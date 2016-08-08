@@ -1,0 +1,29 @@
+{application, webmqx,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {modules, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+				rabbit,
+				  cowboy,
+				  riakc,
+				  mnesia,
+				  jiffy,
+				  observer,
+				  runtime_tools,
+				  amqp_client
+                 ]},
+  {mod, { webmqx_app, []}},%%这个是application 模块，默认的入口是start
+  {env, [
+			{rabbit_node, 'rabbit@iZ2537x4x34Z'}, %%huotianjun 注意：要用原子！
+			{vhost, <<"/">>},
+			{default_user, <<"apns">>},
+			{default_pass, <<"apns">>},
+			
+			%%huotianjun rpc clients的数量
+			{count_of_rpc_clients, 99}
+		]}
+ ]}.
