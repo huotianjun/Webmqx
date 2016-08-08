@@ -5,18 +5,18 @@
   {registered, []},
   {modules, []},
   {applications, [
-                  kernel,
-                  stdlib,
-				rabbit,
-				  cowboy,
-				  riakc,
-				  mnesia,
-				  jiffy,
-				  observer,
-				  runtime_tools,
-				  amqp_client
+					kernel,
+					stdlib,
+					rabbit,
+					cowboy,
+					riakc,
+					mnesia,
+					jiffy,
+					observer,
+					runtime_tools,
+					amqp_client
                  ]},
-  {mod, { webmqx_app, []}},%%这个是application 模块，默认的入口是start
+  {mod, { webmqx_app, []}},%%plugin app 不需要设置app 入口
   {env, [
 			{rabbit_node, 'rabbit@iZ2537x4x34Z'}, %%huotianjun 注意：要用原子！
 			{vhost, <<"/">>},
