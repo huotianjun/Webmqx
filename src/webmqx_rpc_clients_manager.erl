@@ -151,7 +151,7 @@ leave_rpc(MonitorRef, Pid) ->
 ensure_started() ->
     case whereis(?MODULE) of
         undefined ->
-			rabbit_sup:start_restartable_child(?MODULE);
+			webmqx_sup:start_restartable_child(?MODULE);
         Pid ->
             {ok, Pid}
     end.
