@@ -62,12 +62,12 @@ start(_Type, _Args) ->
 	]),
 
 	{ok, Cowboy} = cowboy2:start_clear(http, 100, [{port, 80}], 
-		%%huotianjun rpc_ports通过Opts，传到ranch内核。在内核中，启动应用进程时，rpc_ports再传给Req
+		%%huotianjun rpc_exchanges通过Opts，传到ranch内核。在内核中，启动应用进程时，rpc_exchanges再传给Req
 		#{env => #{dispatch => Dispatch}}
 	),
 
-	%%huotianjun 初始化ranch 内核opts中的rpc_ports
-	webmqx_rpc_ports:init(),
+	%%huotianjun 初始化ranch 内核opts中的rpc_exchanges
+	webmqx_rpc_exchanges:init(),
 
 	{ok, Cowboy}.
 

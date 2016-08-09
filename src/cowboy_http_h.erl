@@ -259,13 +259,13 @@ parse(Buffer, State=#state{in_state=#ps_body{}}) ->
 %% @todo Don't parse if body is finished but request isn't. Let's not parallelize for now.
 
 after_parse({request, Req=#{streamid := StreamID, headers := Headers, version := Version},
-		State0=#state{handler=Handler, opts=Opts=#{rpc_ports := Ports}, streams=Streams0}, Buffer}) ->
+		State0=#state{handler=Handler, opts=Opts=#{rpc_exchanges := Exchanges}, streams=Streams0}, Buffer}) ->
 	%% @todo Opts at the end. Maybe pass the same Opts we got?
 	%%error_logger:error_msg("Req : ~p ~n", [Req]),
-	%%huotianjun 在这里，将Opts里面的rpc_ports转移到Req中！
-	%%huotianjun 将rpc_ports字典转给了Req，rpc_ports用数据还是ets，需要进一步权衡利弊
-	%%huotianjun Opts里面的rpc_ports是新增的项目。可以通过ranch_server:get_protocol_options更新。
-	try Handler:init(StreamID, Req#{rpc_ports => Ports}, Opts) of
+	%%huotianjun 在这里，将Opts里面的rpc_exchanges转移到Req中！
+	%%huotianjun 将rpc_exchanges字典转给了Req，rpc_exchanges用数据还是ets，需要进一步权衡利弊
+	%%huotianjun Opts里面的rpc_exchanges是新增的项目。可以通过ranch_server:get_protocol_options更新。
+	try Handler:init(StreamID, Req#{rpc_exchanges => Exchanges}, Opts) of
 		{Commands, StreamState} ->
 			Streams = [#stream{id=StreamID, state=StreamState, version=Version}|Streams0],
 			State = case maybe_req_close(State0, Headers, Version) of

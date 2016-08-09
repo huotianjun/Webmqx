@@ -16,8 +16,8 @@ init(Req , Opts) ->
 	{ok, Host, Path, PayloadJson, Ports, Req2} = req_parse(Req),
 
 	%%huotianjun 从Ports字典中，查找Port 
-	{ok, Port} = webmqx_rpc_ports:search_port(Host, Path, Ports), 
-	%%error_logger:info_msg("find port : ~p~n", [R]),
+	{ok, Port} = webmqx_rpc_exchanges:search_exchange(Host, Path, Ports), 
+	%%error_logger:info_msg("find exchange : ~p~n", [R]),
 
 	Response =
 		case webmqx_rpc_clients_manager:get_rpc_pid() of
@@ -33,15 +33,15 @@ init(Req , Opts) ->
 				}, Response, Req2),
 	{ok, Req2, Opts}.
 
-req_rpc_ports(#{rpc_ports := Ports}) ->
-	Ports.
+req_rpc_exchanges(#{rpc_exchanges := Exchanges}) ->
+	Exchanges.
 
 req_parse(Req) ->
 	Host = cowboy_req:host(Req),
 	Method = cowboy_req:method(Req),
 	Path = cowboy_req:path(Req),
 	Qs = cowboy_req:qs(Req),
-	RpcPorts = req_rpc_ports(Req),
+	RpcPorts = req_rpc_exchanges(Req),
 	{Body, Req2}  = 
 		case cowboy_req:has_body(Req) of
 			true -> 

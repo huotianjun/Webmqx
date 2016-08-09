@@ -18,7 +18,6 @@
                  ]},
   {mod, { webmqx_app, []}},
   {env, [
-			{rabbit_node, 'rabbit@iZ2537x4x34Z'}, %%huotianjun 注意：要用原子！
 			{vhost, <<"/">>},
 			{default_user, <<"apns">>},
 			{default_pass, <<"apns">>},
