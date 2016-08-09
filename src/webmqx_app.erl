@@ -26,11 +26,11 @@ start(_Type, _Args) ->
 	%%huotianjun 根
 	webmqx_sup:start_link(),
 
-	%%huotianjun 启动RPC clients的管理器，在ets表中维护rpc clients信息，并monitor。初始为空
-	webmqx_rpc_clients_manager:start(),
+	%%huotianjun 启动RPC channel的管理器，在ets表中维护rpc channel信息，并monitor。初始为空
+	webmqx_rpc_channel_manager:start(),
 
-	%%huotianjun 启动所有的RPC clients（发送端），并在RPC clients管理器上注册
-	webmqx_sup:start_supervisor_child(webmqx_rpc_client_sup),
+	%%huotianjun 启动所有的RPC channel（发送端），并在RPC channel管理器上注册
+	webmqx_sup:start_supervisor_child(webmqx_rpc_channel_sup),
 
 	%%huotianjun 测试微服务
 	%%huotianjun test1-1是server name，会记录在binding的routingkey上

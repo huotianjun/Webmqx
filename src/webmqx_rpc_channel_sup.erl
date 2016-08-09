@@ -14,7 +14,7 @@
 %% Copyright (c) 2007-2016 Pivotal Software, Inc.  All rights reserved.
 %%
 
--module(webmqx_rpc_client_sup).
+-module(webmqx_rpc_channel_sup).
 
 -behaviour(supervisor2).
 
@@ -32,15 +32,15 @@
 %%----------------------------------------------------------------------------
 start_link() ->
     {ok, SupPid} = supervisor2:start_link(?MODULE, []),
-	error_logger:info_msg("webmqx_rpc_client_sup : ~p~n", [SupPid]),
+	error_logger:info_msg("webmqx_rpc_channel_sup : ~p~n", [SupPid]),
 	{ok, SupPid}.
 
 init([]) -> 
-	%%huotianjun 从env取rpc clients数量，默认100
-	Count = webmqx_util:get_rpc_clients_count(100),
+	%%huotianjun 从env取rpc channel数量，默认100
+	Count = webmqx_util:get_rpc_channel_count(100),
 
 	Procs = [
-		{{webmqx_rpc_client, N}, {webmqx_rpc_client, start_link, [N]},
+		{{webmqx_rpc_channel, N}, {webmqx_rpc_channel, start_link, [N]},
 			permanent, 16#ffffffff, worker, []}
 			|| N <- lists:seq(1, Count)],
 	{ok, {{one_for_one, 1, 5}, Procs}}.

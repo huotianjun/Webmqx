@@ -32,7 +32,7 @@ amqp_connect(ConnName) ->
 											{channel_max, 1},
 											{frame_max, 0},
 											{client_properties,
-												[{<<"product">>, longstr, <<"RPC client">>}]}] 
+												[{<<"product">>, longstr, <<"RPC channel">>}]}] 
 					},
 
 	case amqp_login(ConnName, RabbitUserBin, RabbitPassBin, AdapterInfo) of
@@ -101,8 +101,8 @@ get_vhost_username(UserBin) ->
     end.
 
 %%huotianjun 获取rpc的通道数量
-get_rpc_clients_count(DefaultCount) when is_number(DefaultCount) ->
-    case application:get_env(?APP, count_of_rpc_clients) of
+get_rpc_channel_count(DefaultCount) when is_number(DefaultCount) ->
+    case application:get_env(?APP, count_of_rpc_channel) of
         {ok, C} -> C;
         _ -> DefaultCount
 	end.

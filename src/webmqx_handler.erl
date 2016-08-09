@@ -20,10 +20,10 @@ init(Req , Opts) ->
 	%%error_logger:info_msg("find exchange : ~p~n", [R]),
 
 	Response =
-		case webmqx_rpc_clients_manager:get_rpc_pid() of
+		case webmqx_rpc_channel_manager:get_rpc_pid() of
 			undefined -> <<"no rpc handlers">>;
 			{ok, Pid} ->
-				webmqx_rpc_client:call(Pid, Port, PayloadJson) 
+				webmqx_rpc_channel:call(Pid, Port, PayloadJson) 
 		end,
 	%%error_logger:info_msg("Response : ~p~n", [Response]),
 

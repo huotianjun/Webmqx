@@ -1,4 +1,4 @@
--module(web_rpc_clients_manager).
+-module(web_rpc_channel_manager).
 -behaviour(gen_server2).
 
 -export([join/2, get_rpc_pid/0]).
@@ -8,7 +8,7 @@
 
 %%----------------------------------------------------------------------------
 %%
--define(TAB, rpc_client_table).
+-define(TAB, rpc_channel_table).
 
 -ifdef(use_specs).
 
@@ -16,7 +16,7 @@
 
 %%----------------------------------------------------------------------------
 
-%%huotianjun 这个进程是管理rpc client的数据字典, 与webmqx_rpc_clients_manager配合使用
+%%huotianjun 这个进程是管理rpc channel的数据字典, 与webmqx_rpc_channel_manager配合使用
 %%huotianjun 集中维护，通过ets提供分散查询
 
 %%%
@@ -36,10 +36,10 @@ start() ->
 join(N, Pid) when is_pid(Pid) ->
     gen_server2:cast(?MODULE, {join, N, Pid}).
 
-%%huotianjun 用Req进程的进程id随机生成一个N，得到rpc client，确保均衡分布
+%%huotianjun 用Req进程的进程id随机生成一个N，得到rpc channel，确保均衡分布
 get_rpc_pid() ->
-	%%huotianjun 随机取一个rpc client编号，默认100
-	Count = webmqx_util:get_rpc_clients_count(100),
+	%%huotianjun 随机取一个rpc channel编号，默认100
+	Count = webmqx_util:get_rpc_channel_count(100),
 	%%huotianjun 这个是被webmqx_handler调用的, 每个req进程一个self()
 	N = erlang:phash2(self(), Count) + 1,
 	%%error_logger:info_msg("N : ~p~n", [N]),
@@ -56,7 +56,7 @@ get_rpc_pid(N, C, Count) ->
 			case C of
 				undefined ->
 					%%huotianjun 第一次没找到，那么最多再找Count0次, 保留住
-					Count0 = webmqx_util:get_rpc_clients_count(100),
+					Count0 = webmqx_util:get_rpc_channel_count(100),
 					get_rpc_pid(case N+1 > Count0 of true -> 1; false -> N+1 end, Count0 - 1, Count0);
 				_ ->
 					get_rpc_pid(case N+1 > Count of true -> 1; false -> N+1 end, C - 1, Count)
