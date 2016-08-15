@@ -23,7 +23,7 @@
 -export([stop/1]).
 
 start(_Type, _Args) ->
-	%%huotianjun 根
+	%%huotianjun root 
 	webmqx_sup:start_link(),
 
 	%%huotianjun 启动RPC channel的管理器，在ets表中维护rpc channel信息，并monitor。初始为空
@@ -56,7 +56,7 @@ start(_Type, _Args) ->
 		{'_', [
 			%%huotianjun []是Opts，会传入toppage_handler
 			%%{"/", toppage_handler, []},
-			%%{"/[...]", hello_handler, []}
+			%%{"/[...]", webmqx_handler, []}
 			{'_', webmqx_handler, []}
 		]}
 	]),

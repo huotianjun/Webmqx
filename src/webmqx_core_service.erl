@@ -1,4 +1,4 @@
--module(hello_core_service).
+-module(webmqx_core_service).
 
 -export([start/0]).
 

@@ -18,6 +18,8 @@
 
 -behaviour(supervisor2).
 
+-include("webmqx.hrl").
+
 -export([start_link/0]).
 
 -export([init/1]).
@@ -36,8 +38,8 @@ start_link() ->
 	{ok, SupPid}.
 
 init([]) -> 
-	%%huotianjun 从env取rpc channel数量，默认100
-	Count = webmqx_util:get_rpc_channel_count(100),
+	%%huotianjun 从env取rpc channel数量
+	Count = webmqx_util:get_rpc_channel_count(?DEFAULT_RPC_CHANNEL_MAX),
 
 	Procs = [
 		{{webmqx_rpc_channel, N}, {webmqx_rpc_channel, start_link, [N]},

@@ -78,11 +78,11 @@ amqp_login(ConnName, UserBin, PassBin, AdapterInfo) ->
             %%                     end),
 			{ok, Connection, VHost};
         Error0 = {error, {auth_failure, Explanation}} ->
-            hello_log:error("AMQP login failed for ~p auth_failure: ~s~n",
+            rabbit_log:error("AMQP login failed for ~p auth_failure: ~s~n",
                              [binary_to_list(UserBin), Explanation]),
             Error0;
         Error1 = {error, access_refused} ->
-            hello_log:warning("AMQP login failed for ~p access_refused "
+            rabbit_log:warning("AMQP login failed for ~p access_refused "
                                "(vhost access not allowed)~n",
                                [binary_to_list(UserBin)]),
             Error1 
@@ -156,4 +156,4 @@ path_for(Dir, VHost, Suffix) ->
 
 vhost_name_to_table_name(VHost) ->
   <<Num:128>> = erlang:md5(VHost),
-  list_to_atom("retained_" ++ hello_misc:format("~36.16.0b", [Num])).
+  list_to_atom("retained_" ++ rabbit_misc:format("~36.16.0b", [Num])).

@@ -50,7 +50,7 @@
 %% handler function. This function returns the pid of the RPC server that
 %% can be used to stop the server.
 start_link(ServerName, ExchangeKey, Fun) ->
-	{ok, Connection} = hello_util:amqp_connect(ServerName),
+	{ok, Connection} = webmqx_util:amqp_connect(ServerName),
     {ok, Pid} = gen_server2:start_link(?MODULE, [ServerName, Connection, ExchangeKey, Fun], []),
 	{ok, Pid}.
 
@@ -123,7 +123,7 @@ handle_info({#'basic.deliver'{delivery_tag = _DeliveryTag},
 	#'P_basic'{correlation_id = CorrelationId,
                reply_to = Q} = Props,
 	%%io:format("rpc server received: ~p ~p ~n", [CorrelationId, Q]),
-	%%hello_worker_pool:submit_async(
+	%%worker_pool:submit_async(
 %%		fun() ->
 			Response = Fun(Payload),
 			%%huotianjun 这个重要，把CorrelationId再打回到返回详细中，让接收的channel知道这个消息给谁

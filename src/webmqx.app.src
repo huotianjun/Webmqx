@@ -9,7 +9,7 @@
 					stdlib,
 					rabbit,
 					cowboy,
-					riakc,
+					%%riakc,
 					mnesia,
 					jiffy,
 					observer,

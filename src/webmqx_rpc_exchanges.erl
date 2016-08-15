@@ -57,7 +57,7 @@ set_ranch_opts_exchanges(HostExchanges) ->
 	ok = ranch_server:set_protocol_options(http, Opts1).
 
 declare_exchange(ExchangeName) ->
-	{ok, Pid} =  webmqx_rpc_channel_manager:get_rpc_pid(), 
+	{ok, Pid} =  webmqx_rpc_channel_manager:get_rpc_channel_pid(), 
 	webmqx_rpc_channel:declare_exchange(Pid, ExchangeName).
 
 %%huotianjun 注意：exchanges从数据库中取出来，key是split path的lists，就设成倒序的！！ 设置到HostExchanges中

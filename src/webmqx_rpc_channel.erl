@@ -27,13 +27,12 @@
 
 -export([start_link/1, stop/1]).
 -export([call/3]).
--export([declare_exchange/2]).
 -export([init/1, terminate/2, code_change/3, handle_call/3,
          handle_cast/2, handle_info/2]).
 
 -record(state, {
 				connection,	
-				channel,
+				rabbit_channel,
                 reply_queue,
                 continuations = dict:new(),
                 correlation_id = 0}).
@@ -51,12 +50,7 @@
 %% to a specified queue. This function returns the pid of the RPC channel 
 %% process that can be used to invoke RPCs and stop the client.
 start_link(N) ->
-	%%huotianjun 一个Rpc channel，启动一个Connection，紧密捆绑
-	NBin = integer_to_binary(N),
-	RPCClientName = atom_to_binary(?MODULE, latin1),
-	ConnName = <<RPCClientName/binary, NBin/binary>>,
-	{ok, Connection} = hello_util:amqp_connect(ConnName),
-    {ok, Pid} = gen_server2:start_link(?MODULE, [N, Connection], []),
+    {ok, Pid} = gen_server2:start_link(?MODULE, [N], []),
 	%%huotianjun 注意：如果这里不返回{ok, Pid}，在supstart_child的时候会出问题的
 	{ok, Pid}.
 
@@ -66,9 +60,6 @@ start_link(N) ->
 %% @doc Stops an exisiting RPC client.
 stop(Pid) ->
     gen_server2:call(Pid, stop, infinity).
-
-declare_port(RpcClient, ExchangeName) when is_binary(ExchangeName) ->
-	gen_server2:cast(RpcClient, {declare_port, ExchangeName}).
 
 %% @spec (RpcClient, Payload) -> ok
 %% where
@@ -81,8 +72,8 @@ declare_port(RpcClient, ExchangeName) when is_binary(ExchangeName) ->
 call(_RpcClient, undefined,  _Payload) -> <<"no service">>;
 
 %%huotianjun 实现的时候，是发起cast，避免阻塞
-call(RpcClient, PortKey, Payload) ->
-    gen_server2:call(RpcClient, {call, PortKey, Payload}, 5000).
+call(RpcClient, Queue, Payload) ->
+    gen_server2:call(RpcClient, {call, Queue, Payload}, 5000).
 
 %%--------------------------------------------------------------------------
 %% Plumbing
@@ -90,13 +81,13 @@ call(RpcClient, PortKey, Payload) ->
 
 %% Sets up a reply queue for this client to listen on
 %% huotianjun Q<<"amq.rabbitmq.reply-to">>是个虚拟Queue
-setup_reply_queue(State = #state{channel = {_Ref, Channel}, reply_queue = Q}) ->
+setup_reply_queue(State = #state{rabbit_channel = {_Ref, Channel}, reply_queue = Q}) ->
     #'queue.declare_ok'{} =
         amqp_channel:call(Channel, #'queue.declare'{queue = Q}),
     State.
 
 %% Registers this RPC client instance as a consumer to handle rpc responses
-setup_consumer(#state{channel = {_Ref, Channel}, reply_queue = Q}) ->
+setup_consumer(#state{rabbit_channel = {_Ref, Channel}, reply_queue = Q}) ->
 	%%huotianjun Q必须是<<"amq.rabbitmq.reply-to">>，channel里面要特殊准备一下，会补充特殊信息到Props中
     #'basic.consume_ok'{} =
 		amqp_channel:call(Channel, #'basic.consume'{queue = Q, no_ack = true}).
@@ -104,20 +95,18 @@ setup_consumer(#state{channel = {_Ref, Channel}, reply_queue = Q}) ->
 %% Publishes to the broker, stores the From address against
 %% the correlation id and increments the correlationid for
 %% the next request
-publish({Payload, ExchangeKey}, From,
-        State = #state{channel = {_ChannelRef, Channel},
+publish({Payload, Queue}, From,
+        State = #state{rabbit_channel = {_ChannelRef, Channel},
                        reply_queue = Q,
                        correlation_id = CorrelationId,
                        continuations = Continuations}) ->
     EncodedCorrelationId = base64:encode(<<CorrelationId:64>>),
     Props = #'P_basic'{correlation_id = EncodedCorrelationId,
                        content_type = <<"application/octet-stream">>,
-					   %%huotianjun 这个很重要，在basic.publish的时候，会修改这个，补充返回路由
-					   %%huotianjun 会用maybe_set_fast_reply_to处理reply_to是<<"amq.rabbitmq.reply-to">>的情况
                        reply_to = Q},
 
-    Publish = #'basic.publish'{exchange = ExchangeKey,
-                               routing_key = <<>>,
+    Publish = #'basic.publish'{exchange = <<"">>,
+                               routing_key = Queue,
                                mandatory = true},
 
     amqp_channel:call(Channel, Publish, #amqp_msg{props = Props,
@@ -135,8 +124,15 @@ publish({Payload, ExchangeKey}, From,
 
 %% Sets up a reply queue and consumer within an existing channel
 %% @private
-init([N, Connection]) ->
+init([N]) ->
 	process_flag(trap_exit, true),
+
+	%%huotianjun 一个Rpc channel，启动一个Connection，紧密捆绑
+	NBin = integer_to_binary(N),
+	RPCClientName = atom_to_binary(?MODULE, latin1),
+	ConnName = <<RPCClientName/binary, NBin/binary>>,
+	{ok, Connection} = webmqx_util:amqp_connect(ConnName),
+
 	%%huotianjun 一个RPC client用一个channel
     {ok, Channel} = amqp_connection:open_channel(
                         Connection, {amqp_direct_consumer, [self()]}),
@@ -148,7 +144,7 @@ init([N, Connection]) ->
 
     InitialState = #state{
 							connection  = {ConnectionRef, Connection},
-							channel     = {ChannelRef, Channel},
+							rabbit_channel     = {ChannelRef, Channel},
 							reply_queue = <<"amq.rabbitmq.reply-to">>
 						 },
 
@@ -156,13 +152,13 @@ init([N, Connection]) ->
     setup_consumer(State),
 
 	%%huotianjun 在管理器上注册一下本Client
-	hello_rpc_channel_manager:join(N, self()),
+	webmqx_rpc_channel_manager:join(N, self()),
     {ok, State}.
 
 %% Closes the channel this gen_server instance started
 %% @private
 %% huotianjun RoutingKey在rpc 调用中，其实就是Queue
-terminate(_Reason, #state{connection = {ConnectionRef, Connection}, channel = {ChannelRef, Channel}}) ->
+terminate(_Reason, #state{connection = {ConnectionRef, Connection}, rabbit_channel = {ChannelRef, Channel}}) ->
 	erlang:demonitor(ConnectionRef),
 	erlang:demonitor(ChannelRef),
 
@@ -179,16 +175,10 @@ handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
 
 %% @private
-handle_call({call, PortKey, Payload}, From, State) ->
-    NewState = publish({Payload, PortKey}, From, State),
+handle_call({call, Queue, Payload}, From, State) ->
+    NewState = publish({Payload, Queue}, From, State),
 	%%huotianjun noreply非常重要，这样，这个channel不会被阻塞(只是call的应用进程被阻塞了），rpc channel还可以继续被call
     {noreply, NewState}.
-
-handle_cast({declare_port, ExchangeName}, State = #state{channel = {_ChannelRef, Channel}}) ->
-	ExchangeDeclare = #'exchange.declare'{exchange = ExchangeName, type = <<"x-random">>},
-	#'exchange.declare_ok'{} =
-		amqp_channel:call(Channel, ExchangeDeclare),
-	{noreply, State};
 
 %% @private
 handle_cast(_Msg, State) ->
@@ -217,10 +207,10 @@ handle_info({#'basic.deliver'{},
              _Msg = #amqp_msg{props = #'P_basic'{correlation_id = Id},
                        payload = Payload}},
             State = #state{continuations = Conts}) ->
+
 	%%error_logger:info_msg("channel get reply : ~p ~n", [Msg]), 
-	%%error_logger:info_msg("ok ~n", []), 
     From = dict:fetch(Id, Conts),
-    gen_server:reply(From, Payload),
+    gen_server2:reply(From, Payload),
     {noreply, State#state{continuations = dict:erase(Id, Conts) }};
 
 handle_info({'EXIT', _Pid, Reason}, State) ->
