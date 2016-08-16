@@ -56,8 +56,8 @@ validate(_X) -> ok.
 %%huotianjun binding之前先要检查一下
 %%huotianjun 有问题返回{error, _}
 validate_binding(_X, #binding{source = X, key = K, destination = D, args = Args}) -> 
-                      Words = split_topic_key(RKey),
-                      mnesia:async_dirty(fun trie_match/2, [X, Words])
+	Words = split_topic_key(RKey),
+	mnesia:async_dirty(fun trie_match/2, [X, Words])
 
 create(_Tx, _X) -> ok.
 
@@ -116,6 +116,8 @@ trie_match(X, Words) ->
 trie_match(X, Node, [], ResAcc) ->
     trie_match_part(X, Node, "#", fun trie_match_skip_any/4, [],
                     trie_bindings(X, Node) ++ ResAcc);
+trie_match(X, Node, ["*" | RestW] = Words, ResAcc) ->
+trie_match(X, Node, ["#" | RestW] = Words, ResAcc) ->
 trie_match(X, Node, [W | RestW] = Words, ResAcc) ->
     lists:foldl(fun ({WArg, MatchFun, RestWArg}, Acc) ->
                         trie_match_part(X, Node, WArg, MatchFun, RestWArg, Acc)
@@ -129,8 +131,10 @@ trie_match_part(X, Node, Search, MatchFun, RestW, ResAcc) ->
         error          -> ResAcc
     end.
 
+%%huotianjun 如果遇到'#'，跳到这里来递归, 
 trie_match_skip_any(X, Node, [], ResAcc) ->
     trie_match(X, Node, [], ResAcc);
+%%huotianjun 一节一节卸掉，用剩余的与Node（'#')后面的链子匹配，匹配到的就是！Node不动
 trie_match_skip_any(X, Node, [_ | RestW] = Words, ResAcc) ->
     trie_match_skip_any(X, Node, RestW,
                         trie_match(X, Node, Words, ResAcc)).
