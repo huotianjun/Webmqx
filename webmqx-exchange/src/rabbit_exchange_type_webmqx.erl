@@ -18,18 +18,21 @@
 
 -include_lib("rabbit_common/include/rabbit.hrl").
 
+-define(WEBMQX_EXCHANGE, <<"webmqx">>).
+
 -behaviour(rabbit_exchange_type).
 
 -export([description/0, serialise_events/0, route/2]).
 -export([validate/1, validate_binding/2,
          create/2, delete/3, policy_changed/2, add_binding/3,
          remove_bindings/3, assert_args_equivalence/2]).
+-export([search/1]).
 -export([info/1, info/2]).
 
 -rabbit_boot_step({?MODULE,
                    [{description, "exchange type webmqx"},
                     {mfa,         {rabbit_registry, register,
-                                   [exchange, <<"webmqx">>, ?MODULE]}},
+                                   [exchange, ?WEBMQX_EXCHANGE, ?MODULE]}},
                     {requires,    rabbit_registry},
                     {enables,     kernel_ready}]}).
 
@@ -44,20 +47,16 @@ description() ->
 serialise_events() -> false.
 
 %% NB: This may return duplicate results in some situations (that's ok)
-route(#exchange{name = X},
-      #delivery{message = #basic_message{routing_keys = Routes}}) ->
-    lists:append([begin
-                      Words = split_topic_key(RKey),
-                      mnesia:async_dirty(fun trie_match/2, [X, Words])
-                  end || RKey <- Routes]).
+%% huotianjun 只是借用了binding及其数据库表，不用exchange的route，在应用中直接match Queues。
+route(_X, _D} -> ok.
+
+search(RoutingKey) ->
+	Words = split_topic_key(RoutingKey),
+    mnesia:async_dirty(fun trie_match/2, [?WEBMQX_EXCHANGE, Words].
 
 validate(_X) -> ok.
 
-%%huotianjun binding之前先要检查一下
-%%huotianjun 有问题返回{error, _}
-validate_binding(_X, #binding{source = X, key = K, destination = D, args = Args}) -> 
-	Words = split_topic_key(RKey),
-	mnesia:async_dirty(fun trie_match/2, [X, Words])
+validate_binding(_X, _B) -> ok.
 
 create(_Tx, _X) -> ok.
 
@@ -110,34 +109,20 @@ internal_add_binding(#binding{source = X, key = K, destination = D,
     trie_add_binding(X, FinalNode, D, Args),
     ok.
 
+%%huotianjun 严格匹配，数量必须一样
 trie_match(X, Words) ->
-    trie_match(X, root, Words, []).
+    trie_match(X, root, Words).
 
-trie_match(X, Node, [], ResAcc) ->
-    trie_match_part(X, Node, "#", fun trie_match_skip_any/4, [],
-                    trie_bindings(X, Node) ++ ResAcc);
-trie_match(X, Node, ["*" | RestW] = Words, ResAcc) ->
-trie_match(X, Node, ["#" | RestW] = Words, ResAcc) ->
-trie_match(X, Node, [W | RestW] = Words, ResAcc) ->
-    lists:foldl(fun ({WArg, MatchFun, RestWArg}, Acc) ->
-                        trie_match_part(X, Node, WArg, MatchFun, RestWArg, Acc)
-                end, ResAcc, [{W, fun trie_match/4, RestW},
-                              {"*", fun trie_match/4, RestW},
-                              {"#", fun trie_match_skip_any/4, Words}]).
+trie_match(X, Node, []) ->
+	trie_bindings(X, Node);
+trie_match(X, Node, [W | RestW])  ->
+	trie_match_part(X, Node, W, RestW).
 
-trie_match_part(X, Node, Search, MatchFun, RestW, ResAcc) ->
+trie_match_part(X, Node, Search, RestW) ->
     case trie_child(X, Node, Search) of
-        {ok, NextNode} -> MatchFun(X, NextNode, RestW, ResAcc);
-        error          -> ResAcc
+        {ok, NextNode} -> trie_match(X, NextNode, RestW);
+        error          -> []
     end.
-
-%%huotianjun 如果遇到'#'，跳到这里来递归, 
-trie_match_skip_any(X, Node, [], ResAcc) ->
-    trie_match(X, Node, [], ResAcc);
-%%huotianjun 一节一节卸掉，用剩余的与Node（'#')后面的链子匹配，匹配到的就是！Node不动
-trie_match_skip_any(X, Node, [_ | RestW] = Words, ResAcc) ->
-    trie_match_skip_any(X, Node, RestW,
-                        trie_match(X, Node, Words, ResAcc)).
 
 follow_down_create(X, Words) ->
     case follow_down_last_node(X, Words) of
