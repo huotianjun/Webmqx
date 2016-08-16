@@ -59,8 +59,8 @@ start_restartable_child(Mod, Args, Delay) ->
                    transient, infinity, supervisor, [webmqx_restartable_sup]})).
 
 stop_child(ChildId) ->
-    case supervisor:terminate_child(?SERVER, ChildId) of
-        ok -> supervisor:delete_child(?SERVER, ChildId);
+    case supervisor2:terminate_child(?SERVER, ChildId) of
+        ok -> supervisor2:delete_child(?SERVER, ChildId);
         E  -> E
     end.
 

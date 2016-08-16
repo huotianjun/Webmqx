@@ -23,6 +23,8 @@
 
 -behaviour(gen_server2).
 
+-include("webmqx.hrl").
+
 -include_lib("amqp_client/include/amqp_client.hrl").
 
 -export([init/1, terminate/2, code_change/3, handle_call/3,
@@ -49,9 +51,8 @@
 %% requests via a specified queue and dispatches them to a specified
 %% handler function. This function returns the pid of the RPC server that
 %% can be used to stop the server.
-start_link(ServerName, ExchangeKey, Fun) ->
-	{ok, Connection} = webmqx_util:amqp_connect(ServerName),
-    {ok, Pid} = gen_server2:start_link(?MODULE, [ServerName, Connection, ExchangeKey, Fun], []),
+start_link(ServerName, RoutingKey, Fun) ->
+    {ok, Pid} = gen_server2:start_link(?MODULE, [ServerName, RoutingKey, Fun], []),
 	{ok, Pid}.
 
 %% @spec (RpcServer) -> ok
@@ -59,20 +60,22 @@ start_link(ServerName, ExchangeKey, Fun) ->
 %%      RpcServer = pid()
 %% @doc Stops an exisiting RPC server.
 stop(Pid) ->
-    gen_server:call(Pid, stop, infinity).
+    gen_server2:call(Pid, stop, infinity).
 
 %%--------------------------------------------------------------------------
 %% gen_server callbacks
 %%--------------------------------------------------------------------------
 
 %% @private
-init([ServerName, Connection, ExchangeKey, Fun]) ->
+init([ServerName, RoutingKey, Fun]) ->
 	process_flag(trap_exit, true),
+	
+	{ok, Connection} = webmqx_util:amqp_connect(ServerName),
 
     {ok, Channel} = amqp_connection:open_channel(
                         Connection, {amqp_direct_consumer, [self()]}),
 
-	ExchangeDeclare = #'exchange.declare'{exchange = ExchangeKey, type = <<"x-random">>},
+	ExchangeDeclare = #'exchange.declare'{exchange = ?EXCHANGE_WEBMQX, type = <<"topic">>},
 	#'exchange.declare_ok'{} = 
 		amqp_channel:call(Channel, ExchangeDeclare),
 
@@ -83,7 +86,7 @@ init([ServerName, Connection, ExchangeKey, Fun]) ->
 													auto_delete = true}),
 
 	%%huotianjun 这个里面的routing_key没有什么功能用途，仅仅定义微服务的实例名
-	Bind = #'queue.bind'{queue = Q, exchange = ExchangeKey, routing_key = ServerName},
+	Bind = #'queue.bind'{queue = Q, exchange = ?EXCHANGE_WEBMQX, routing_key = RoutingKey, arguments = [ServerName]},
 	#'queue.bind_ok'{} = amqp_channel:call(Channel, Bind),
 
 	%%huotianjun 效率第一，不用ack。（这个需要再权衡一下，如果channel启用basic.qos，需要设置prefetch_count。可以根据consumer的处理能力来发消息）

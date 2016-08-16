@@ -41,17 +41,10 @@ init() ->
 	Exchanges108 = dict:store([<<"/">>], <<"stock">>, dict:new()),
 	HostExchanges3 = dict:store(<<"106.187.44.101">>, Exchanges108, HostExchanges2),
 
-	declare_exchange(<<"test1">>),
-	declare_exchange(<<"test2">>),
-	declare_exchange(<<"test3">>),
-	declare_exchange(<<"report">>),
-	declare_exchange(<<"stock">>),
-	declare_exchange(<<"maker">>),
-
 	set_ranch_opts_exchanges(HostExchanges3).
 
 %%huotianjun 把Exchanges设置到ranch core opts中
-set_ranch_opts_exchanges(HostExchanges) ->
+set_ranch_opts_routingkeys(HostExchanges) ->
 	Opts = ranch_server:get_protocol_options(http),
 	Opts1 = Opts#{rpc_exchanges => HostExchanges},
 	ok = ranch_server:set_protocol_options(http, Opts1).
