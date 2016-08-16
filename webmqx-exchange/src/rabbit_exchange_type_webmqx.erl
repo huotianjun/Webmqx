@@ -52,7 +52,13 @@ route(#exchange{name = X},
                   end || RKey <- Routes]).
 
 validate(_X) -> ok.
-validate_binding(_X, _B) -> ok.
+
+%%huotianjun binding之前先要检查一下
+%%huotianjun 有问题返回{error, _}
+validate_binding(_X, #binding{source = X, key = K, destination = D, args = Args}) -> 
+                      Words = split_topic_key(RKey),
+                      mnesia:async_dirty(fun trie_match/2, [X, Words])
+
 create(_Tx, _X) -> ok.
 
 delete(transaction, #exchange{name = X}, _Bs) ->
