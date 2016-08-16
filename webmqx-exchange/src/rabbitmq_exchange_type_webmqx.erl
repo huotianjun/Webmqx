@@ -14,7 +14,7 @@
 %% Copyright (c) 2007-2016 Pivotal Software, Inc.  All rights reserved.
 %%
 
--module(rabbit_exchange_type_topic).
+-module(rabbit_exchange_type_webmqx).
 
 -include_lib("rabbit_common/include/rabbit.hrl").
 
@@ -27,9 +27,9 @@
 -export([info/1, info/2]).
 
 -rabbit_boot_step({?MODULE,
-                   [{description, "exchange type topic"},
+                   [{description, "exchange type webmqx"},
                     {mfa,         {rabbit_registry, register,
-                                   [exchange, <<"topic">>, ?MODULE]}},
+                                   [exchange, <<"webmqx">>, ?MODULE]}},
                     {requires,    rabbit_registry},
                     {enables,     kernel_ready}]}).
 
@@ -39,7 +39,7 @@ info(_X) -> [].
 info(_X, _) -> [].
 
 description() ->
-    [{description, <<"AMQP topic exchange, as per the AMQP specification">>}].
+    [{description, <<"AMQP webmqx exchange, as per the AMQP specification">>}].
 
 serialise_events() -> false.
 
