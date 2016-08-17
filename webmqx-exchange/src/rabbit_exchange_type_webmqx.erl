@@ -26,7 +26,7 @@
 -export([validate/1, validate_binding/2,
          create/2, delete/3, policy_changed/2, add_binding/3,
          remove_bindings/3, assert_args_equivalence/2]).
--export([search/1, all_bindings/0]).
+-export([search/1]).
 -export([info/1, info/2]).
 
 -rabbit_boot_step({?MODULE,
@@ -186,15 +186,6 @@ trie_bindings(X, Node) ->
                                    arguments     = '_'}},
 	%%huotianjun select 匹配map、条件、输出
     mnesia:select(rabbit_topic_trie_binding, [{MatchHead, [], ['$1']}]).
-
-all_bindings() ->
-    MatchHead = #topic_trie_binding{
-      trie_binding = #trie_binding{exchange_name = ?WEBMQX_EXCHANGE,
-                                   node_id       = '$1',
-                                   destination   = '$2',
-                                   arguments     = '$3'}},
-	%%huotianjun select 匹配map、条件、输出
-    mnesia:select(rabbit_topic_trie_binding, [{MatchHead, [], ['$1', '$2', '$3']}]).
 
 trie_update_node_counts(X, Node, Field, Delta) ->
     E = case mnesia:read(rabbit_topic_trie_node,
