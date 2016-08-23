@@ -274,7 +274,8 @@ split_topic_key(<<>>, [], []) ->
     [];
 split_topic_key(<<>>, RevWordAcc, RevResAcc) ->
     lists:reverse([lists:reverse(RevWordAcc) | RevResAcc]);
-split_topic_key(<<$., Rest/binary>>, RevWordAcc, RevResAcc) ->
+%%huotianjun split by '/'
+split_topic_key(<<$/, Rest/binary>>, RevWordAcc, RevResAcc) ->
     split_topic_key(Rest, [], [lists:reverse(RevWordAcc) | RevResAcc]);
 split_topic_key(<<C:8, Rest/binary>>, RevWordAcc, RevResAcc) ->
     split_topic_key(Rest, [C | RevWordAcc], RevResAcc).

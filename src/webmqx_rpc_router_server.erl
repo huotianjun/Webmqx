@@ -36,7 +36,8 @@
 -define(TAB, ?MODULE).
 
 -record(state, {
-				gm = undefined
+				gm = undefined,
+				routers = dict:new()
 				}). 
 
 %% API.
@@ -52,12 +53,30 @@ start() ->
 		ordered_set, public, named_table]),
     ensure_started().
 
-%%huotianjun set用gen_server，能避免冲入
-set_router(RoutingKey, Queues) ->
-	gen_server:call(?MODULE, {set_router, RoutingKey, Queues}).
+%%huotianjun 所有的channels都记录这个？
 
-get_router(RoutingKey) ->
-	ets:lookup_element(?TAB, {router, RoutingKey}, 2).
+%%huotianjun set用gen_server，避免冲突
+set_router(Path, Queues) ->
+	gen_server:call(?MODULE, {set_router, Path, Queues}).
+
+get_router(<<>>) -> [].
+get_router(Path) ->
+	Path1 =
+		case binary:last(Path) of
+			%%huotianjun 47 is $/
+			47 ->
+				S = byte_size(Path),
+				<<Path2:(S-1)/binary, $/>> = Path,
+				Path2;
+			_ ->
+				Path
+		end,
+
+	%%huotianjun 每次刷新，都按照1、2、3、、、n插入gb_trees
+	case ets:lookup(?TAB, {router, Path1}, 2) of
+
+		[_] -> 
+		%%huotianjun ets中存放gb_trees
 
 %% gen_server.
 
@@ -78,15 +97,15 @@ init([]) ->
 	{ok, #state{gm = GM}}.
 
 handle_call({set_router, RoutingKey, Queues}, _, State) ->
-	true = ets:insert(?TAB, {{router, RoutingKey}, Queues}),
-	gm:broadcast(GM, {set_rpc_router, RoutingKey, Queues, self()}),
+	%%huotianjun 最终的set，由gm消息处理。
+	gm:broadcast(GM, {set_rpc_router, RoutingKey, Queues}),
 	{reply, ok, State};
 
 handle_call(_Request, _From, State) ->
 	{reply, ignore, State}.
 
-%%huotianjun 自己发的不管
-handle_cast({gm, {set_rpc_router, RoutingKey, Queues, self()}, State) ->
+handle_cast({gm, {set_rpc_router, RoutingKey, Queues}, State) ->
+	true = ets:insert(?TAB, {{router, RoutingKey}, Queues}),
 	{noreply, State};
 handle_cast({gm, {set_rpc_router, RoutingKey, Queues, _From}, State) ->
 	true = ets:insert(?TAB, {{router, RoutingKey}, Queues}),
