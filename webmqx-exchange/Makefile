@@ -1,37 +1,19 @@
-PACKAGE=webmqx-exchange
-DIST_DIR=dist
-EBIN_DIR=ebin
-INCLUDE_DIRS=include
-DEPS_DIR=deps
-DEPS ?= 
-DEPS_EZ=$(foreach DEP, $(DEPS), $(DEPS_DIR)/$(DEP).ez)
-RABBITMQ_HOME ?= .
+PROJECT = webmqx_exchange
 
-all: compile
+DEPS = amqp_client
+TEST_DEPS += rabbit
 
-clean:
-	rm -rf $(DIST_DIR)
-	rm -rf $(EBIN_DIR)
+DEP_PLUGINS = rabbit_common/mk/rabbitmq-plugin.mk
 
-distclean: clean
-	rm -rf $(DEPS_DIR)
+# FIXME: Use erlang.mk patched for RabbitMQ, while waiting for PRs to be
+# reviewed and merged.
 
-package: compile $(DEPS_EZ)
-	rm -f $(DIST_DIR)/$(PACKAGE).ez
-	mkdir -p $(DIST_DIR)/$(PACKAGE)
-	cp -r $(EBIN_DIR) $(DIST_DIR)/$(PACKAGE)
-	$(foreach EXTRA_DIR, $(INCLUDE_DIRS), cp -r $(EXTRA_DIR) $(DIST_DIR)/$(PACKAGE);)
-	(cd $(DIST_DIR); zip -r $(PACKAGE).ez $(PACKAGE))
+ERLANG_MK_REPO = https://github.com/rabbitmq/erlang.mk.git
+ERLANG_MK_COMMIT = rabbitmq-tmp
 
-install: package
-	$(foreach DEP, $(DEPS_EZ), cp $(DEP) $(RABBITMQ_HOME)/plugins;)
-	cp $(DIST_DIR)/$(PACKAGE).ez $(RABBITMQ_HOME)/plugins
+include rabbitmq-components.mk
 
-$(DEPS_DIR):
-	./rebar get-deps
+# FIXME: Remove rabbitmq_test as TEST_DEPS from here for now.
+TEST_DEPS := $(filter-out rabbitmq_test,$(TEST_DEPS))
 
-$(DEPS_EZ): 
-	cd $(DEPS_DIR); $(foreach DEP, $(DEPS), zip -r $(DEP).ez $(DEP);)
-
-compile: $(DEPS_DIR)
-	./rebar compile
+include erlang.mk

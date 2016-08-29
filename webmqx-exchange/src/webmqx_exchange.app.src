@@ -4,6 +4,7 @@
   {vsn, "0.1.0"},
   {modules, []},
   {registered, []},
+  {broker_version_requirements, []},
   {env, []},
   {applications, [kernel, stdlib, rabbit, mnesia]}
  ]
