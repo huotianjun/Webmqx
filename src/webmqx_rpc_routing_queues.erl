@@ -12,15 +12,16 @@
 %% ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 %% OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
--module(webmqx_rpc_router_server).
+-module(webmqx_rpc_routing_queues).
 -behaviour(gen_server2).
+
+%%huotianjun 用于同步routing queues变更的消息
 -behaviour(gm).
 
 %% API.
 -export([start/0]).
 -export([start_link/0]).
--export([set_router/2]).
--export([get_router/1]).
+-export([get_routing_queues/1]).
 
 %% gen_server.
 -export([init/1]).
@@ -37,7 +38,7 @@
 
 -record(state, {
 				gm = undefined,
-				routers = dict:new()
+				routing_queues= dict:new() %%huotianjun value内容是gb_trees结构, key是path split words
 				}). 
 
 %% API.
@@ -53,29 +54,31 @@ start() ->
 		ordered_set, public, named_table]),
     ensure_started().
 
-%%huotianjun 所有的channels都记录这个？
+get_routing_queues(Path) when is_binary(Path) ->
+	Words = rabbit_exchange_type_webmqx:split_topic_key(Path),
+	get_routing_queues1(Words).
 
-%%huotianjun set用gen_server，避免冲突
-set_router(Path, Queues) ->
-	gen_server:call(?MODULE, {set_router, Path, Queues}).
-
-get_router(<<>>) -> [].
-get_router(Path) ->
-	Path1 =
-		case binary:last(Path) of
-			%%huotianjun 47 is $/
-			47 ->
-				S = byte_size(Path),
-				<<Path2:(S-1)/binary, $/>> = Path,
-				Path2;
-			_ ->
-				Path
-		end,
-
+get_routing_queues1([]) -> none.
+get_routing_queues1(PathSplitWords) ->
 	%%huotianjun 每次刷新，都按照1、2、3、、、n插入gb_trees
-	case ets:lookup(?TAB, {router, Path1}, 2) of
+	case ets:lookup(?TAB, {path, PathSplitWords}) of
+		[] ->
+			case gen_server2:call( of
 
-		[_] -> 
+
+			none;
+		%%huotianjun 刚才get过，没有得到
+		[{none, LastStampCounter}] -> 
+			if
+				(now_timestamp_counter() - LastStampCounter) > 10 ->
+					case gen_server2:call( of
+
+					none;		
+				true -> none	
+			end;
+		[QueuesTree]
+			QueuesTree
+				
 		%%huotianjun ets中存放gb_trees
 
 %% gen_server.
@@ -96,7 +99,39 @@ init([]) ->
 
 	{ok, #state{gm = GM}}.
 
-handle_call({set_router, RoutingKey, Queues}, _, State) ->
+handle_call({get_routing_queues, PathSplitWords, Queues), _, State = #state{routing_queues = RoutingQueues}) ->
+	case dict:find(PathSplitWords, RoutingQueues) of
+		{ok, QueuesTree} ->
+			{reply, QueueTrees, State};
+		error ->
+			%%huotianjun 保护一下
+			NowTimestampCounter = now_timestamp_counter(),
+			GoFetch = 
+			case ets:lookup(?TAB, {path, PathSplitWords}) of
+				[{none, LastStampCounter}] -> 
+					if
+						(NowTimeStampCounter - LastStampCounter) > 10 -> true;
+						true -> false
+					end;
+				_ -> true
+			end,
+			
+			case GoFetch of		
+				true ->
+					case rabbit_exchange_type_webmqx:fetch_routing_queues(PathSplitWords) of
+						[] ->
+							true = ets:insert(?TAB, {{path, PathSplitWords}, {none, NowTimeStampCounter}}),
+							{reply, none, State};
+						Queues ->
+							queues to gb_trees
+							State1
+					end;
+				false ->
+					{reply, none, State}
+			end
+	end.
+
+handle_call({set_routing_queues, Path, Queues}, _, State) ->
 	%%huotianjun 最终的set，由gm消息处理。
 	gm:broadcast(GM, {set_rpc_router, RoutingKey, Queues}),
 	{reply, ok, State};
@@ -131,6 +166,31 @@ ensure_started() ->
             {ok, Pid}
     end.
 
+now_timestamp_counter() ->
+	{{NowYear, NowMonth, NowDay},{NowHour, NowMinute, NowSecond}} = calendar:now_to_local_time(os:timestamp()),
+	NowYear*10000 + NowMonth*100 + NowDay)*3600*24 + (NowHour*3600 + NowMinute*60 + NowSecond.
+
+queue_trees_size(QueueTrees) ->
+	gb_trees:size(QueueTrees).
+
+queue_trees_lookup(Number, QueueTrees) ->
+	case gb_trees:lookup(Number, QueueTrees) of 
+		{value,	Queue} -> Queue;
+		none        -> undefined
+	end.
+
+queue_trees_enter(Number, Queue, QueueTrees) ->
+	gb_trees:enter(Number, Queue, QueueTrees).
+
+queue_trees_new(Queues) ->
+	new_queue_trees(Queues, gb_trees:empty(), 1).
+
+queue_trees_new1([], QueueTrees, _Count) -> {ok, QueueTrees};
+queue_trees_new1([Queue|Left], QueueTrees, Count) ->
+	queue_trees_new1(Left, queue_trees_enter(Count, Queue, QueueTrees), Count+1). 
+
+
+	
 %%huotianjun 以下几个是gm的标准回调
 %%huotianjun 注意：joined是gm回调的
 %%huotianjun 这4个函数是在使用gm的模块里必须定义的！！！！

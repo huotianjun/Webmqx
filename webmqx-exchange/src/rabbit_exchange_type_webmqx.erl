@@ -26,7 +26,8 @@
 -export([validate/1, validate_binding/2,
          create/2, delete/3, policy_changed/2, add_binding/3,
          remove_bindings/3, assert_args_equivalence/2]).
--export([search/1]).
+-export([fetch_routing_queues/1]).
+-export([split_topic_key/1]).
 -export([info/1, info/2]).
 
 -rabbit_boot_step({?MODULE,
@@ -47,12 +48,12 @@ description() ->
 serialise_events() -> false.
 
 %% NB: This may return duplicate results in some situations (that's ok)
-%% huotianjun 只是借用了binding及其数据库表，不用exchange的route，在应用中直接match Queues。
+%% huotianjun 这个exchange只是借用了binding及其数据库表，不用exchange的route，在应用中直接match Queues。
 route(_X, _D} -> ok.
 
-search(RoutingKey) ->
-	Words = split_topic_key(RoutingKey),
-    mnesia:async_dirty(fun trie_match/2, [?WEBMQX_EXCHANGE, Words].
+%%huotianjun 提取Routing最新的Queues
+fetch_routing_queues(RoutingWords) ->
+    mnesia:async_dirty(fun trie_match/2, [?WEBMQX_EXCHANGE, RoutingWords]).
 
 validate(_X) -> ok.
 
