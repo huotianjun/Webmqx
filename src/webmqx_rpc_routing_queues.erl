@@ -56,14 +56,11 @@ start() ->
 
 random_a_queue(Path) ->
 	case get_routing_queues(Path) of
-		none -> undefined;
+		undefined -> undefined;
 		{ok, QueueTrees} ->
 			Size = queue_trees_size(QueueTrees),
 			N = erlang:phash2(self(), Size) + 1,
-			case queue_trees_lookup(N, QueueTrees) of
-				undefined -> undefined;
-				Q -> {ok, Q}
-			end
+			queue_trees_lookup(N, QueueTrees)
 	end.
 
 %%huotianjun 结果是gb_trees
@@ -71,7 +68,7 @@ get_routing_queues(Path) when is_binary(Path) ->
 	Words = rabbit_exchange_type_webmqx:split_topic_key(Path),
 	get_routing_queues1(Words).
 
-get_routing_queues1([]) -> none.
+get_routing_queues1([]) -> undefined.
 get_routing_queues1(PathSplitWords) ->
 	case ets:lookup(?TAB, {path, PathSplitWords}) of
 		[] ->
@@ -82,7 +79,7 @@ get_routing_queues1(PathSplitWords) ->
 			if
 				(now_timestamp_counter() - LastStampCounter) > 10 ->
 					gen_server2:call(?MODULE, {get_routing_queue, PathSplitWords}, infinity);
-				true -> none	
+				true -> undefined	
 			end;
 		[QueuesTree]
 			{ok, QueuesTree}
@@ -116,15 +113,15 @@ handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queu
 	case dict:find(PathSplitWords, RoutingQueues) of
 		{ok, QueueTrees0} -> 
 			case gb_trees:is_empty(QueeuTrees0) of
-				true -> none;
+				true -> undefined;
 				false -> QueueTrees0
 			end;
 		error ->
-			none
+			undefined
 	end,
 
 	case QueueTrees1 of 
-		none ->
+		undefined ->
 			%%huotianjun 保护一下
 			NowTimestampCounter = now_timestamp_counter(),
 			GoFetch = 
@@ -143,7 +140,7 @@ handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queu
 					case rabbit_exchange_type_webmqx:fetch_routing_queues(PathSplitWords) of
 						[] ->
 							true = ets:insert(?TAB, {{path, PathSplitWords}, {none, NowTimeStampCounter}}),
-							{reply, none, State};
+							{reply, undefined, State};
 						Queues ->
 							QueueTrees = queue_trees_new(Queues),
 							true = ets:insert(?TAB, {{path, PathSplitWords}, QueueTrees}),
@@ -152,7 +149,7 @@ handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queu
 												dict:store(PathSplitWords, QueueTrees, RoutingQueues)}} 
 					end;
 				false ->
-					{reply, none, State}
+					{reply, undefined, State}
 			end;
 		_ -> {reply, {ok, QueueTrees1}, State} 
 	end.
@@ -209,7 +206,7 @@ queue_trees_size(QueueTrees) ->
 
 queue_trees_lookup(Number, QueueTrees) ->
 	case gb_trees:lookup(Number, QueueTrees) of 
-		{value,	Queue} -> Queue;
+		{value,	Queue} -> {ok, Queue};
 		none        -> undefined
 	end.
 

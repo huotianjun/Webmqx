@@ -128,9 +128,6 @@ init([N]) ->
 	process_flag(trap_exit, true),
 
 	%%huotianjun 一个Rpc channel，启动一个Connection，紧密捆绑
-	NBin = integer_to_binary(N),
-	RPCClientName = atom_to_binary(?MODULE, latin1),
-	ConnName = <<RPCClientName/binary, NBin/binary>>,
 	{ok, Connection} = amqp_connection:start(#amqp_params_direct{}),
 
 	%%huotianjun 一个RPC client用一个channel

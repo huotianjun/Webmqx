@@ -29,41 +29,6 @@ get_rpc_channel_count(DefaultCount) when is_number(DefaultCount) ->
         _ -> DefaultCount
 	end.
 
-%%huotianjun 分离url里面的path
-split_path(<< $/, Path/bits >>) ->
-	split_path(Path, []);
-split_path(_) ->
-	badrequest.
-
-%%huotianjun 这个是个经典的字符串分段分析
-%%huotianjun 分离出的结果，就用倒序的
-%%huotianjun 相应的配合：routes从数据库中取出来，key是split path的lists，就设成倒序的！！
-split_path(Path, Acc) ->
-	try
-		case binary:match(Path, <<"/">>) of
-			nomatch when Path =:= <<>> ->
-				%%huotianjun 没有了，整理输出
-				[cow_qs:urldecode(S) || S <- Acc];
-			nomatch ->
-				%%huotianjun 最后一段了，整理输出
-				%%huotianjun 需要多url中的转义码进行恢复
-				[cow_qs:urldecode(S) || S <- [Path|Acc]];
-			{Pos, _} ->
-				<< Segment:Pos/binary, _:8, Rest/bits >> = Path,
-				split_path(Rest, [Segment|Acc])
-		end
-	catch
-		error:badarg ->
-			badrequest
-	end.
-
-amqp_close(undefined) ->
-    ok;
-amqp_close(Connection) ->
-    %% ignore noproc or other exceptions to avoid debris
-    catch amqp_connection:close(Connection),
-	ok.
-
 env(Key) ->
     case application:get_env(?APP, Key) of
         {ok, Val} -> Val;

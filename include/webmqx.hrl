@@ -1,4 +1,4 @@
--define(APP, hello_erlang).
+-define(APP, webmqx).
 
 -define(DEFAULT_RPC_CHANNEL_MAX, 100).
 
