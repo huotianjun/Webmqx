@@ -81,7 +81,7 @@ get_routing_queues1(PathSplitWords) ->
 					gen_server2:call(?MODULE, {get_routing_queue, PathSplitWords}, infinity);
 				true -> undefined	
 			end;
-		[QueuesTree]
+		[QueuesTree] ->
 			{ok, QueuesTree}
 	end.
 				
@@ -164,7 +164,7 @@ handle_cast({flush_rpc_routing_queues, PathSplitWords}, State = #state{gm = GM})
 	gm:broadcast(GM, {flush_rpc_routing_queues, PathSplitWords});
 
 %%huotianjun 统一在这里处理flush
-handle_cast({gm, {flush_rpc_routing_queues, PathSplitWords}, State = #state{routing_queues = RoutingQueues}) ->
+handle_cast({gm, {flush_rpc_routing_queues, PathSplitWords}}, State = #state{routing_queues = RoutingQueues}) ->
 	QueueTrees =
 	case rabbit_exchange_type_webmqx:fetch_routing_queues(PathSplitWords) of
 		[] ->
@@ -199,7 +199,7 @@ ensure_started() ->
 
 now_timestamp_counter() ->
 	{{NowYear, NowMonth, NowDay},{NowHour, NowMinute, NowSecond}} = calendar:now_to_local_time(os:timestamp()),
-	NowYear*10000 + NowMonth*100 + NowDay)*3600*24 + (NowHour*3600 + NowMinute*60 + NowSecond.
+	(NowYear*10000 + NowMonth*100 + NowDay)*3600*24 + (NowHour*3600 + NowMinute*60 + NowSecond.
 
 queue_trees_size(QueueTrees) ->
 	gb_trees:size(QueueTrees).
