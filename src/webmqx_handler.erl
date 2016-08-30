@@ -13,35 +13,33 @@ init(Req , Opts) ->
 	%%error_logger:info_msg("Req : ~p ~n", [Req]),
 
 	%%huotianjun 解析Req
-	{ok, Host, Path, PayloadJson, Ports, Req2} = req_parse(Req),
-
-	%%huotianjun 从Ports字典中，查找Port 
-	{ok, Port} = webmqx_rpc_exchanges:search_exchange(Host, Path, Ports), 
-	%%error_logger:info_msg("find exchange : ~p~n", [R]),
+	{ok, {_Host, Path, PayloadJson, Req2}} = req_parse(Req),
 
 	Response =
-		case webmqx_rpc_channel_manager:get_rpc_channel_pid() of
-			undefined -> <<"no rpc handlers">>;
-			{ok, Pid} ->
-				webmqx_rpc_channel:call(Pid, Port, PayloadJson) 
-		end,
-	%%error_logger:info_msg("Response : ~p~n", [Response]),
+	case webmqx_rpc_routing_queues:random_a_queue(Path) of
+		undefined ->
+			<<"no rpc routing queues">>;
+		ServerQueue ->
+			case webmqx_rpc_channel_manager:get_rpc_channel_pid() of
+				undefined -> <<"no rpc handlers">>;
+				{ok, Pid} ->
+					webmqx_rpc_channel:call(Pid, Port, PayloadJson) 
+			end
+			%%error_logger:info_msg("Response : ~p~n", [Response]),
+	end,
 
 	cowboy_req:reply(200, #{
-			<<"content-type">> => <<"text/html">>
-			%%<<"content-type">> => <<"text/plain">>
+				<<"content-type">> => <<"text/html">>
+				%%<<"content-type">> => <<"text/plain">>
 				}, Response, Req2),
-	{ok, Req2, Opts}.
 
-req_rpc_exchanges(#{rpc_exchanges := Exchanges}) ->
-	Exchanges.
+	{ok, Req2, Opts}.
 
 req_parse(Req) ->
 	Host = cowboy_req:host(Req),
 	Method = cowboy_req:method(Req),
 	Path = cowboy_req:path(Req),
 	Qs = cowboy_req:qs(Req),
-	RpcPorts = req_rpc_exchanges(Req),
 	{Body, Req2}  = 
 		case cowboy_req:has_body(Req) of
 			true -> 
@@ -68,5 +66,5 @@ req_parse(Req) ->
 
 	%%error_logger:info_msg("Payload : ~p ~n", [Payload]),
 
-	{ok, Host, Path, jiffy:encode(Payload), RpcPorts, Req2}.
+	{ok, {Host, Path, jiffy:encode(Payload), Req2}}.
 

@@ -52,7 +52,7 @@ serialise_events() -> false.
 route(_X, _D} -> ok.
 
 %%huotianjun 提取Routing最新的Queues
-fetch_routing_queues(RoutingWords) ->
+fetch_routing_queues(RoutingWords) when is_list(RoutingWords) ->
     mnesia:async_dirty(fun trie_match/2, [?WEBMQX_EXCHANGE, RoutingWords]).
 
 validate(_X) -> ok.
@@ -91,6 +91,7 @@ remove_bindings(transaction, _X, Bs) ->
          {ok, Path = [{FinalNode, _} | _]} ->
              trie_remove_binding(X, FinalNode, D, Args),
 
+			 %%huotianjun 发出gm广播消息flush
 			 webmqx_rpc_routing_queues:flush_routing_queues(TopicSplited),
 
 			 %%huotianjun 没有后续节点，层层网上删
@@ -111,7 +112,8 @@ assert_args_equivalence(X, Args) ->
 
 internal_add_binding(#binding{source = X, key = K, destination = D,
                               args = Args}) ->
-    FinalNode = follow_down_create(X, TopicSplited = split_topic_key(K)),
+    TopicSplited = split_topic_key(K),
+    FinalNode = follow_down_create(X, TopicSplited),
     trie_add_binding(X, FinalNode, D, Args),
 
 	%%huotianjun 这里要发一个gm广播消息，

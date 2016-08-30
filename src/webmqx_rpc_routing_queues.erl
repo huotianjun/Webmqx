@@ -21,8 +21,7 @@
 %% API.
 -export([start/0]).
 -export([start_link/0]).
--export([get_routing_queues/1, flush_routing_queues/1]).
--export([queue_trees_size/1, queue_trees_lookup/2]).
+-export([random_a_queue/1, flush_routing_queues/1]).
 
 %% gen_server.
 -export([init/1]).
@@ -54,6 +53,18 @@ start() ->
 	?TAB = ets:new(?TAB, [
 		ordered_set, public, named_table]),
     ensure_started().
+
+random_a_queue(Path) ->
+	case get_routing_queues(Path) of
+		none -> undefined;
+		{ok, QueueTrees} ->
+			Size = queue_trees_size(QueueTrees),
+			N = erlang:phash2(self(), Size) + 1,
+			case queue_trees_lookup(N, QueueTrees) of
+				undefined -> undefined;
+				Q -> {ok, Q}
+			end
+	end.
 
 %%huotianjun 结果是gb_trees
 get_routing_queues(Path) when is_binary(Path) ->
