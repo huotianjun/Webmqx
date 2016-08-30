@@ -6,7 +6,7 @@
 -export([join/2, get_rpc_channel_pid/0]).
 -export([sync/0]). %% intended for testing only; not part of official API
 -export([start/0, start_link/0, init/1, handle_call/3, handle_cast/2,
-         handle_info/2, terminate/2]).
+         handle_info/2, terminate/2, code_change/3]).
 
 %%----------------------------------------------------------------------------
 %%
@@ -103,6 +103,9 @@ handle_info(_, S) ->
 
 terminate(_Reason, _S) ->
     ok.
+
+code_change(_OldVsn, State, _Extra) ->
+	{ok, State}.
 
 %%%
 %%% Local functions
