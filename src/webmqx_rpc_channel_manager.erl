@@ -140,7 +140,7 @@ leave_rpc(MonitorRef, Pid) ->
 			%%error_logger:info_msg("leave_rpc : ~p ~p~n", [N, Pid]),
 
             true = ets:delete(?TAB, {pid, Pid}),
-            true = ets:delete(?TAB, {n, N});
+            true = ets:delete(?TAB, {n, N}),
 			true = erlang:demonitor(MonitorRef, [flush]);
 		_ ->
 			error_logger:error_info("unknown died ! MonitorRef : ~p Pid : ~p~n", [MonitorRef, Pid]),
