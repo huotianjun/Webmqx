@@ -113,7 +113,7 @@ handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queu
 	QueueTrees1=
 	case dict:find(PathSplitWords, RoutingQueues) of
 		{ok, QueueTrees0} -> 
-			case gb_trees:is_empty(QueeuTrees0) of
+			case gb_trees:is_empty(QueueTrees0) of
 				true -> undefined;
 				false -> QueueTrees0
 			end;
@@ -124,7 +124,7 @@ handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queu
 	case QueueTrees1 of 
 		undefined ->
 			%%huotianjun 保护一下
-			NowTimestampCounter = now_timestamp_counter(),
+			NowTimeStampCounter = now_timestamp_counter(),
 			GoFetch = 
 			case ets:lookup(?TAB, {path, PathSplitWords}) of
 				%%huotianjun 上次没有读到的情况
@@ -153,7 +153,7 @@ handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queu
 					{reply, undefined, State}
 			end;
 		_ -> {reply, {ok, QueueTrees1}, State} 
-	end.
+	end;
 
 handle_call(_Request, _From, State) ->
 	{reply, ignore, State}.
@@ -162,7 +162,8 @@ handle_call(_Request, _From, State) ->
 %%huotianjun gm:broadcast(GM, {flush_rpc_routing_queues, PathSplitWords}),
 
 handle_cast({flush_rpc_routing_queues, PathSplitWords}, State = #state{gm = GM}) ->
-	gm:broadcast(GM, {flush_rpc_routing_queues, PathSplitWords});
+	gm:broadcast(GM, {flush_rpc_routing_queues, PathSplitWords}),
+	{noreply, State};
 
 %%huotianjun 统一在这里处理flush
 handle_cast({gm, {flush_rpc_routing_queues, PathSplitWords}}, State = #state{routing_queues = RoutingQueues}) ->
