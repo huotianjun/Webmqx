@@ -72,8 +72,8 @@ stop(Pid) ->
 call(_RpcClient, undefined,  _Payload) -> <<"no service">>;
 
 %%huotianjun 实现的时候，是发起cast，避免阻塞
-call(RpcClient, Queue, Payload) ->
-    gen_server2:call(RpcClient, {call, Queue, Payload}, 5000).
+call(RpcClient, ServerQueue, Payload) ->
+    gen_server2:call(RpcClient, {call, ServerQueue, Payload}, 5000).
 
 %%--------------------------------------------------------------------------
 %% Plumbing
@@ -95,7 +95,7 @@ setup_consumer(#state{rabbit_channel = {_Ref, Channel}, reply_queue = Q}) ->
 %% Publishes to the broker, stores the From address against
 %% the correlation id and increments the correlationid for
 %% the next request
-publish({Payload, Queue}, From,
+publish({Payload, ServerQueue}, From,
         State = #state{rabbit_channel = {_ChannelRef, Channel},
                        reply_queue = Q,
                        correlation_id = CorrelationId,
@@ -106,7 +106,7 @@ publish({Payload, Queue}, From,
                        reply_to = Q},
 
     Publish = #'basic.publish'{exchange = <<"">>,
-                               routing_key = Queue,
+                               routing_key = ServerQueue,
                                mandatory = true},
 
     amqp_channel:call(Channel, Publish, #amqp_msg{props = Props,
@@ -131,7 +131,7 @@ init([N]) ->
 	NBin = integer_to_binary(N),
 	RPCClientName = atom_to_binary(?MODULE, latin1),
 	ConnName = <<RPCClientName/binary, NBin/binary>>,
-	{ok, Connection} = webmqx_util:amqp_connect(ConnName),
+	{ok, Connection} = amqp_connection:start(#amqp_params_direct{}),
 
 	%%huotianjun 一个RPC client用一个channel
     {ok, Channel} = amqp_connection:open_channel(
@@ -175,8 +175,8 @@ handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
 
 %% @private
-handle_call({call, Queue, Payload}, From, State) ->
-    NewState = publish({Payload, Queue}, From, State),
+handle_call({call, ServerQueue, Payload}, From, State) ->
+    NewState = publish({Payload, ServerQueue}, From, State),
 	%%huotianjun noreply非常重要，这样，这个channel不会被阻塞(只是call的应用进程被阻塞了），rpc channel还可以继续被call
     {noreply, NewState}.
 

@@ -17,8 +17,7 @@
 -module(rabbit_exchange_type_webmqx).
 
 -include_lib("rabbit_common/include/rabbit.hrl").
-
--define(WEBMQX_EXCHANGE, <<"webmqx">>).
+-include("webmqx.hrl").
 
 -behaviour(rabbit_exchange_type).
 
@@ -33,7 +32,7 @@
 -rabbit_boot_step({?MODULE,
                    [{description, "exchange type webmqx"},
                     {mfa,         {rabbit_registry, register,
-                                   [exchange, ?WEBMQX_EXCHANGE, ?MODULE]}},
+                                   [exchange, ?EXCHANGE_WEBMQX, ?MODULE]}},
                     {requires,    rabbit_registry},
                     {enables,     kernel_ready}]}).
 
@@ -53,7 +52,7 @@ route(_X, _D} -> ok.
 
 %%huotianjun 提取Routing最新的Queues
 fetch_routing_queues(RoutingWords) when is_list(RoutingWords) ->
-    mnesia:async_dirty(fun trie_match/2, [?WEBMQX_EXCHANGE, RoutingWords]).
+    mnesia:async_dirty(fun trie_match/2, [?EXCHANGE_WEBMQX, RoutingWords]).
 
 validate(_X) -> ok.
 

@@ -34,20 +34,8 @@ start(_Type, _Args) ->
 
 	%%huotianjun 测试微服务
 	%%huotianjun test1-1是server name，会记录在binding的routingkey上
-	webmqx_rpc_server:start_link(<<"test1-1">>, <<"test1">>, fun micro_service_test/1), 
-	webmqx_rpc_server:start_link(<<"test2-1">>, <<"test2">>, fun micro_service_test/1), 
-	webmqx_rpc_server:start_link(<<"test2-2">>, <<"test2">>, fun micro_service_test/1), 
-	webmqx_rpc_server:start_link(<<"test2-3">>, <<"test2">>, fun micro_service_test/1), 
-	webmqx_rpc_server:start_link(<<"test2-4">>, <<"test2">>, fun micro_service_test/1), 
-	webmqx_rpc_server:start_link(<<"test2-5">>, <<"test2">>, fun micro_service_test/1), 
-	webmqx_rpc_server:start_link(<<"test2-6">>, <<"test2">>, fun micro_service_test/1), 
-	webmqx_rpc_server:start_link(<<"test2-7">>, <<"test2">>, fun micro_service_test/1), 
-	webmqx_rpc_server:start_link(<<"test2-8">>, <<"test2">>, fun micro_service_test/1), 
-	webmqx_rpc_server:start_link(<<"test2-9">>, <<"test2">>, fun micro_service_test/1), 
-	webmqx_rpc_server:start_link(<<"test2-10">>, <<"test2">>, fun micro_service_test/1), 
-	webmqx_rpc_server:start_link(<<"test2-11">>, <<"test2">>, fun micro_service_test/1), 
-	webmqx_rpc_server:start_link(<<"test3-1">>, <<"test3">>, fun micro_service_test/1), 
-	webmqx_rpc_server:start_link(<<"report-1">>, <<"report">>, fun tsung_report/1),
+	webmqx_rpc_server:start_link(<<"test">>, <<"test1/2/3">>, fun micro_service_test/1), 
+	webmqx_rpc_server:start_link(<<"report">>, <<"report">>, fun tsung_report/1),
 
 	%%huotianjun 启动核心微服务
 	webmqx_core_service:start(),

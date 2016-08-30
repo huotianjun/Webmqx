@@ -23,7 +23,7 @@ init(Req , Opts) ->
 			case webmqx_rpc_channel_manager:get_rpc_channel_pid() of
 				undefined -> <<"no rpc handlers">>;
 				{ok, Pid} ->
-					webmqx_rpc_channel:call(Pid, Port, PayloadJson) 
+					webmqx_rpc_channel:call(Pid, ServerQueue, PayloadJson) 
 			end
 			%%error_logger:info_msg("Response : ~p~n", [Response]),
 	end,

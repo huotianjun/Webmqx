@@ -70,12 +70,12 @@ stop(Pid) ->
 init([ServerName, RoutingKey, Fun]) ->
 	process_flag(trap_exit, true),
 	
-	{ok, Connection} = webmqx_util:amqp_connect(ServerName),
+	{ok, Connection} = amqp_connection:start(#amqp_params_direct{}),
 
     {ok, Channel} = amqp_connection:open_channel(
                         Connection, {amqp_direct_consumer, [self()]}),
 
-	ExchangeDeclare = #'exchange.declare'{exchange = ?EXCHANGE_WEBMQX, type = <<"topic">>},
+	ExchangeDeclare = #'exchange.declare'{exchange = ?EXCHANGE_WEBMQX, type = ?EXCHANGE_WEBMQX},
 	#'exchange.declare_ok'{} = 
 		amqp_channel:call(Channel, ExchangeDeclare),
 
