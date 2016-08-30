@@ -48,7 +48,7 @@ serialise_events() -> false.
 
 %% NB: This may return duplicate results in some situations (that's ok)
 %% huotianjun 这个exchange只是借用了binding及其数据库表，不用exchange的route，在应用中直接match Queues。
-route(_X, _D} -> ok.
+route(_X, _D) -> ok.
 
 %%huotianjun 提取Routing最新的Queues
 fetch_routing_queues(RoutingWords) when is_list(RoutingWords) ->
