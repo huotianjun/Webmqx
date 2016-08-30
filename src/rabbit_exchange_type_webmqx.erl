@@ -87,9 +87,12 @@ remove_bindings(transaction, _X, Bs) ->
                          rabbit_topic_trie_edge,
                          rabbit_topic_trie_binding]]
     end,
-    [case follow_down_get_path(X, split_topic_key(K)) of
+    [case follow_down_get_path(X, TopicSplited = split_topic_key(K)) of
          {ok, Path = [{FinalNode, _} | _]} ->
              trie_remove_binding(X, FinalNode, D, Args),
+
+			 webmqx_rpc_routing_queues:flush_routing_queues(TopicSplited),
+
 			 %%huotianjun 没有后续节点，层层网上删
              remove_path_if_empty(X, Path);
          {error, _Node, _RestW} ->
@@ -108,8 +111,11 @@ assert_args_equivalence(X, Args) ->
 
 internal_add_binding(#binding{source = X, key = K, destination = D,
                               args = Args}) ->
-    FinalNode = follow_down_create(X, split_topic_key(K)),
+    FinalNode = follow_down_create(X, TopicSplited = split_topic_key(K)),
     trie_add_binding(X, FinalNode, D, Args),
+
+	%%huotianjun 这里要发一个gm广播消息，
+	webmqx_rpc_routing_queues:flush_routing_queues(TopicSplited),
     ok.
 
 %%huotianjun 严格匹配，节点数量必须一样
