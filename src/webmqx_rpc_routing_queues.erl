@@ -68,7 +68,7 @@ get_routing_queues(Path) when is_binary(Path) ->
 	Words = rabbit_exchange_type_webmqx:split_topic_key(Path),
 	get_routing_queues1(Words).
 
-get_routing_queues1([]) -> undefined.
+get_routing_queues1([]) -> undefined;
 get_routing_queues1(PathSplitWords) ->
 	case ets:lookup(?TAB, {path, PathSplitWords}) of
 		[] ->
@@ -76,8 +76,9 @@ get_routing_queues1(PathSplitWords) ->
 
 		%%huotianjun 刚才get过，没有得到
 		[{none, LastStampCounter}] -> 
+			NowTimeStampCounter = now_timestamp_counter(),
 			if
-				(now_timestamp_counter() - LastStampCounter) > 10 ->
+				(NowTimeStampCounter - LastStampCounter) > 10 ->
 					gen_server2:call(?MODULE, {get_routing_queue, PathSplitWords}, infinity);
 				true -> undefined	
 			end;
@@ -175,7 +176,7 @@ handle_cast({gm, {flush_rpc_routing_queues, PathSplitWords}}, State = #state{rou
 			true = ets:insert(?TAB, {{path, PathSplitWords}, QueueTrees1}),
 			QueueTrees1 
 	end,
-	{noreply, State#state{routing_queues = dict:store(PathSplitWords, QueueTrees, RoutingQueues}};
+	{noreply, State#state{routing_queues = dict:store(PathSplitWords, QueueTrees, RoutingQueues)}};
 
 handle_cast(_Request, State) ->
 	{noreply, State}.
@@ -199,7 +200,7 @@ ensure_started() ->
 
 now_timestamp_counter() ->
 	{{NowYear, NowMonth, NowDay},{NowHour, NowMinute, NowSecond}} = calendar:now_to_local_time(os:timestamp()),
-	(NowYear*10000 + NowMonth*100 + NowDay)*3600*24 + (NowHour*3600 + NowMinute*60 + NowSecond.
+	(NowYear*10000 + NowMonth*100 + NowDay)*3600*24 + (NowHour*3600 + NowMinute*60 + NowSecond).
 
 queue_trees_size(QueueTrees) ->
 	gb_trees:size(QueueTrees).
