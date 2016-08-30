@@ -43,7 +43,7 @@ get_rpc_channel_pid() ->
 
 	%%huotianjun 这个是被webmqx_handler调用的, 每个req一个独立进程
 	N = erlang:phash2(self(), Count) + 1,
-	get_rpc_channel_pid(N, {undefined, undefined}).
+	get_rpc_channel_pid1(N, {undefined, undefined}).
 
 %%huotianjun 如果没有命中，看下一个，找到为止
 get_rpc_channel_pid1(_N, {C, _}) when C =/= undefined andalso C =< 0 ->
