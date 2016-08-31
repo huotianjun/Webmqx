@@ -32,6 +32,8 @@ start(_Type, _Args) ->
 	%%huotianjun 启动所有的RPC channel（发送端），并在RPC channel管理器上注册
 	webmqx_sup:start_supervisor_child(webmqx_rpc_channel_sup),
 
+	webmqx_rpc_routing_queues:start(),
+
 	%%huotianjun 测试微服务
 	%%huotianjun test1-1是server name，会记录在binding的routingkey上
 	webmqx_rpc_server:start_link(<<"test">>, <<"test1/2/3">>, fun micro_service_test/1), 

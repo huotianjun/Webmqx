@@ -85,7 +85,7 @@ init([ServerName, RoutingKey, Fun]) ->
 													durable		= false,
 													auto_delete = true}),
 
-	%%huotianjun 这个里面的routing_key没有什么功能用途，仅仅定义微服务的实例名
+	%%huotianjun 记录到topics node数据库中 
 	Bind = #'queue.bind'{queue = Q, exchange = ?EXCHANGE_WEBMQX, routing_key = RoutingKey, arguments = [ServerName]},
 	#'queue.bind_ok'{} = amqp_channel:call(Channel, Bind),
 

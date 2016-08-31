@@ -21,7 +21,7 @@
 %% API.
 -export([start/0]).
 -export([start_link/0]).
--export([random_a_queue/1, flush_routing_queues/1]).
+-export([get_a_random_queue/1, flush_routing_queues/1]).
 
 %% gen_server.
 -export([init/1]).
@@ -54,7 +54,7 @@ start() ->
 		ordered_set, public, named_table]),
     ensure_started().
 
-random_a_queue(Path) ->
+get_a_random_queue(Path) ->
 	case get_routing_queues(Path) of
 		undefined -> undefined;
 		{ok, QueueTrees} ->

@@ -69,11 +69,11 @@ stop(Pid) ->
 %% encoding the request and decoding the response.
 %%
 %% huotianjun to-do 这个异常需要输出到特殊队列中
-call(_RpcClient, undefined,  _Payload) -> <<"no service">>;
+call(_RpcChannel, undefined,  _Payload) -> <<"no service">>;
 
 %%huotianjun 实现的时候，是发起cast，避免阻塞
-call(RpcClient, ServerQueue, Payload) ->
-    gen_server2:call(RpcClient, {call, ServerQueue, Payload}, 5000).
+call(RpcChannel, ServerQueue, Payload) ->
+    gen_server2:call(RpcChannel, {call, ServerQueue, Payload}, infinity).
 
 %%--------------------------------------------------------------------------
 %% Plumbing

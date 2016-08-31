@@ -18,18 +18,13 @@
 
 %%----------------------------------------------------------------------------
 
-%%huotianjun 这个进程是管理rpc channel的ets
-%%huotianjun 集中维护，通过ets提供分布查询
-
 %%%
 %%% Exported functions
 %%%
 start_link() ->
     gen_server2:start_link({local, ?MODULE}, ?MODULE, [], []).
 
-%%huotianjun 用这个启动, 目的是让?TAB的new在start_link之外执行，避免节点重启时候new
 start() ->
-	%%huotianjun 创建全局table
 	?TAB = ets:new(?TAB, [
 		ordered_set, public, named_table]),
     ensure_started().
@@ -39,7 +34,6 @@ join(N, Pid) when is_pid(Pid) ->
 
 %%huotianjun 用Req进程的进程id随机生成一个N，均衡调用
 get_rpc_channel_pid() ->
-	%%huotianjun 这个是被webmqx_handler调用的, 每个req一个独立进程
 	N = erlang:phash2(self(), ?DEFAULT_RPC_CHANNEL_MAX) + 1,
 	get_rpc_channel_pid1(N, {undefined, undefined}).
 

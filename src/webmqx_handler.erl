@@ -7,7 +7,6 @@
 -export([init/2]).
 
 %%huotianjun 每一个请求会创建一个进程用这个init处理Request
-%%huotianjun 注意:这个Opts是State，会传入cowboy_rest
 init(Req , Opts) ->
 	%%random:seed(os:timestamp()),
 	%%error_logger:info_msg("Req : ~p ~n", [Req]),
@@ -16,7 +15,7 @@ init(Req , Opts) ->
 	{ok, {_Host, Path, PayloadJson, Req2}} = req_parse(Req),
 
 	Response =
-	case webmqx_rpc_routing_queues:random_a_queue(Path) of
+	case webmqx_rpc_routing_queues:get_a_random_queue(Path) of
 		undefined ->
 			<<"no rpc routing queues">>;
 		ServerQueue ->
