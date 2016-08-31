@@ -18,11 +18,5 @@
                  ]},
   {mod, { webmqx_app, []}},
   {env, [
-			{vhost, <<"/">>},
-			{default_user, <<"apns">>},
-			{default_pass, <<"apns">>},
-			
-			%%huotianjun rpc channel的数量
-			{count_of_rpc_channel, 99}
 		]}
  ]}.
