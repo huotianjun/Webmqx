@@ -22,25 +22,8 @@
 
 -compile(export_all).
 
-%%huotianjun 获取rpc的通道数量
-get_rpc_channel_count(DefaultCount) when is_number(DefaultCount) ->
-    case application:get_env(?APP, count_of_rpc_channel) of
-        {ok, C} -> C;
-        _ -> DefaultCount
-	end.
-
 env(Key) ->
     case application:get_env(?APP, Key) of
         {ok, Val} -> Val;
         undefined -> undefined
     end.
-
-path_for(Dir, VHost) ->
-  filename:join(Dir, vhost_name_to_dir_name(VHost)).
-
-path_for(Dir, VHost, Suffix) ->
-  filename:join(Dir, vhost_name_to_dir_name(VHost, Suffix)).
-
-vhost_name_to_table_name(VHost) ->
-  <<Num:128>> = erlang:md5(VHost),
-  list_to_atom("retained_" ++ rabbit_misc:format("~36.16.0b", [Num])).

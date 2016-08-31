@@ -39,10 +39,8 @@ join(N, Pid) when is_pid(Pid) ->
 
 %%huotianjun 用Req进程的进程id随机生成一个N，均衡调用
 get_rpc_channel_pid() ->
-	Count = webmqx_util:get_rpc_channel_count(?DEFAULT_RPC_CHANNEL_MAX),
-
 	%%huotianjun 这个是被webmqx_handler调用的, 每个req一个独立进程
-	N = erlang:phash2(self(), Count) + 1,
+	N = erlang:phash2(self(), ?DEFAULT_RPC_CHANNEL_MAX) + 1,
 	get_rpc_channel_pid1(N, {undefined, undefined}).
 
 %%huotianjun 如果没有命中，看下一个，找到为止
@@ -56,7 +54,7 @@ get_rpc_channel_pid1(N, {C, Count}) ->
 			case C of
 				undefined ->
 					%%huotianjun 第一次没找到，设置继续找的上下文
-					Count0 = webmqx_util:get_rpc_channel_count(?DEFAULT_RPC_CHANNEL_MAX),
+					Count0 = ?DEFAULT_RPC_CHANNEL_MAX,
 					get_rpc_channel_pid1(case N+1 > Count0 of true -> 1; false -> N+1 end, {Count0 - 1, Count0});
 				_ ->
 					get_rpc_channel_pid1(case N+1 > Count of true -> 1; false -> N+1 end, {C - 1, Count})

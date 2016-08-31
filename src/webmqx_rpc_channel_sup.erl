@@ -38,12 +38,9 @@ start_link() ->
 	{ok, SupPid}.
 
 init([]) -> 
-	%%huotianjun 从env取rpc channel数量
-	Count = webmqx_util:get_rpc_channel_count(?DEFAULT_RPC_CHANNEL_MAX),
-
 	Procs = [
 		{{webmqx_rpc_channel, N}, {webmqx_rpc_channel, start_link, [N]},
 			permanent, 16#ffffffff, worker, []}
-			|| N <- lists:seq(1, Count)],
+			|| N <- lists:seq(1, ?DEFAULT_RPC_CHANNEL_MAX)],
 	{ok, {{one_for_one, 1, 5}, Procs}}.
 
