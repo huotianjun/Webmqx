@@ -29,13 +29,14 @@ start(_Type, _Args) ->
 	%%huotianjun 启动RPC channel的管理器，在ets表中维护rpc channel信息，并monitor。初始为空
 	webmqx_rpc_channel_manager:start(),
 
+	%%huotianjun 管理queues of application server
+	webmqx_rpc_server_queues:start(),
+
 	%%huotianjun 启动所有的RPC channel（发送端），并在RPC channel管理器上注册
 	webmqx_sup:start_supervisor_child(webmqx_rpc_channel_sup),
 
-	webmqx_rpc_routing_queues:start(),
-
-	%%huotianjun 测试微服务
-	%%huotianjun test1-1是server name，会记录在binding的routingkey上
+	%%huotianjun 启动测试微服务
+	%%huotianjun 第一个参数会记录在binding的arg信息里面
 	webmqx_rpc_server:start_link(<<"test">>, <<"test1/2/3">>, fun micro_service_test/1), 
 	webmqx_rpc_server:start_link(<<"report">>, <<"report">>, fun tsung_report/1),
 
@@ -58,7 +59,7 @@ start(_Type, _Args) ->
 
 	{ok, Cowboy}.
 
-%%huotianjun 测试微服务的回调
+%%huotianjun 测试微服务的server's callback
 micro_service_test(PayloadJSON) -> PayloadJSON.
 
 tsung_report(PayloadJSON) when is_binary(PayloadJSON) ->

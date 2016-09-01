@@ -12,16 +12,16 @@
 %% ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 %% OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
--module(webmqx_rpc_routing_queues).
+-module(webmqx_rpc_server_queues).
 -behaviour(gen_server2).
 
-%%huotianjun 用于同步routing queues变更的消息
+%%huotianjun 用于同步server queues变更的消息
 -behaviour(gm).
 
 %% API.
 -export([start/0]).
 -export([start_link/0]).
--export([get_a_random_queue/1, flush_routing_queues/1]).
+-export([get_a_random_queue/1, flush_server_queues/1]).
 
 %% gen_server.
 -export([init/1]).
@@ -38,7 +38,7 @@
 
 -record(state, {
 				gm = undefined,
-				routing_queues= dict:new() %%huotianjun value内容是gb_trees结构, key是path split words
+				server_queues= dict:new() %%huotianjun value内容是gb_trees结构, key是path split words
 				}). 
 
 %% API.
@@ -55,7 +55,7 @@ start() ->
     ensure_started().
 
 get_a_random_queue(Path) ->
-	case get_routing_queues(Path) of
+	case get_server_queues(Path) of
 		undefined -> undefined;
 		{ok, QueueTrees} ->
 			Size = queue_trees_size(QueueTrees),
@@ -64,22 +64,22 @@ get_a_random_queue(Path) ->
 	end.
 
 %%huotianjun 结果是gb_trees
-get_routing_queues(Path) when is_binary(Path) ->
+get_server_queues(Path) when is_binary(Path) ->
 	Words = rabbit_exchange_type_webmqx:split_topic_key(Path),
-	get_routing_queues1(Words).
+	get_server_queues1(Words).
 
-get_routing_queues1([]) -> undefined;
-get_routing_queues1(PathSplitWords) ->
+get_server_queues1([]) -> undefined;
+get_server_queues1(PathSplitWords) ->
 	case ets:lookup(?TAB, {path, PathSplitWords}) of
 		[] ->
-			gen_server2:call(?MODULE, {get_routing_queue, PathSplitWords}, infinity);
+			gen_server2:call(?MODULE, {get_server_queue, PathSplitWords}, infinity);
 
 		%%huotianjun 刚才get过，没有得到
 		[{none, LastStampCounter}] -> 
 			NowTimeStampCounter = now_timestamp_counter(),
 			if
 				(NowTimeStampCounter - LastStampCounter) > 10 ->
-					gen_server2:call(?MODULE, {get_routing_queue, PathSplitWords}, infinity);
+					gen_server2:call(?MODULE, {get_server_queue, PathSplitWords}, infinity);
 				true -> undefined	
 			end;
 		[QueuesTree] ->
@@ -87,8 +87,8 @@ get_routing_queues1(PathSplitWords) ->
 	end.
 				
 %%huotianjun 在rabbit_exchange_type_webmqx中发起		
-flush_routing_queues(PathSplitWords) ->
-	gen_server2:cast(?MODULE, {flush_routing_queues, PathSplitWords}).
+flush_server_queues(PathSplitWords) ->
+	gen_server2:cast(?MODULE, {flush_server_queues, PathSplitWords}).
 
 %% gen_server.
 
@@ -109,7 +109,7 @@ init([]) ->
 	{ok, #state{gm = GM}}.
 
 %%huotianjun 这个只是本节点get，并不gm广播
-handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queues = RoutingQueues}) ->
+handle_call({get_server_queues, PathSplitWords}, _, State = #state{server_queues = RoutingQueues}) ->
 	QueueTrees1=
 	case dict:find(PathSplitWords, RoutingQueues) of
 		{ok, QueueTrees0} -> 
@@ -138,7 +138,7 @@ handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queu
 			
 			case GoFetch of		
 				true ->
-					case rabbit_exchange_type_webmqx:fetch_routing_queues(PathSplitWords) of
+					case rabbit_exchange_type_webmqx:fetch_server_queues(PathSplitWords) of
 						[] ->
 							true = ets:insert(?TAB, {{path, PathSplitWords}, {none, NowTimeStampCounter}}),
 							{reply, undefined, State};
@@ -146,7 +146,7 @@ handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queu
 							QueueTrees = queue_trees_new(Queues),
 							true = ets:insert(?TAB, {{path, PathSplitWords}, QueueTrees}),
 							{reply, {ok, QueueTrees}, 
-								State#state{routing_queues = 
+								State#state{server_queues = 
 												dict:store(PathSplitWords, QueueTrees, RoutingQueues)}} 
 					end;
 				false ->
@@ -159,16 +159,16 @@ handle_call(_Request, _From, State) ->
 	{reply, ignore, State}.
 
 %%huotianjun 第一次用某path的时候，以及add_binding、remove_binding的时候
-%%huotianjun gm:broadcast(GM, {flush_rpc_routing_queues, PathSplitWords}),
+%%huotianjun gm:broadcast(GM, {flush_rpc_server_queues, PathSplitWords}),
 
-handle_cast({flush_rpc_routing_queues, PathSplitWords}, State = #state{gm = GM}) ->
-	gm:broadcast(GM, {flush_rpc_routing_queues, PathSplitWords}),
+handle_cast({flush_rpc_server_queues, PathSplitWords}, State = #state{gm = GM}) ->
+	gm:broadcast(GM, {flush_rpc_server_queues, PathSplitWords}),
 	{noreply, State};
 
 %%huotianjun 统一在这里处理flush
-handle_cast({gm, {flush_rpc_routing_queues, PathSplitWords}}, State = #state{routing_queues = RoutingQueues}) ->
+handle_cast({gm, {flush_rpc_server_queues, PathSplitWords}}, State = #state{server_queues = RoutingQueues}) ->
 	QueueTrees =
-	case rabbit_exchange_type_webmqx:fetch_routing_queues(PathSplitWords) of
+	case rabbit_exchange_type_webmqx:fetch_server_queues(PathSplitWords) of
 		[] ->
 			true = ets:insert(?TAB, {{path, PathSplitWords}, {none, now_timestamp_counter()}}),
 			gb_trees:empty();
@@ -177,7 +177,7 @@ handle_cast({gm, {flush_rpc_routing_queues, PathSplitWords}}, State = #state{rou
 			true = ets:insert(?TAB, {{path, PathSplitWords}, QueueTrees1}),
 			QueueTrees1 
 	end,
-	{noreply, State#state{routing_queues = dict:store(PathSplitWords, QueueTrees, RoutingQueues)}};
+	{noreply, State#state{server_queues = dict:store(PathSplitWords, QueueTrees, RoutingQueues)}};
 
 handle_cast(_Request, State) ->
 	{noreply, State}.

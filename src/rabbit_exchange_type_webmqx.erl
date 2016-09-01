@@ -90,8 +90,8 @@ remove_bindings(transaction, _X, Bs) ->
          {ok, Path = [{FinalNode, _} | _]} ->
              trie_remove_binding(X, FinalNode, D, Args),
 
-			 %%huotianjun 发出gm广播消息flush
-			 webmqx_rpc_routing_queues:flush_routing_queues(TopicSplited),
+			 %%huotianjun 发出gm广播消息flush routing queues of the K
+			 webmqx_rpc_server_queues:flush_server_queues(TopicSplited),
 
 			 %%huotianjun 没有后续节点，层层网上删
              remove_path_if_empty(X, Path);
@@ -116,7 +116,7 @@ internal_add_binding(#binding{source = X, key = K, destination = D,
     trie_add_binding(X, FinalNode, D, Args),
 
 	%%huotianjun 这里要发一个gm广播消息，
-	webmqx_rpc_routing_queues:flush_routing_queues(TopicSplited),
+	webmqx_rpc_server_queues:flush_server_queues(TopicSplited),
     ok.
 
 %%huotianjun 严格匹配，节点数量必须一样

@@ -15,7 +15,7 @@ init(Req , Opts) ->
 	{ok, {_Host, Path, PayloadJson, Req2}} = req_parse(Req),
 
 	Response =
-	case webmqx_rpc_routing_queues:get_a_random_queue(Path) of
+	case webmqx_rpc_server_queues:get_a_random_queue(Path) of
 		undefined ->
 			<<"no rpc routing queues">>;
 		ServerQueue ->
