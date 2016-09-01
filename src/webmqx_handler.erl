@@ -8,7 +8,6 @@
 
 %%huotianjun 每一个请求会创建一个进程用这个init处理Request
 init(Req , Opts) ->
-	%%random:seed(os:timestamp()),
 	%%error_logger:info_msg("Req : ~p ~n", [Req]),
 
 	%%huotianjun 解析Req

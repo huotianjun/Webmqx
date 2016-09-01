@@ -23,7 +23,6 @@
 -export([stop/1]).
 
 start(_Type, _Args) ->
-	%%huotianjun root 
 	webmqx_sup:start_link(),
 
 	%%huotianjun 启动RPC channel的管理器，在ets表中维护rpc channel信息，并monitor。初始为空
@@ -32,6 +31,9 @@ start(_Type, _Args) ->
 	%%huotianjun 管理queues of application server
 	webmqx_rpc_server_queues:start(),
 
+	%%huotianjun 启动核心微服务
+	webmqx_core_service:start(),
+
 	%%huotianjun 启动所有的RPC channel（发送端），并在RPC channel管理器上注册
 	webmqx_sup:start_supervisor_child(webmqx_rpc_channel_sup),
 
@@ -39,9 +41,6 @@ start(_Type, _Args) ->
 	%%huotianjun 第一个参数会记录在binding的arg信息里面
 	webmqx_rpc_server:start_link(<<"test">>, <<"test1/2/3">>, fun micro_service_test/1), 
 	webmqx_rpc_server:start_link(<<"report">>, <<"report">>, fun tsung_report/1),
-
-	%%huotianjun 启动核心微服务
-	webmqx_core_service:start(),
 
 	Dispatch = cowboy_router:compile([
 		{'_', [

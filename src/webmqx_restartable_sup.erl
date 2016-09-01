@@ -33,8 +33,6 @@
 
 %%----------------------------------------------------------------------------
 %%
-%%huotianjun 本节点在webmqx_sup下, 把可以重启的children都放到这里. 因为webmqx_sup的节点是one_for_all的，把需要one_for_one的都放到这里
-%%huotianjun 一个sup下面只有一个child
 start_link(Name, {_M, _F, _A} = Fun, Delay) ->
     supervisor2:start_link({local, Name}, ?MODULE, [Fun, Delay]).
 

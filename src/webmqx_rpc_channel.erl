@@ -69,11 +69,11 @@ stop(Pid) ->
 %% encoding the request and decoding the response.
 %%
 %% huotianjun to-do 这个异常需要输出到特殊队列中
-call(_RpcChannel, undefined,  _Payload) -> <<"no service">>;
+call(_RpcChannelPid, undefined,  _Payload) -> <<"no service">>;
 
 %%huotianjun 实现的时候，是发起cast，避免阻塞
-call(RpcChannel, ServerQueue, Payload) ->
-    gen_server2:call(RpcChannel, {call, ServerQueue, Payload}, infinity).
+call(RpcChannelPid, ServerQueue, Payload) ->
+    gen_server2:call(RpcChannelPid, {call, ServerQueue, Payload}, infinity).
 
 %%--------------------------------------------------------------------------
 %% Plumbing
@@ -88,7 +88,7 @@ setup_reply_queue(State = #state{rabbit_channel = {_Ref, Channel}, reply_queue =
 
 %% Registers this RPC client instance as a consumer to handle rpc responses
 setup_consumer(#state{rabbit_channel = {_Ref, Channel}, reply_queue = Q}) ->
-	%%huotianjun Q必须是<<"amq.rabbitmq.reply-to">>，channel里面要特殊准备一下，会补充特殊信息到Props中
+	%%huotianjun Q必须是<<"amq.rabbitmq.reply-to">>，channel里面要特殊准备一下，会补充特殊信息到Props中。这个channel发送的所有RPC的reply_to都会回到这个channel
     #'basic.consume_ok'{} =
 		amqp_channel:call(Channel, #'basic.consume'{queue = Q, no_ack = true}).
 
@@ -127,14 +127,10 @@ publish({Payload, ServerQueue}, From,
 init([N]) ->
 	process_flag(trap_exit, true),
 
-	%%huotianjun 一个Rpc channel，启动一个Connection，紧密捆绑
 	{ok, Connection} = amqp_connection:start(#amqp_params_direct{}),
 
-	%%huotianjun 一个RPC client用一个channel
     {ok, Channel} = amqp_connection:open_channel(
                         Connection, {amqp_direct_consumer, [self()]}),
-
-	%%error_logger:info_msg("Connection : ~p Channel : ~p ~n", [Connection, Channel]),
 
 	ConnectionRef = erlang:monitor(process, Connection),
 	ChannelRef = erlang:monitor(process, Channel),
@@ -162,8 +158,6 @@ terminate(_Reason, #state{connection = {ConnectionRef, Connection}, rabbit_chann
     amqp_channel:close(Channel),
 	amqp_direct_connection:server_close(Connection, <<"404">>, <<"close">>),
 	amqp_connection:close(Connection),
-
-	error_logger:info_msg("close connection : ~p ~n", [Connection]),
     ok.
 
 %% Handle the application initiated stop by just stopping this gen server
@@ -174,7 +168,6 @@ handle_call(stop, _From, State) ->
 %% @private
 handle_call({call, ServerQueue, Payload}, From, State) ->
     NewState = publish({Payload, ServerQueue}, From, State),
-	%%huotianjun noreply非常重要，这样，这个channel不会被阻塞(只是call的应用进程被阻塞了），rpc channel还可以继续被call
     {noreply, NewState}.
 
 %% @private
@@ -213,7 +206,6 @@ handle_info({#'basic.deliver'{},
 handle_info({'EXIT', _Pid, Reason}, State) ->
 	{stop, Reason, State};
 
-%%huotianjun Connection出问题了
 handle_info({'DOWN', _MRef, process, _Pid, Reason}, State) ->
 	{stop, {error, Reason}, State}.
 

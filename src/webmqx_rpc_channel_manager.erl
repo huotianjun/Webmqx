@@ -38,20 +38,19 @@ get_rpc_channel_pid() ->
 	get_rpc_channel_pid1(N, {undefined, undefined}).
 
 %%huotianjun 如果没有命中，看下一个，找到为止
-get_rpc_channel_pid1(_N, {C, _}) when C =/= undefined andalso C =< 0 ->
+get_rpc_channel_pid1(_N, {L, _}) when L =/= undefined andalso L =< 0 ->
 	undefined;
-get_rpc_channel_pid1(N, {C, Count}) ->
+get_rpc_channel_pid1(N, {L, Count}) ->
 	case ets:lookup(?TAB, {n, N}) of
 		[{{n, N}, {Pid, _Ref}}] ->
 			{ok, Pid};
 		_ ->
-			case C of
+			case L of
 				undefined ->
-					%%huotianjun 第一次没找到，设置继续找的上下文
 					Count0 = ?DEFAULT_RPC_CHANNEL_MAX,
 					get_rpc_channel_pid1(case N+1 > Count0 of true -> 1; false -> N+1 end, {Count0 - 1, Count0});
 				_ ->
-					get_rpc_channel_pid1(case N+1 > Count of true -> 1; false -> N+1 end, {C - 1, Count})
+					get_rpc_channel_pid1(case N+1 > Count of true -> 1; false -> N+1 end, {L - 1, Count})
 			end
 	end.
 
@@ -107,8 +106,6 @@ join_rpc(N, Pid) ->
 	MonitorRef = erlang:monitor(process, Pid),
 	case ets:lookup(?TAB, {n, N}) of
 		[{{n, N}, {Pid, MonitorRef}}] ->
-			%%huotianjun 同一个Pid，monitor多次，Ref是不同的
-			%%huotianjun 所以，这种情况不存在
 			ok;
 		[{{n, N}, {Pid, OldRef0}}] ->
 			%%huotianjun 本进程重启，会出现这个情况
@@ -132,8 +129,6 @@ join_rpc(N, Pid) ->
 leave_rpc(MonitorRef, Pid) ->
 	case ets:lookup(?TAB, {pid, Pid}) of
 		[{{pid, Pid}, {N, MonitorRef}}] ->
-			%%error_logger:info_msg("leave_rpc : ~p ~p~n", [N, Pid]),
-
             true = ets:delete(?TAB, {pid, Pid}),
             true = ets:delete(?TAB, {n, N}),
 			true = erlang:demonitor(MonitorRef, [flush]);

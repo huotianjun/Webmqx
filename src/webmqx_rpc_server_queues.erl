@@ -93,7 +93,7 @@ flush_server_queues(PathSplitWords) ->
 %% gen_server.
 
 init([]) ->
-	%%huotianjun 第一个MODULE是group name
+	%%huotianjun group name is MODULE
 	{ok, GM} = gm:start_link(?MODULE, ?MODULE, [self()],
 							 fun rabbit_misc:execute_mnesia_transaction/1),
 	MRef = erlang:monitor(process, GM),
@@ -130,6 +130,7 @@ handle_call({get_server_queues, PathSplitWords}, _, State = #state{server_queues
 				%%huotianjun 上次没有读到的情况
 				[{none, LastStampCounter}] -> 
 					if
+						%%huotianjun 10 seconds
 						(NowTimeStampCounter - LastStampCounter) > 10 -> true;
 						true -> false
 					end;
@@ -165,7 +166,7 @@ handle_cast({flush_rpc_server_queues, PathSplitWords}, State = #state{gm = GM}) 
 	gm:broadcast(GM, {flush_rpc_server_queues, PathSplitWords}),
 	{noreply, State};
 
-%%huotianjun 统一在这里处理flush
+%%huotianjun all nodes flush in here
 handle_cast({gm, {flush_rpc_server_queues, PathSplitWords}}, State = #state{server_queues = RoutingQueues}) ->
 	QueueTrees =
 	case rabbit_exchange_type_webmqx:fetch_server_queues(PathSplitWords) of
@@ -199,9 +200,11 @@ ensure_started() ->
             {ok, Pid}
     end.
 
+%%% Local Functions
+
 now_timestamp_counter() ->
-	{{NowYear, NowMonth, NowDay},{NowHour, NowMinute, NowSecond}} = calendar:now_to_local_time(os:timestamp()),
-	(NowYear*10000 + NowMonth*100 + NowDay)*3600*24 + (NowHour*3600 + NowMinute*60 + NowSecond).
+	{{_, _, _},{NowHour, NowMinute, NowSecond}} = calendar:now_to_local_time(os:timestamp()),
+	(NowHour*3600 + NowMinute*60 + NowSecond).
 
 queue_trees_size(QueueTrees) ->
 	gb_trees:size(QueueTrees).
@@ -215,18 +218,16 @@ queue_trees_lookup(Number, QueueTrees) ->
 queue_trees_enter(Number, Queue, QueueTrees) ->
 	gb_trees:enter(Number, Queue, QueueTrees).
 
+%%huotianjun new from queues list
 queue_trees_new(Queues) ->
 	queue_trees_new1(Queues, gb_trees:empty(), 1).
 
 queue_trees_new1([], QueueTrees, _Count) -> {ok, QueueTrees};
 queue_trees_new1([Queue|Left], QueueTrees, Count) ->
 	queue_trees_new1(Left, queue_trees_enter(Count, Queue, QueueTrees), Count+1). 
-
-
 	
-%%huotianjun 以下几个是gm的标准回调
-%%huotianjun 注意：joined是gm回调的
-%%huotianjun 这4个函数是在使用gm的模块里必须定义的！！！！
+
+%%huotianjun gm's callback
 joined([SPid], _Members) -> SPid ! {joined, self()}, ok.
 
 members_changed([_SPid], _Births, _) ->

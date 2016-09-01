@@ -17,6 +17,7 @@
 -module(rabbit_exchange_type_webmqx).
 
 -include_lib("rabbit_common/include/rabbit.hrl").
+
 -include("webmqx.hrl").
 
 -behaviour(rabbit_exchange_type).
@@ -32,7 +33,7 @@
 -rabbit_boot_step({?MODULE,
                    [{description, "exchange type webmqx"},
                     {mfa,         {rabbit_registry, register,
-                                   [exchange, ?EXCHANGE_WEBMQX, ?MODULE]}},
+                                   [exchange, ?EXCHANGE_WEBMQX_TYPE, ?MODULE]}},
                     {requires,    rabbit_registry},
                     {enables,     kernel_ready}]}).
 
