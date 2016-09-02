@@ -27,7 +27,6 @@
          create/2, delete/3, policy_changed/2, add_binding/3,
          remove_bindings/3, assert_args_equivalence/2]).
 -export([fetch_routing_queues/1]).
--export([split_topic_key/1]).
 -export([info/1, info/2]).
 
 -rabbit_boot_step({?MODULE,
@@ -87,12 +86,11 @@ remove_bindings(transaction, _X, Bs) ->
                          rabbit_topic_trie_edge,
                          rabbit_topic_trie_binding]]
     end,
-    [case follow_down_get_path(X, TopicSplited = split_topic_key(K)) of
+    [case follow_down_get_path(X, PathSplited = webmqx_util:split_path_key(K)) of
          {ok, Path = [{FinalNode, _} | _]} ->
              trie_remove_binding(X, FinalNode, D, Args),
 
-			 %%huotianjun 发出gm广播消息flush routing queues of the K
-			 webmqx_rpc_server_queues:flush_server_queues(TopicSplited),
+			 rabbit_event:notify(binding_remove, {PathSplited, X, D, Args}),
 
 			 %%huotianjun 没有后续节点，层层网上删
              remove_path_if_empty(X, Path);
@@ -112,12 +110,11 @@ assert_args_equivalence(X, Args) ->
 
 internal_add_binding(#binding{source = X, key = K, destination = D,
                               args = Args}) ->
-    TopicSplited = split_topic_key(K),
-    FinalNode = follow_down_create(X, TopicSplited),
+    PathSplited = webmqx_util:split_path_key(K),
+    FinalNode = follow_down_create(X, PathSplited),
     trie_add_binding(X, FinalNode, D, Args),
 
-	%%huotianjun 这里要发一个gm广播消息，
-	webmqx_rpc_server_queues:flush_server_queues(TopicSplited),
+	rabbit_event:notify(binding_add, {PathSplited, X, D, Args}),
     ok.
 
 %%huotianjun 严格匹配，节点数量必须一样
@@ -273,22 +270,8 @@ remove_all(Table, Pattern) ->
     lists:foreach(fun (R) -> mnesia:delete_object(Table, R, write) end,
                   mnesia:match_object(Table, Pattern, write)).
 
+
+
 new_node_id() ->
     rabbit_guid:gen().
 
-split_topic_key(Key) ->
-    split_topic_key(Key, [], []).
-
-split_topic_key(<<>>, [], []) ->
-    [];
-split_topic_key(<<>>, [], RevResAcc) ->
-    lists:reverse(RevResAcc);
-split_topic_key(<<>>, RevWordAcc, RevResAcc) ->
-    lists:reverse([lists:reverse(RevWordAcc) | RevResAcc]);
-%%huotianjun split by '/'
-split_topic_key(<<$/, Rest/binary>>, [], RevResAcc) ->
-    split_topic_key(Rest, [], RevResAcc);
-split_topic_key(<<$/, Rest/binary>>, RevWordAcc, RevResAcc) ->
-    split_topic_key(Rest, [], [lists:reverse(RevWordAcc) | RevResAcc]);
-split_topic_key(<<C:8, Rest/binary>>, RevWordAcc, RevResAcc) ->
-    split_topic_key(Rest, [C | RevWordAcc], RevResAcc).

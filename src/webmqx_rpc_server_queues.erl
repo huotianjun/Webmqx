@@ -65,7 +65,7 @@ get_a_random_queue(Path) ->
 
 %%huotianjun 结果是gb_trees
 get_server_queues(Path) when is_binary(Path) ->
-	Words = rabbit_exchange_type_webmqx:split_topic_key(Path),
+	Words = webmqx_util:split_path_key(Path),
 	get_server_queues1(Words).
 
 get_server_queues1([]) -> undefined;

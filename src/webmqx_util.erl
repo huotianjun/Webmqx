@@ -27,3 +27,28 @@ env(Key) ->
         {ok, Val} -> Val;
         undefined -> undefined
     end.
+
+words_to_path(Words) ->
+	words_to_path(Words, []).
+
+words_to_path([], Acc) -> list_to_binary(lists:reverse(Acc));
+words_to_path([Word|Rest], Acc) ->
+	words_to_path([Rest], [Word | ["/" | Acc]]).
+
+
+split_path_key(Key) ->
+    split_topic_key(Key, [], []).
+
+split_path_key(<<>>, [], []) ->
+    [];
+split_path_key(<<>>, [], RevResAcc) ->
+    lists:reverse(RevResAcc);
+split_path_key(<<>>, RevWordAcc, RevResAcc) ->
+    lists:reverse([lists:reverse(RevWordAcc) | RevResAcc]);
+%%huotianjun split by '/'
+split_path_key(<<$/, Rest/binary>>, [], RevResAcc) ->
+    split_path_key(Rest, [], RevResAcc);
+split_path_key(<<$/, Rest/binary>>, RevWordAcc, RevResAcc) ->
+    split_path_key(Rest, [], [lists:reverse(RevWordAcc) | RevResAcc]);
+split_path_key(<<C:8, Rest/binary>>, RevWordAcc, RevResAcc) ->
+    split_path_key(Rest, [C | RevWordAcc], RevResAcc).

@@ -14,17 +14,16 @@ init(Req , Opts) ->
 	{ok, {_Host, Path, PayloadJson, Req2}} = req_parse(Req),
 
 	Response =
-	case webmqx_rpc_server_queues:get_a_random_queue(Path) of
-		undefined ->
-			<<"no rpc routing queues">>;
-		ServerQueue ->
-			case webmqx_rpc_channel_manager:get_rpc_channel_pid() of
-				undefined -> <<"no rpc handlers">>;
-				{ok, Pid} ->
-					webmqx_rpc_channel:call(Pid, ServerQueue, PayloadJson) 
-			end
-			%%error_logger:info_msg("Response : ~p~n", [Response]),
-	end,
+	try 
+		case webmqx_rpc_channel:rpc_call(Path, PayloadJson) of
+			undefined ->
+				<<"no rpc routing queues">>;
+			{ok, Response1} -> Response1
+		end
+	catch 
+		Error:Reason -> 
+			Reason 
+	end
 
 	cowboy_req:reply(200, #{
 				<<"content-type">> => <<"text/html">>

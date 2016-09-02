@@ -26,7 +26,7 @@
 -behaviour(gen_server2).
 
 -export([start_link/1, stop/1]).
--export([call/3]).
+-export([rpc_call/2]).
 -export([init/1, terminate/2, code_change/3, handle_call/3,
          handle_cast/2, handle_info/2]).
 
@@ -54,6 +54,21 @@ start_link(N) ->
 	%%huotianjun 注意：如果这里不返回{ok, Pid}，在supstart_child的时候会出问题的
 	{ok, Pid}.
 
+
+rpc_call(Path, PayloadJson) ->
+	case webmqx_rpc_server_queues:get_a_random_queue(Path) of
+		undefined ->
+			undefined;
+		ServerQueue ->
+			case webmqx_rpc_channel_manager:get_rpc_channel_pid() of
+				undefined -> undefined;
+				{ok, Pid} ->
+					call(Pid, ServerQueue, PayloadJson) 
+			end
+			%%error_logger:info_msg("Response : ~p~n", [Response]),
+	end.
+
+
 %% @spec (RpcClient) -> ok
 %% where
 %%      RpcClient = pid()
@@ -69,7 +84,7 @@ stop(Pid) ->
 %% encoding the request and decoding the response.
 %%
 %% huotianjun to-do 这个异常需要输出到特殊队列中
-call(_RpcChannelPid, undefined,  _Payload) -> <<"no service">>;
+call(_RpcChannelPid, undefined,  _Payload) -> undefined;
 
 %%huotianjun 实现的时候，是发起cast，避免阻塞
 call(RpcChannelPid, ServerQueue, Payload) ->
@@ -200,7 +215,7 @@ handle_info({#'basic.deliver'{},
 
 	%%error_logger:info_msg("channel get reply : ~p ~n", [Msg]), 
     From = dict:fetch(Id, Conts),
-    gen_server2:reply(From, Payload),
+    gen_server2:reply(From, {ok, Payload}),
     {noreply, State#state{continuations = dict:erase(Id, Conts) }};
 
 handle_info({'EXIT', _Pid, Reason}, State) ->

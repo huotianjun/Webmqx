@@ -23,7 +23,7 @@
 -export([stop/1]).
 
 start(_Type, _Args) ->
-	webmqx_sup:start_link(),
+	Result = webmqx_sup:start_link(),
 
 	%%huotianjun 启动RPC channel的管理器，在ets表中维护rpc channel信息，并monitor。初始为空
 	webmqx_rpc_channel_manager:start(),
@@ -36,6 +36,8 @@ start(_Type, _Args) ->
 
 	%%huotianjun 启动所有的RPC channel（发送端），并在RPC channel管理器上注册
 	webmqx_sup:start_supervisor_child(webmqx_rpc_channel_sup),
+
+	webmqx_sup:start_supervisor_child(webmqx_cast_msg_sup),
 
 	%%huotianjun 启动测试微服务
 	%%huotianjun 第一个参数会记录在binding的arg信息里面
@@ -56,7 +58,13 @@ start(_Type, _Args) ->
 		  middlewares => [cowboy_router, cowboy_handler]}
 	),
 
-	{ok, Cowboy}.
+	EventPid = case rabbit_event:start_link() of
+					{ok, Pid}                       -> Pid;
+					{error, {already_started, Pid}} -> Pid
+				end,
+	gen_event:add_handler(EventPid, webmqx_binding_event_handler, []),
+
+	Result.
 
 %%huotianjun 测试微服务的server's callback
 micro_service_test(PayloadJSON) -> PayloadJSON.
