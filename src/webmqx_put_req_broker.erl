@@ -129,7 +129,7 @@ handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
 					continuations = dict:store(SeqId, DeliveryTag, Continuations)}
 		end
 	catch 
-		Error:Reason -> 
+		_Error:_Reason -> 
 			amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag}),
 			State 
 	end,
