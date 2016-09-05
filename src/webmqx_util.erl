@@ -37,7 +37,7 @@ words_to_path([Word|Rest], Acc) ->
 
 
 split_path_key(Key) ->
-    split_topic_key(Key, [], []).
+    split_path_key(Key, [], []).
 
 split_path_key(<<>>, [], []) ->
     [];
