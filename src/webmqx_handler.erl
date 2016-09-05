@@ -15,7 +15,7 @@ init(Req , Opts) ->
 
 	Response =
 	try 
-		case webmqx_rpc_channel_manager:get_rpc_channel_pid() of
+		case webmqx_rpc_channel_manager:get_a_pid() of
 			undefined -> <<"no rpc channel">>;
 			{ok, Pid} ->
 				case webmqx_rpc_channel:rpc(call, Path, PayloadJson) of

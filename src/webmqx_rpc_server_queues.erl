@@ -21,7 +21,7 @@
 %% API.
 -export([start/0]).
 -export([start_link/0]).
--export([get_a_random_queue/1, flush_server_queues/1]).
+-export([get_a_queue/1, flush_server_queues/1, count/1]).
 
 %% gen_server.
 -export([init/1]).
@@ -54,13 +54,20 @@ start() ->
 		ordered_set, public, named_table]),
     ensure_started().
 
-get_a_random_queue(Path) ->
+get_a_queue(Path) ->
 	case get_server_queues(Path) of
 		undefined -> undefined;
 		{ok, QueueTrees} ->
 			Size = queue_trees_size(QueueTrees),
 			N = erlang:phash2(self(), Size) + 1,
 			queue_trees_lookup(N, QueueTrees)
+	end.
+
+count(Path) ->
+	case get_server_queues(Path) of
+		undefined -> 0;
+		{ok, QueueTrees} ->
+			Size = queue_trees_size(QueueTrees)
 	end.
 
 %%huotianjun 结果是gb_trees

@@ -3,7 +3,7 @@
 
 -include("webmqx.hrl").
 
--export([join/2, get_rpc_channel_pid/0]).
+-export([join/2, get_a_pid/0]).
 -export([sync/0]). %% intended for testing only; not part of official API
 -export([start/0, start_link/0, init/1, handle_call/3, handle_cast/2,
          handle_info/2, terminate/2, code_change/3]).
@@ -33,14 +33,14 @@ join(N, Pid) when is_pid(Pid) ->
     gen_server2:cast(?MODULE, {join, N, Pid}).
 
 %%huotianjun 用Req进程的进程id随机生成一个N，均衡调用
-get_rpc_channel_pid() ->
+get_a_pid() ->
 	N = erlang:phash2(self(), ?DEFAULT_RPC_CHANNEL_MAX) + 1,
-	get_rpc_channel_pid1(N, {undefined, undefined}).
+	get_a_pid1(N, {undefined, undefined}).
 
 %%huotianjun 如果没有命中，看下一个，找到为止
-get_rpc_channel_pid1(_N, {L, _}) when L =/= undefined andalso L =< 0 ->
+get_a_pid1(_N, {L, _}) when L =/= undefined andalso L =< 0 ->
 	undefined;
-get_rpc_channel_pid1(N, {L, Count}) ->
+get_a_pid1(N, {L, Count}) ->
 	case ets:lookup(?TAB, {n, N}) of
 		[{{n, N}, {Pid, _Ref}}] ->
 			{ok, Pid};
@@ -48,9 +48,9 @@ get_rpc_channel_pid1(N, {L, Count}) ->
 			case L of
 				undefined ->
 					Count0 = ?DEFAULT_RPC_CHANNEL_MAX,
-					get_rpc_channel_pid1(case N+1 > Count0 of true -> 1; false -> N+1 end, {Count0 - 1, Count0});
+					get_a_pid1(case N+1 > Count0 of true -> 1; false -> N+1 end, {Count0 - 1, Count0});
 				_ ->
-					get_rpc_channel_pid1(case N+1 > Count of true -> 1; false -> N+1 end, {L - 1, Count})
+					get_a_pid1(case N+1 > Count of true -> 1; false -> N+1 end, {L - 1, Count})
 			end
 	end.
 

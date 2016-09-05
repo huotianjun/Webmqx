@@ -74,9 +74,12 @@ init([Path]) ->
     {ok, Channel} = amqp_connection:open_channel(
                         Connection, {amqp_direct_consumer, [self()]}),
 
+	%%huotianjun enable rabbit_limiter 
+	#'basic.qos_ok'{} = amqp_channel:call(
+							Channel, #'basic.qos'{prefetch_count = 10}),
+
 	#'queue.declare_ok'{queue = Q} =
 		amqp_channel:call(Channel, #'queue.declare'{queue		= Path,
-													exclusive   = true,
 													durable		= true,
 													auto_delete = false}),
 
@@ -86,6 +89,7 @@ init([Path]) ->
 	ChannelRef = erlang:monitor(process, Channel),
     {ok, #state{connection = {ConnectionRef, Connection}, channel = {ChannelRef, Channel}, 
 				path = Path}}.
+
 %%huotianjun from webmqx_rpc_channel
 handle_cast({rpc_reply, SeqId, Response}, 
 				State = #state{channel = {_Ref, Channel},
@@ -123,6 +127,7 @@ handle_info(#'basic.cancel_ok'{}, State) ->
     {stop, normal, State};
 
 %% @private
+%% huotianjun from PutReq Queue of Path
 handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
 				#amqp_msg{payload = PayloadJson}},
 				State = #state{path = Path, channel = {_Ref, Channel},
@@ -130,7 +135,7 @@ handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
 								continuations = Continuations}) ->
 	NewState = 
 	try 
-		case webmqx_rpc_channel_manager:get_rpc_channel_pid() of
+		case webmqx_rpc_channel_manager:get_a_pid() of
 			undefined -> 
 				amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag}),
 				State;
