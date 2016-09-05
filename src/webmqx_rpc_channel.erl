@@ -174,7 +174,7 @@ handle_cast({rpc_cast, From, SeqId, Path, Payload}, State) ->
 	NewState =
 	case webmqx_rpc_server_queues:get_a_queue(Path) of
 		undefined ->
-			gen_server2:cast(From, {rpc_reply, SeqId, no_server})
+			gen_server2:cast(From, {rpc_reply, SeqId, no_server}),
 			State;
 		ServerQueue ->
 			publish({ServerQueue, Payload}, _From = {rpc_cast, {From, SeqId}}, State)
