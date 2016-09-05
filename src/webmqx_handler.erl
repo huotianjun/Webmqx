@@ -27,7 +27,7 @@ init(Req , Opts) ->
 	catch 
 		Error:Reason -> 
 			Reason 
-	end
+	end,
 
 	cowboy_req:reply(200, #{
 				<<"content-type">> => <<"text/html">>
