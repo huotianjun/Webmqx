@@ -67,7 +67,7 @@ count(Path) ->
 	case get_server_queues(Path) of
 		undefined -> 0;
 		{ok, QueueTrees} ->
-			Size = queue_trees_size(QueueTrees)
+			_Size = queue_trees_size(QueueTrees)
 	end.
 
 %%huotianjun 结果是gb_trees
