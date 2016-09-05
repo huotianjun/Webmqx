@@ -53,7 +53,7 @@ start(_Type, _Args) ->
 		]}
 	]),
 
-	{ok, Cowboy} = cowboy:start_clear(http, 100, [{port, 80}], 
+	{ok, _Cowboy} = cowboy:start_clear(http, 100, [{port, 80}], 
 		#{env => #{dispatch => Dispatch}, 
 		  middlewares => [cowboy_router, cowboy_handler]}
 	),
