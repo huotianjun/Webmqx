@@ -48,7 +48,8 @@ delete_child(Path) ->
 			Id = binary_to_atom(Path, ?ENCODING),
 			ok = supervisor2:terminate_child(?MODULE, Id),
 			ok = supervisor2:delete_child(?MODULE, Id);
-		_ -> ok.
+		_ -> ok
+	end.
 
 init([]) ->
   {ok, {{one_for_one, 5, 10}, []}}.
