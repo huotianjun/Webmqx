@@ -29,7 +29,7 @@
 
 -export([init/1, terminate/2, code_change/3, handle_call/3,
          handle_cast/2, handle_info/2]).
--export([start_link/3]).
+-export([start_link/1]).
 -export([stop/1]).
 
 -record(state, {connection, channel, path,
@@ -90,22 +90,6 @@ init([Path]) ->
     {ok, #state{connection = {ConnectionRef, Connection}, channel = {ChannelRef, Channel}, 
 				path = Path}}.
 
-%%huotianjun from webmqx_rpc_channel
-handle_cast({rpc_reply, SeqId, Response}, 
-				State = #state{channel = {_Ref, Channel},
-								continuations = Continuations}) ->
-	DeliveryTag =  dict:fetch(SeqId, Continuations),
-	case Response of
-		no_server ->
-			amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag});
-		{ok, _} ->
-			amqp_channel:call(Channel, #'basic.ack'{delivery_tag = DeliveryTag})
-	end,
-	{noreply, State#state{continuations = dict:erase(SeqId, Continuations)}};
-
-handle_cast(_Msg, State) ->
-	{noreply, State}.
-
 %% @private
 handle_info(shutdown, State) ->
     {stop, normal, State};
@@ -165,6 +149,19 @@ handle_call(stop, _From, State) ->
 %%--------------------------------------------------------------------------
 %% Rest of the gen_server callbacks
 %%--------------------------------------------------------------------------
+
+%%huotianjun from webmqx_rpc_channel
+handle_cast({rpc_reply, SeqId, Response}, 
+				State = #state{channel = {_Ref, Channel},
+								continuations = Continuations}) ->
+	DeliveryTag =  dict:fetch(SeqId, Continuations),
+	case Response of
+		no_server ->
+			amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag});
+		{ok, _} ->
+			amqp_channel:call(Channel, #'basic.ack'{delivery_tag = DeliveryTag})
+	end,
+	{noreply, State#state{continuations = dict:erase(SeqId, Continuations)}};
 
 %% @private
 handle_cast(_Message, State) ->
