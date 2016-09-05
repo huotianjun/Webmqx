@@ -17,15 +17,15 @@ init(Req , Opts) ->
 	try 
 		case webmqx_rpc_channel_manager:get_a_pid() of
 			undefined -> <<"no rpc channel">>;
-			{ok, Pid} ->
-				case webmqx_rpc_channel:rpc(call, Path, PayloadJson) of
+			{ok, ChannelPid} ->
+				case webmqx_rpc_channel:rpc(call, ChannelPid, Path, PayloadJson) of
 					undefined ->
 						<<"no rpc routing queues">>;
 					{ok, Response1} -> Response1
 				end
 		end
 	catch 
-		Error:Reason -> 
+		_Error:Reason -> 
 			Reason 
 	end,
 
