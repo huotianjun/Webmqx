@@ -17,7 +17,7 @@
 -module(webmqx_put_req_sup).
 -behaviour(supervisor2).
 
--export([start_link/1, init/1, start_child/2,start_child/1, child_for_path/1,
+-export([start_link/0, init/1, start_child/1, 
          delete_child/1]).
 
 -define(ENCODING, utf8).
@@ -43,7 +43,7 @@ start_child1(Path) ->
       permanent, 60, worker, [webmqx_cast_msg_broker]}).
 
 delete_child(Path) ->
-	case count(webmqx_rpc_server_queues:count(Path)) of
+	case webmqx_rpc_server_queues:count(Path) of
 		0 ->
 			Id = binary_to_atom(Path, ?ENCODING),
 			ok = supervisor2:terminate_child(?MODULE, Id),
