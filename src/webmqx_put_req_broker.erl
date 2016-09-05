@@ -19,7 +19,7 @@
 %% a simple function from having to plumb this into AMQP. Note that the
 %% RPC server does not handle any data encoding, so it is up to the callback
 %% function to marshall and unmarshall message payloads accordingly.
--module(webmqx_cast_msg_broker).
+-module(webmqx_put_req_broker).
 
 -behaviour(gen_server2).
 
@@ -32,7 +32,9 @@
 -export([start_link/3]).
 -export([stop/1]).
 
--record(state, {connection, channel, path}}).
+-record(state, {connection, channel, path,
+				continuations = dict:new(),
+				seq_id = 0}).
 
 %%--------------------------------------------------------------------------
 %% API
@@ -84,6 +86,21 @@ init([Path]) ->
 	ChannelRef = erlang:monitor(process, Channel),
     {ok, #state{connection = {ConnectionRef, Connection}, channel = {ChannelRef, Channel}, 
 				path = Path}}.
+%%huotianjun from webmqx_rpc_channel
+handle_cast({rpc_reply, SeqId, Response}, 
+				State = #state{channel = {_Ref, Channel},
+								continuations = Continuations}) ->
+	DeliveryTag =  dict:fetch(SeqId, Continuations),
+	case Response of
+		no_server ->
+			amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag});
+		{ok, _} ->
+			amqp_channel:call(Channel, #'basic.ack'{delivery_tag = DeliveryTag})
+	end,
+	{noreply, State#state{continuations = dict:erase(SeqId, Continuations)}};
+
+handle_cast(_Msg, State) ->
+	{noreply, State}.
 
 %% @private
 handle_info(shutdown, State) ->
@@ -108,24 +125,26 @@ handle_info(#'basic.cancel_ok'{}, State) ->
 %% @private
 handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
 				#amqp_msg{payload = PayloadJson}},
-				State = #state{path = Path, channel = {_Ref, Channel}}) ->
-	%%io:format("rpc server received: ~p ~p ~n", [CorrelationId, Q]),
-	%%worker_pool:submit_async(
-%%		fun() ->
+				State = #state{path = Path, channel = {_Ref, Channel},
+								seq_id = SeqId,
+								continuations = Continuations}) ->
+	NewState = 
 	try 
-		case webmqx_rpc_channel:rpc_call(Path, PayloadJson) of
-			undefined ->
-				amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag});
-			{ok, _Response} -> 
-				amqp_channel:call(Channel, #'basic.ack'{delivery_tag = DeliveryTag})
-		end,
+		case webmqx_rpc_channel_manager:get_rpc_channel_pid() of
+			undefined -> 
+				amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag}),
+				State;
+			{ok, ChannelPid} ->
+				webmqx_rpc_channel:rpc(cast, ChannelPid, SeqId, Path, PayloadJson),
+				State#state{seq_id = SeqId + 1,
+					continuations = dict:store(SeqId, DeliveryTag, Continuations)}
+		end
 	catch 
 		Error:Reason -> 
 			amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag}),
-			{Error, Reason} 
-	end
-%%		end),
-    {noreply, State};
+			State 
+	end,
+	{noreply, NewState};
 
 handle_info({'EXIT', _Pid, Reason}, State) ->
 	{stop, Reason, State};

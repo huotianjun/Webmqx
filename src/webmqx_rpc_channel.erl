@@ -26,7 +26,7 @@
 -behaviour(gen_server2).
 
 -export([start_link/1, stop/1]).
--export([rpc_call/2]).
+-export([rpc/4, rpc/5]).
 -export([init/1, terminate/2, code_change/3, handle_call/3,
          handle_cast/2, handle_info/2]).
 
@@ -55,19 +55,11 @@ start_link(N) ->
 	{ok, Pid}.
 
 
-rpc_call(Path, PayloadJson) ->
-	case webmqx_rpc_server_queues:get_a_random_queue(Path) of
-		undefined ->
-			undefined;
-		ServerQueue ->
-			case webmqx_rpc_channel_manager:get_rpc_channel_pid() of
-				undefined -> undefined;
-				{ok, Pid} ->
-					call(Pid, ServerQueue, PayloadJson) 
-			end
-			%%error_logger:info_msg("Response : ~p~n", [Response]),
-	end.
+rpc(call, ChannelPid, Path, Payload) ->
+    gen_server2:call(ChannelPid, {rpc_call, Path, Payload}, infinity).
 
+rpc(cast, ChannelPid, SeqId, Path, Payload) ->
+    gen_server2:cast(ChannelPid, {rpc_cast, {self(), SeqId}, Path, Payload}).
 
 %% @spec (RpcClient) -> ok
 %% where
@@ -76,19 +68,6 @@ rpc_call(Path, PayloadJson) ->
 stop(Pid) ->
     gen_server2:call(Pid, stop, infinity).
 
-%% @spec (RpcClient, Payload) -> ok
-%% where
-%%      RpcClient = pid()
-%%      Payload = binary()
-%% @doc Invokes an RPC. Note the caller of this function is responsible for
-%% encoding the request and decoding the response.
-%%
-%% huotianjun to-do 这个异常需要输出到特殊队列中
-call(_RpcChannelPid, undefined,  _Payload) -> undefined;
-
-%%huotianjun 实现的时候，是发起cast，避免阻塞
-call(RpcChannelPid, ServerQueue, Payload) ->
-    gen_server2:call(RpcChannelPid, {call, ServerQueue, Payload}, infinity).
 
 %%--------------------------------------------------------------------------
 %% Plumbing
@@ -110,7 +89,7 @@ setup_consumer(#state{rabbit_channel = {_Ref, Channel}, reply_queue = Q}) ->
 %% Publishes to the broker, stores the From address against
 %% the correlation id and increments the correlationid for
 %% the next request
-publish({Payload, ServerQueue}, From,
+publish({ServerQueue, Payload}, From,
         State = #state{rabbit_channel = {_ChannelRef, Channel},
                        reply_queue = Q,
                        correlation_id = CorrelationId,
@@ -181,11 +160,27 @@ handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
 
 %% @private
-handle_call({call, ServerQueue, Payload}, From, State) ->
-    NewState = publish({Payload, ServerQueue}, From, State),
-    {noreply, NewState}.
+handle_call({rpc_call, Path, Payload}, From, State) ->
+	case webmqx_rpc_server_queues:get_a_random_queue(Path) of
+		undefined ->
+			{reply, undefined, State};
+		ServerQueue ->
+			NewState = publish({ServerQueue, Payload}, {rpc_call, From}, State),
+			{noreply, NewState}
+	end.
 
 %% @private
+handle_cast({rpc_cast, {From, SeqId}, Path, Payload}, State) -> 
+	NewState =
+	case webmqx_rpc_server_queues:get_a_random_queue(Path) of
+		undefined ->
+			gen_server2:cast(From, {rpc_reply, SeqId, no_server})
+			State;
+		ServerQueue ->
+			publish({ServerQueue, Payload}, {rpc_cast, {From, SeqId}}, State)
+	end,
+	{noreply, NewState};
+
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
@@ -214,8 +209,14 @@ handle_info({#'basic.deliver'{},
             State = #state{continuations = Conts}) ->
 
 	%%error_logger:info_msg("channel get reply : ~p ~n", [Msg]), 
-    From = dict:fetch(Id, Conts),
-    gen_server2:reply(From, {ok, Payload}),
+	{CallOrCast, From} =  dict:fetch(Id, Conts), 
+	case CallOrCast of
+		rpc_call ->	
+			gen_server2:reply(From, {ok, Payload});
+		rpc_cast ->
+			{FromPid, SeqId} = From,
+			gen_server2:cast(FromPid, {rpc_reply, SeqId, {ok, Payload}})
+	end,
     {noreply, State#state{continuations = dict:erase(Id, Conts) }};
 
 handle_info({'EXIT', _Pid, Reason}, State) ->

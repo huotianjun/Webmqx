@@ -14,7 +14,7 @@
 %% Copyright (c) 2007-2014 GoPivotal, Inc.  All rights reserved.
 %%
 
--module(webmqx_cast_msg_sup).
+-module(webmqx_put_req_sup).
 -behaviour(supervisor2).
 
 -export([start_link/1, init/1, start_child/2,start_child/1, child_for_path/1,
@@ -39,7 +39,7 @@ start_child(Path) when is_binary(Path) ->
 start_child1(Path) ->
   supervisor2:start_child(?MODULE,
     {binary_to_atom(Path, ?ENCODING),
-      {webmqx_cast_msg_broker, start_link, [Path]},
+      {webmqx_put_req_broker, start_link, [Path]},
       permanent, 60, worker, [webmqx_cast_msg_broker]}).
 
 delete_child(Path) ->
