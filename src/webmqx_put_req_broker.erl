@@ -157,11 +157,14 @@ handle_cast({rpc_reply, SeqId, Response},
 	DeliveryTag =  dict:fetch(SeqId, Continuations),
 	case Response of
 		no_server ->
-			amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag});
+			dict:fold(fun (_SeqId, DeliveryTag, ok) ->
+							amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag});
+						end, ok, Continuations),
+			{stop, normal, State};
 		{ok, _} ->
-			amqp_channel:call(Channel, #'basic.ack'{delivery_tag = DeliveryTag})
+			amqp_channel:call(Channel, #'basic.ack'{delivery_tag = DeliveryTag}),
+			{noreply, State#state{continuations = dict:erase(SeqId, Continuations)}}
 	end,
-	{noreply, State#state{continuations = dict:erase(SeqId, Continuations)}};
 
 %% @private
 handle_cast(_Message, State) ->
@@ -178,3 +181,8 @@ terminate(_Reason, #state{connection = {_ConnectionRef, Connection}, channel = {
 %% @private
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
+
+nack_all(#state{
+
+
+

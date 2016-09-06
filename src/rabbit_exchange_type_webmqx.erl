@@ -17,7 +17,6 @@
 -module(rabbit_exchange_type_webmqx).
 
 -include_lib("rabbit_common/include/rabbit.hrl").
-
 -include("webmqx.hrl").
 
 -behaviour(rabbit_exchange_type).
@@ -46,22 +45,19 @@ description() ->
 
 serialise_events() -> false.
 
-%% NB: This may return duplicate results in some situations (that's ok)
-%% huotianjun 这个exchange只是借用了binding及其数据库表，不用exchange的route，在应用中直接match Queues。
-route(_X, _D) -> ok.
-
 %%huotianjun 提取Routing最新的Queues
 fetch_routing_queues(RoutingWords) when is_list(RoutingWords) ->
     mnesia:async_dirty(fun trie_match/2, [?EXCHANGE_WEBMQX, RoutingWords]).
 
+%% NB: This may return duplicate results in some situations (that's ok)
+%% huotianjun 这个exchange只是借用了binding及其数据库表，不用exchange的route，在应用中直接match Queues。
+route(_X, _D) -> ok.
+
 validate(_X) -> ok.
-
 validate_binding(_X, _B) -> ok.
-
 create(_Tx, _X) -> ok.
 
 delete(transaction, #exchange{name = X}, _Bs) ->
-	%%huotianjun 分三个层面描述binding及其节点信息
     trie_remove_all_nodes(X),
     trie_remove_all_edges(X),
     trie_remove_all_bindings(X),
@@ -90,9 +86,9 @@ remove_bindings(transaction, _X, Bs) ->
          {ok, Path = [{FinalNode, _} | _]} ->
              trie_remove_binding(X, FinalNode, D, Args),
 
+			 %%huotianjun 
 			 rabbit_event:notify(binding_remove, {PathSplited, X, D, Args}),
 
-			 %%huotianjun 没有后续节点，层层网上删
              remove_path_if_empty(X, Path);
          {error, _Node, _RestW} ->
              %% We're trying to remove a binding that no longer exists.
@@ -114,24 +110,34 @@ internal_add_binding(#binding{source = X, key = K, destination = D,
     FinalNode = follow_down_create(X, PathSplited),
     trie_add_binding(X, FinalNode, D, Args),
 
+	%%huotianjun
 	rabbit_event:notify(binding_add, {PathSplited, X, D, Args}),
     ok.
 
-%%huotianjun 严格匹配，节点数量必须一样
 trie_match(X, Words) ->
-    trie_match(X, root, Words).
+    trie_match(X, root, Words, []).
 
-%%huotianjun 最终取到的是bindings的destination
-trie_match(X, Node, []) ->
-	trie_bindings(X, Node);
-trie_match(X, Node, [W | RestW])  ->
-	trie_match_part(X, Node, W, RestW).
+trie_match(X, Node, [], ResAcc) ->
+    trie_match_part(X, Node, "#", fun trie_match_skip_any/4, [],
+                    trie_bindings(X, Node) ++ ResAcc);
+trie_match(X, Node, [W | RestW] = Words, ResAcc) ->
+    lists:foldl(fun ({WArg, MatchFun, RestWArg}, Acc) ->
+                        trie_match_part(X, Node, WArg, MatchFun, RestWArg, Acc)
+                end, ResAcc, [{W, fun trie_match/4, RestW},
+                              {"*", fun trie_match/4, RestW},
+                              {"#", fun trie_match_skip_any/4, Words}]).
 
-trie_match_part(X, Node, Search, RestW) ->
+trie_match_part(X, Node, Search, MatchFun, RestW, ResAcc) ->
     case trie_child(X, Node, Search) of
-        {ok, NextNode} -> trie_match(X, NextNode, RestW);
-        error          -> []
+        {ok, NextNode} -> MatchFun(X, NextNode, RestW, ResAcc);
+        error          -> ResAcc
     end.
+
+trie_match_skip_any(X, Node, [], ResAcc) ->
+    trie_match(X, Node, [], ResAcc);
+trie_match_skip_any(X, Node, [_ | RestW] = Words, ResAcc) ->
+    trie_match_skip_any(X, Node, RestW,
+                        trie_match(X, Node, Words, ResAcc)).
 
 follow_down_create(X, Words) ->
     case follow_down_last_node(X, Words) of
@@ -182,22 +188,18 @@ trie_child(X, Node, Word) ->
         []                                     -> error
     end.
 
-%%huotianjun 一个Node的binding可能有多个
-%%huotianjun 最终取到的是destination
 trie_bindings(X, Node) ->
     MatchHead = #topic_trie_binding{
       trie_binding = #trie_binding{exchange_name = X,
                                    node_id       = Node,
                                    destination   = '$1',
                                    arguments     = '_'}},
-	%%huotianjun select 匹配map、条件、输出
     mnesia:select(rabbit_topic_trie_binding, [{MatchHead, [], ['$1']}]).
 
 trie_update_node_counts(X, Node, Field, Delta) ->
     E = case mnesia:read(rabbit_topic_trie_node,
                          #trie_node{exchange_name = X,
                                     node_id       = Node}, write) of
-			%%huotianjun 初始化
             []   -> #topic_trie_node{trie_node = #trie_node{
                                        exchange_name = X,
                                        node_id       = Node},
@@ -205,10 +207,8 @@ trie_update_node_counts(X, Node, Field, Delta) ->
                                      binding_count = 0};
             [E0] -> E0
         end,
-	%%huotianjun record的update
     case setelement(Field, E, element(Field, E) + Delta) of
         #topic_trie_node{edge_count = 0, binding_count = 0} ->
-			%%huotianjun 空了就删除
             ok = mnesia:delete_object(rabbit_topic_trie_node, E, write);
         EN ->
             ok = mnesia:write(rabbit_topic_trie_node, EN, write)
@@ -222,7 +222,6 @@ trie_remove_edge(X, FromNode, ToNode, W) ->
     trie_update_node_counts(X, FromNode, #topic_trie_node.edge_count, -1),
     trie_edge_op(X, FromNode, ToNode, W, fun mnesia:delete_object/3).
 
-%%huotianjun 抽象一个对节点的操作
 trie_edge_op(X, FromNode, ToNode, W, Op) ->
     ok = Op(rabbit_topic_trie_edge,
             #topic_trie_edge{trie_edge = #trie_edge{exchange_name = X,
@@ -270,8 +269,5 @@ remove_all(Table, Pattern) ->
     lists:foreach(fun (R) -> mnesia:delete_object(Table, R, write) end,
                   mnesia:match_object(Table, Pattern, write)).
 
-
-
 new_node_id() ->
     rabbit_guid:gen().
-
