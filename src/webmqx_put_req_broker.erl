@@ -182,7 +182,5 @@ terminate(_Reason, #state{connection = {_ConnectionRef, Connection}, channel = {
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-nack_all(#state{
-
 
 
