@@ -82,12 +82,12 @@ remove_bindings(transaction, _X, Bs) ->
                          rabbit_topic_trie_edge,
                          rabbit_topic_trie_binding]]
     end,
-    [case follow_down_get_path(X, webmqx_util:split_path_key(K)) of
+    [case follow_down_get_path(X, SplitedPath = webmqx_util:split_path_key(K)) of
          {ok, Path = [{FinalNode, _} | _]} ->
              trie_remove_binding(X, FinalNode, D, Args),
 
 			 %%huotianjun 
-			 rabbit_event:notify(binding_remove, {K, X, D, Args}),
+			 rabbit_event:notify(binding_remove, {SplitedPath, X, D, Args}),
 
              remove_path_if_empty(X, Path);
          {error, _Node, _RestW} ->
@@ -106,11 +106,11 @@ assert_args_equivalence(X, Args) ->
 
 internal_add_binding(#binding{source = X, key = K, destination = D,
                               args = Args}) ->
-    FinalNode = follow_down_create(X, webmqx_util:split_path_key(K)),
+    FinalNode = follow_down_create(X, SplitedPath = webmqx_util:split_path_key(K)),
     trie_add_binding(X, FinalNode, D, Args),
 
 	%%huotianjun
-	rabbit_event:notify(binding_add, {K, X, D, Args}),
+	rabbit_event:notify(binding_add, {SplitedPath, X, D, Args}),
     ok.
 
 trie_match(X, Words) ->
@@ -119,11 +119,7 @@ trie_match(X, Words) ->
 trie_match(X, Node, [], ResAcc) ->
 	trie_bindings(X, Node) ++ ResAcc;
 trie_match(X, Node, [W | RestW], ResAcc) ->
-    lists:foldl(fun ({WArg, MatchFun, RestWArg}, Acc) ->
-                        trie_match_part(X, Node, WArg, MatchFun, RestWArg, Acc)
-                end, ResAcc, [{W, fun trie_match/4, RestW},
-                              {"*", fun trie_match/4, RestW}
-                              ]).
+	trie_match_part(X, Node, W, fun trie_match/4, RestW, ResAccc).
 
 trie_match_part(X, Node, Search, MatchFun, RestW, ResAcc) ->
     case trie_child(X, Node, Search) of
