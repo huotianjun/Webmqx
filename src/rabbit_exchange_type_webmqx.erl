@@ -119,7 +119,7 @@ trie_match(X, Words) ->
 trie_match(X, Node, [], ResAcc) ->
 	trie_bindings(X, Node) ++ ResAcc;
 trie_match(X, Node, [W | RestW], ResAcc) ->
-	trie_match_part(X, Node, W, fun trie_match/4, RestW, ResAccc).
+	trie_match_part(X, Node, W, fun trie_match/4, RestW, ResAcc).
 
 trie_match_part(X, Node, Search, MatchFun, RestW, ResAcc) ->
     case trie_child(X, Node, Search) of
