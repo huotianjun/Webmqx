@@ -164,7 +164,7 @@ handle_cast({rpc_reply, SeqId, Response},
 		{ok, _} ->
 			amqp_channel:call(Channel, #'basic.ack'{delivery_tag = DeliveryTag}),
 			{noreply, State#state{continuations = dict:erase(SeqId, Continuations)}}
-	end,
+	end;
 
 %% @private
 handle_cast(_Message, State) ->
