@@ -33,7 +33,7 @@ words_to_path(Words) ->
 
 words_to_path([], Acc) -> list_to_binary(lists:reverse(Acc));
 words_to_path([Word|Rest], Acc) ->
-	words_to_path([Rest], [Word | ["/" | Acc]]).
+	words_to_path(Rest, [Word | ["/" | Acc]]).
 
 
 split_path_key(Key) ->
