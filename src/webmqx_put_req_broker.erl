@@ -158,7 +158,7 @@ handle_cast({rpc_reply, SeqId, Response},
 	case Response of
 		no_server ->
 			dict:fold(fun (_SeqId, DeliveryTag, ok) ->
-							amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag});
+							amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag})
 						end, ok, Continuations),
 			{stop, normal, State};
 		{ok, _} ->
