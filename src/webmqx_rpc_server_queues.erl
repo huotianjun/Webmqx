@@ -64,7 +64,7 @@ get_a_queue(Path) ->
 	end.
 
 count(Path) ->
-	case get_server_queues(Path) of
+	case get_queue_trees(Path) of
 		undefined -> 0;
 		{ok, QueueTrees} ->
 			_Size = queue_trees_size(QueueTrees)
