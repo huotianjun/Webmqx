@@ -118,7 +118,7 @@ trie_match(X, Words) ->
 
 trie_match(X, Node, [], ResAcc) ->
 	trie_bindings(X, Node) ++ ResAcc;
-trie_match(X, Node, [W | RestW] = Words, ResAcc) ->
+trie_match(X, Node, [W | RestW], ResAcc) ->
     lists:foldl(fun ({WArg, MatchFun, RestWArg}, Acc) ->
                         trie_match_part(X, Node, WArg, MatchFun, RestWArg, Acc)
                 end, ResAcc, [{W, fun trie_match/4, RestW},
