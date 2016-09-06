@@ -25,7 +25,7 @@
 -export([validate/1, validate_binding/2,
          create/2, delete/3, policy_changed/2, add_binding/3,
          remove_bindings/3, assert_args_equivalence/2]).
--export([fetch_routing_queues/1]).
+-export([fetch_server_queues/1]).
 -export([info/1, info/2]).
 
 -rabbit_boot_step({?MODULE,
@@ -46,7 +46,7 @@ description() ->
 serialise_events() -> false.
 
 %%huotianjun 提取Routing最新的Queues
-fetch_routing_queues(RoutingWords) when is_list(RoutingWords) ->
+fetch_server_queues(RoutingWords) when is_list(RoutingWords) ->
     mnesia:async_dirty(fun trie_match/2, [?EXCHANGE_WEBMQX, RoutingWords]).
 
 %% NB: This may return duplicate results in some situations (that's ok)
@@ -82,12 +82,12 @@ remove_bindings(transaction, _X, Bs) ->
                          rabbit_topic_trie_edge,
                          rabbit_topic_trie_binding]]
     end,
-    [case follow_down_get_path(X, PathSplited = webmqx_util:split_path_key(K)) of
+    [case follow_down_get_path(X, webmqx_util:split_path_key(K)) of
          {ok, Path = [{FinalNode, _} | _]} ->
              trie_remove_binding(X, FinalNode, D, Args),
 
 			 %%huotianjun 
-			 rabbit_event:notify(binding_remove, {PathSplited, X, D, Args}),
+			 rabbit_event:notify(binding_remove, {K, X, D, Args}),
 
              remove_path_if_empty(X, Path);
          {error, _Node, _RestW} ->
@@ -106,38 +106,30 @@ assert_args_equivalence(X, Args) ->
 
 internal_add_binding(#binding{source = X, key = K, destination = D,
                               args = Args}) ->
-    PathSplited = webmqx_util:split_path_key(K),
-    FinalNode = follow_down_create(X, PathSplited),
+    FinalNode = follow_down_create(X, webmqx_util:split_path_key(K)),
     trie_add_binding(X, FinalNode, D, Args),
 
 	%%huotianjun
-	rabbit_event:notify(binding_add, {PathSplited, X, D, Args}),
+	rabbit_event:notify(binding_add, {K, X, D, Args}),
     ok.
 
 trie_match(X, Words) ->
     trie_match(X, root, Words, []).
 
 trie_match(X, Node, [], ResAcc) ->
-    trie_match_part(X, Node, "#", fun trie_match_skip_any/4, [],
-                    trie_bindings(X, Node) ++ ResAcc);
+	trie_bindings(X, Node) ++ ResAcc;
 trie_match(X, Node, [W | RestW] = Words, ResAcc) ->
     lists:foldl(fun ({WArg, MatchFun, RestWArg}, Acc) ->
                         trie_match_part(X, Node, WArg, MatchFun, RestWArg, Acc)
                 end, ResAcc, [{W, fun trie_match/4, RestW},
-                              {"*", fun trie_match/4, RestW},
-                              {"#", fun trie_match_skip_any/4, Words}]).
+                              {"*", fun trie_match/4, RestW}
+                              ]).
 
 trie_match_part(X, Node, Search, MatchFun, RestW, ResAcc) ->
     case trie_child(X, Node, Search) of
         {ok, NextNode} -> MatchFun(X, NextNode, RestW, ResAcc);
         error          -> ResAcc
     end.
-
-trie_match_skip_any(X, Node, [], ResAcc) ->
-    trie_match(X, Node, [], ResAcc);
-trie_match_skip_any(X, Node, [_ | RestW] = Words, ResAcc) ->
-    trie_match_skip_any(X, Node, RestW,
-                        trie_match(X, Node, Words, ResAcc)).
 
 follow_down_create(X, Words) ->
     case follow_down_last_node(X, Words) of

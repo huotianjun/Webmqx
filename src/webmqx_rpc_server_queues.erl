@@ -55,7 +55,7 @@ start() ->
     ensure_started().
 
 get_a_queue(Path) ->
-	case get_server_queues(Path) of
+	case get_queue_trees(Path) of
 		undefined -> undefined;
 		{ok, QueueTrees} ->
 			Size = queue_trees_size(QueueTrees),
@@ -71,22 +71,22 @@ count(Path) ->
 	end.
 
 %%huotianjun 结果是gb_trees
-get_server_queues(Path) when is_binary(Path) ->
+get_queue_trees(Path) when is_binary(Path) ->
 	Words = webmqx_util:split_path_key(Path),
-	get_server_queues1(Words).
+	get_queue_trees1(Words).
 
-get_server_queues1([]) -> undefined;
-get_server_queues1(PathSplitWords) ->
+get_queue_trees1([]) -> undefined;
+get_queue_trees1(PathSplitWords) ->
 	case ets:lookup(?TAB, {path, PathSplitWords}) of
 		[] ->
-			gen_server2:call(?MODULE, {get_server_queue, PathSplitWords}, infinity);
+			gen_server2:call(?MODULE, {get_server_queues, PathSplitWords}, infinity);
 
 		%%huotianjun 刚才get过，没有得到
 		[{none, LastStampCounter}] -> 
 			NowTimeStampCounter = now_timestamp_counter(),
 			if
 				(NowTimeStampCounter - LastStampCounter) > 10 ->
-					gen_server2:call(?MODULE, {get_server_queue, PathSplitWords}, infinity);
+					gen_server2:call(?MODULE, {get_server_queues, PathSplitWords}, infinity);
 				true -> undefined	
 			end;
 		[QueuesTree] ->
