@@ -26,7 +26,7 @@
 -behaviour(gen_server2).
 
 -export([start_link/1, stop/1]).
--export([rpc/4, rpc/5]).
+-export([rpc/4, rpc/5, publish/3]).
 -export([init/1, terminate/2, code_change/3, handle_call/3,
          handle_cast/2, handle_info/2]).
 
@@ -60,6 +60,10 @@ rpc(call, ChannelPid, Path, Payload) ->
 
 rpc(cast, ChannelPid, SeqId, Path, Payload) ->
     gen_server2:cast(ChannelPid, {rpc_cast, self(), SeqId, Path, Payload}).
+
+%%huotianjun return ok if ok
+publish(ChannelPid, Path, Payload) ->
+	gen_server2:call(ChannelPid, {publish, Path, Payload}, infinity).
 
 %% @spec (RpcClient) -> ok
 %% where
@@ -112,6 +116,20 @@ publish({ServerQueue, Payload}, From,
 				%%huotianjun 记录一下，这个Id的RPC消息返回后，交给哪个From
                 continuations = dict:store(EncodedCorrelationId, From, Continuations)}.
 
+publish({Path, Payload},
+        State = #state{rabbit_channel = {_ChannelRef, Channel}) ->
+    Publish = #'basic.publish'{exchange = <<"">>,
+                               routing_key = Path,
+                               mandatory = true},
+
+    case amqp_channel:call(Channel, Publish, #amqp_msg{payload = Payload}) of
+		ok ->
+			ok;
+		Error ->
+			Error	
+	end.
+
+
 %%--------------------------------------------------------------------------
 %% gen_server callbacks
 %%--------------------------------------------------------------------------
@@ -158,6 +176,9 @@ terminate(_Reason, #state{connection = {ConnectionRef, Connection}, rabbit_chann
 %% @private
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
+
+handle_call({publish, Path, Payload}, From, State) ->
+	{reply, publish({Path, Payload}, State), State};
 
 %% @private
 handle_call({rpc_call, Path, Payload}, From, State) ->

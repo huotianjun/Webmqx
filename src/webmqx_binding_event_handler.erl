@@ -25,11 +25,11 @@ init([]) ->
 
 handle_event({event, binding_add, {PathSplited, _X, _D, _Args}, _, _}, State) ->
   Path = webmqx_util:words_to_path(PathSplited),
-  webmqx_cast_msg_sup:start_child(Path),
+  webmqx_put_req_sup:start_child(Path),
   {ok, State};
 handle_event({event, binding_remove, {PathSplited, _X, _D, _Args}, _, _}, State) ->
   Path = webmqx_util:words_to_path(PathSplited),
-  webmqx_cast_msg_sup:delete_child(Path),
+  webmqx_put_req_sup:delete_child(Path),
   {ok, State};
 
 handle_event(_Event, State) ->

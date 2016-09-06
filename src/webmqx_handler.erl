@@ -11,17 +11,36 @@ init(Req , Opts) ->
 	%%error_logger:info_msg("Req : ~p ~n", [Req]),
 
 	%%huotianjun 解析Req
-	{ok, {_Host, Path, PayloadJson, Req2}} = req_parse(Req),
+	{ok, {_Host, Path, Method, PayloadJson, Req2}} = req_parse(Req),
+
+	IsPutReq = case Method of
+				   <<"GET">> -> false;
+				   <<"POST">> -> false;
+				   <<"PUT">> -> true;
+				   <<"DELETE">> -> true;
+				   _ -> false
+				end,
 
 	Response =
 	try 
 		case webmqx_rpc_channel_manager:get_a_pid() of
 			undefined -> <<"no rpc channel">>;
 			{ok, ChannelPid} ->
-				case webmqx_rpc_channel:rpc(call, ChannelPid, Path, PayloadJson) of
-					undefined ->
-						<<"no rpc routing queues">>;
-					{ok, Response1} -> Response1
+				case IsPutReq of
+					true ->
+						case webmqx_rpc_channel:publish(ChannelPid, Path, PayloadJson) of
+							ok ->	
+								<<"OK">>;
+							_ ->
+								<<"ERROR:not published">>
+						end;
+					false ->	
+						case webmqx_rpc_channel:rpc(call, ChannelPid, Path, PayloadJson) of
+							undefined ->
+								<<"ERROR:no rpc routing queues">>;
+							{ok, Response1} -> 
+								Response1
+						end
 				end
 		end
 	catch 
@@ -67,5 +86,5 @@ req_parse(Req) ->
 
 	%%error_logger:info_msg("Payload : ~p ~n", [Payload]),
 
-	{ok, {Host, Path, jiffy:encode(Payload), Req2}}.
+	{ok, {Host, Path, Method, jiffy:encode(Payload), Req2}}.
 
