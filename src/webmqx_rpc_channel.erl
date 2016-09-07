@@ -22,7 +22,7 @@
 -module(webmqx_rpc_channel).
 
 -include_lib("amqp_client/include/amqp_client.hrl").
--inculde("webmqx.hrl").
+-include("webmqx.hrl").
 
 -behaviour(gen_server2).
 
@@ -187,7 +187,7 @@ handle_call({rpc_call, Path, Payload}, From, State) ->
 
 %% @private
 handle_cast({rpc_cast, From, SeqId, Path, Payload}, State) -> 
-	NewState = rpc_publish(Path, Payload, _From = {rpc_cast, {From, SeqId}}, State)
+	NewState = rpc_publish(Path, Payload, _From = {rpc_cast, {From, SeqId}}, State),
 	{noreply, NewState};
 
 handle_cast(_Msg, State) ->
