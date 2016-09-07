@@ -25,16 +25,16 @@
 start(_Type, _Args) ->
 	Result = webmqx_sup:start_link(),
 
-	%%huotianjun 启动RPC channel的管理器，在ets表中维护rpc channel信息，并monitor。初始为空
+	%%huotianjun start manager, null 
 	webmqx_rpc_channel_manager:start(),
 
-	%%huotianjun 管理queues of application server
+	%%huotianjun webmqx exchange routing server
 	webmqx_exchange_routing:start(),
 
-	%%huotianjun 启动核心微服务
+	%%huotianjun start core internal rpc server
 	webmqx_core_service:start(),
 
-	%%huotianjun 启动所有的RPC channel（发送端），并在RPC channel管理器上注册
+	%%huotianjun start all RPC channels, and regstry in manager
 	webmqx_sup:start_supervisor_child(webmqx_rpc_channel_sup),
 
 	webmqx_sup:start_supervisor_child(webmqx_cast_msg_sup),

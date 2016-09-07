@@ -19,7 +19,7 @@
 %% a simple function from having to plumb this into AMQP. Note that the
 %% RPC server does not handle any data encoding, so it is up to the callback
 %% function to marshall and unmarshall message payloads accordingly.
--module(webmqx_put_req_broker).
+-module(webmqx_consistent_req_broker).
 
 -behaviour(gen_server2).
 
@@ -34,7 +34,7 @@
 
 -record(state, {connection, channel, path,
 				continuations = dict:new(),
-				seq_id = 0}).
+				req_id = 0}).
 
 %%--------------------------------------------------------------------------
 %% API
@@ -74,7 +74,7 @@ init([Path]) ->
     {ok, Channel} = amqp_connection:open_channel(
                         Connection, {amqp_direct_consumer, [self()]}),
 
-	%%huotianjun enable rabbit_limiter 
+	%%huotianjun rabbit_limiter enable.
 	#'basic.qos_ok'{} = amqp_channel:call(
 							Channel, #'basic.qos'{prefetch_count = 10}),
 
@@ -87,6 +87,7 @@ init([Path]) ->
 
 	ConnectionRef = erlang:monitor(process, Connection),
 	ChannelRef = erlang:monitor(process, Channel),
+
     {ok, #state{connection = {ConnectionRef, Connection}, channel = {ChannelRef, Channel}, 
 				path = Path}}.
 
@@ -111,11 +112,11 @@ handle_info(#'basic.cancel_ok'{}, State) ->
     {stop, normal, State};
 
 %% @private
-%% huotianjun from PutReq Queue of Path
+%% huotianjun from Consistent Req Queue named Path
 handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
 				#amqp_msg{payload = PayloadJson}},
 				State = #state{path = Path, channel = {_Ref, Channel},
-								seq_id = SeqId,
+								req_id = ReqId,
 								continuations = Continuations}) ->
 	NewState = 
 	try 
@@ -124,9 +125,9 @@ handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
 				amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag}),
 				State;
 			{ok, ChannelPid} ->
-				webmqx_rpc_channel:rpc(cast, ChannelPid, SeqId, Path, PayloadJson),
-				State#state{seq_id = SeqId + 1,
-					continuations = dict:store(SeqId, DeliveryTag, Continuations)}
+				webmqx_rpc_channel:rpc(cast, ChannelPid, ReqId, Path, PayloadJson),
+				State#state{req_id = ReqId + 1,
+					continuations = dict:store(ReqId, DeliveryTag, Continuations)}
 		end
 	catch 
 		_Error:_Reason -> 
@@ -150,21 +151,19 @@ handle_call(stop, _From, State) ->
 %% Rest of the gen_server callbacks
 %%--------------------------------------------------------------------------
 
-%%huotianjun from webmqx_rpc_channel
-handle_cast({rpc_reply, SeqId, Response}, 
+%%huotianjun no send，must handle
+%%			dict:fold(fun (_ReqId, Tag, ok) ->
+%%							amqp_channel:call(Channel, #'basic.nack'{delivery_tag = Tag})
+%%						end, ok, Continuations),
+%%			{stop, normal, State};
+
+%%huotianjun return from webmqx_rpc_channel 
+handle_cast({rpc_reply, ReqId, {ok, Response}}, 
 				State = #state{channel = {_Ref, Channel},
 								continuations = Continuations}) ->
-	case Response of
-		no_server ->
-			dict:fold(fun (_SeqId, Tag, ok) ->
-							amqp_channel:call(Channel, #'basic.nack'{delivery_tag = Tag})
-						end, ok, Continuations),
-			{stop, normal, State};
-		{ok, _} ->
-			DeliveryTag =  dict:fetch(SeqId, Continuations),
-			amqp_channel:call(Channel, #'basic.ack'{delivery_tag = DeliveryTag}),
-			{noreply, State#state{continuations = dict:erase(SeqId, Continuations)}}
-	end;
+	DeliveryTag =  dict:fetch(ReqId, Continuations),
+	amqp_channel:call(Channel, #'basic.ack'{delivery_tag = DeliveryTag}),
+	{noreply, State#state{continuations = dict:erase(ReqId, Continuations)}};
 
 %% @private
 handle_cast(_Message, State) ->
@@ -172,7 +171,13 @@ handle_cast(_Message, State) ->
 
 %% Closes the channel this gen_server instance started
 %% @private
-terminate(_Reason, #state{connection = {_ConnectionRef, Connection}, channel = {_ChannelRef, Channel}}) ->
+terminate(_Reason, #state{connection = {_ConnectionRef, Connection}, 
+							channel = {_ChannelRef, Channel},
+							continuations = Continuations}) ->
+	dict:fold(fun (_ReqId, Tag, ok) ->
+				amqp_channel:call(Channel, #'basic.nack'{delivery_tag = Tag})
+			end, ok, Continuations),
+
     amqp_channel:close(Channel),
 	amqp_direct_connection:server_close(Connection, <<"404">>, <<"close">>),
 	amqp_connection:close(Connection),

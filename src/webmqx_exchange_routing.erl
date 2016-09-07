@@ -31,14 +31,14 @@
 -export([terminate/2]).
 -export([code_change/3]).
 
-%%huotianjun gm 必须定义
+%%huotianjun gm callback 
 -export([joined/2, members_changed/3, handle_msg/3, handle_terminate/2]).
 
 -define(TAB, ?MODULE).
 
 -record(state, {
 				gm = undefined,
-				routing_queues= dict:new() %%huotianjun value内容是gb_trees结构, key是path split words
+				routing_queues= dict:new() %%huotianjun value is gb_trees, key is splited path.
 				}). 
 
 %% API.
@@ -47,14 +47,12 @@
 start_link() ->
 	gen_server2:start_link({local, ?MODULE}, ?MODULE, [], []).
 
-%%huotianjun 用这个启动, 目的是让?TAB的new在start_link之外执行，避免节点重启时候new
 start() ->
-	%%huotianjun 创建全局table
 	?TAB = ets:new(?TAB, [
 		ordered_set, public, named_table]),
     ensure_started().
 
-%%huotianjun call by rabbit_exchange_type_webmqx
+%%huotianjun called by rabbit_exchange_type_webmqx
 route(Path) ->
 	case get_queue_trees(Path) of
 		undefined -> [];
@@ -82,11 +80,10 @@ get_queue_trees1(PathSplitWords) ->
 		[] ->
 			gen_server2:call(?MODULE, {get_routing_queues, PathSplitWords}, infinity);
 
-		%%huotianjun 刚才get过，没有得到
-		[{none, LastStampCounter}] -> 
-			NowTimeStampCounter = now_timestamp_counter(),
+		[{none, LastTryStamp}] -> 
+			NowTimeStamp = now_timestamp_counter(),
 			if
-				(NowTimeStampCounter - LastStampCounter) > 10 ->
+				(NowTimeStamp - LastTryStamp) > 10 ->
 					gen_server2:call(?MODULE, {get_routing_queues, PathSplitWords}, infinity);
 				true -> undefined	
 			end;
@@ -94,7 +91,7 @@ get_queue_trees1(PathSplitWords) ->
 			{ok, QueuesTree}
 	end.
 				
-%%huotianjun 在rabbit_exchange_type_webmqx中发起		
+%%huotianjun rabbit event	
 flush_routing_queues(PathSplitWords) ->
 	gen_server2:cast(?MODULE, {flush_routing_queues, PathSplitWords}).
 
@@ -116,7 +113,7 @@ init([]) ->
 
 	{ok, #state{gm = GM}}.
 
-%%huotianjun 这个只是本节点get，并不gm广播
+%%huotianjun no gm broadcast.
 handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queues = RoutingQueues}) ->
 	QueueTrees1=
 	case dict:find({path, PathSplitWords}, RoutingQueues) of
@@ -132,14 +129,14 @@ handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queu
 	case QueueTrees1 of 
 		undefined ->
 			%%huotianjun
-			NowTimeStampCounter = now_timestamp_counter(),
+			NowTimeStamp = now_timestamp_counter(),
 			GoFetch = 
 			case ets:lookup(?TAB, {path, PathSplitWords}) of
 				%%huotianjun 上次没有读到的情况
-				[{none, LastStampCounter}] -> 
+				[{none, LastTryStamp}] -> 
 					if
 						%%huotianjun 10 seconds
-						(NowTimeStampCounter - LastStampCounter) > 10 -> true;
+						(NowTimeStamp - LastTryStamp) > 10 -> true;
 						true -> false
 					end;
 				_ -> true
@@ -149,7 +146,7 @@ handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queu
 				true ->
 					case rabbit_exchange_type_webmqx:fetch_routing_queues(PathSplitWords) of
 						[] ->
-							true = ets:insert(?TAB, {{path, PathSplitWords}, {none, NowTimeStampCounter}}),
+							true = ets:insert(?TAB, {{path, PathSplitWords}, {none, NowTimeStamp}}),
 							{reply, undefined, State};
 						Queues ->
 							QueueTrees = queue_trees_new(Queues),
