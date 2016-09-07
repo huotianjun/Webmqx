@@ -104,7 +104,7 @@ rpc_publish(Path, Payload, From,
                        content_type = <<"application/octet-stream">>,
                        reply_to = Q},
 
-    Publish = #'basic.publish'{exchange = ?WEBMQX_EXCHANGE, 
+    Publish = #'basic.publish'{exchange = ?EXCHANGE_WEBMQX, 
                                routing_key = Path,
                                mandatory = true},
 
