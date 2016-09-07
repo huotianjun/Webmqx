@@ -93,7 +93,7 @@ setup_consumer(#state{rabbit_channel = {_Ref, Channel}, reply_queue = Q}) ->
 %% Publishes to the broker, stores the From address against
 %% the correlation id and increments the correlationid for
 %% the next request
-publish({ServerQueue, Payload}, From,
+rpc_publish(Path, Payload, From,
         State = #state{rabbit_channel = {_ChannelRef, Channel},
                        reply_queue = Q,
                        correlation_id = CorrelationId,
@@ -103,8 +103,8 @@ publish({ServerQueue, Payload}, From,
                        content_type = <<"application/octet-stream">>,
                        reply_to = Q},
 
-    Publish = #'basic.publish'{exchange = <<"">>,
-                               routing_key = ServerQueue,
+    Publish = #'basic.publish'{exchange = ?WEBMQX_EXCHANGE, 
+                               routing_key = Path,
                                mandatory = true},
 
     amqp_channel:call(Channel, Publish, #amqp_msg{props = Props,
@@ -116,7 +116,7 @@ publish({ServerQueue, Payload}, From,
 				%%huotianjun 记录一下，这个Id的RPC消息返回后，交给哪个From
                 continuations = dict:store(EncodedCorrelationId, From, Continuations)}.
 
-publish({Path, Payload},
+normal_publish(Path, Payload,
         State = #state{rabbit_channel = {_ChannelRef, Channel}) ->
     Publish = #'basic.publish'{exchange = <<"">>,
                                routing_key = Path,
@@ -128,7 +128,6 @@ publish({Path, Payload},
 		Error ->
 			Error	
 	end.
-
 
 %%--------------------------------------------------------------------------
 %% gen_server callbacks
@@ -178,28 +177,16 @@ handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
 
 handle_call({publish, Path, Payload}, From, State) ->
-	{reply, publish({Path, Payload}, State), State};
+	{reply, normal_publish(Path, Payload, State), State};
 
 %% @private
 handle_call({rpc_call, Path, Payload}, From, State) ->
-	case webmqx_rpc_server_queues:get_a_queue(Path) of
-		undefined ->
-			{reply, undefined, State};
-		ServerQueue ->
-			NewState = publish({ServerQueue, Payload}, _From = {rpc_call, From}, State),
-			{noreply, NewState}
-	end.
+	NewState = rpc_publish(Path, Payload, _From = {rpc_call, From}, State),
+	{noreply, NewState}
 
 %% @private
 handle_cast({rpc_cast, From, SeqId, Path, Payload}, State) -> 
-	NewState =
-	case webmqx_rpc_server_queues:get_a_queue(Path) of
-		undefined ->
-			gen_server2:cast(From, {rpc_reply, SeqId, no_server}),
-			State;
-		ServerQueue ->
-			publish({ServerQueue, Payload}, _From = {rpc_cast, {From, SeqId}}, State)
-	end,
+	NewState = rpc_publish(Path, Payload, _From = {rpc_cast, {From, SeqId}}, State)
 	{noreply, NewState};
 
 handle_cast(_Msg, State) ->

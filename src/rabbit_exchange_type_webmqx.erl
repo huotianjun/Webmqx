@@ -25,7 +25,7 @@
 -export([validate/1, validate_binding/2,
          create/2, delete/3, policy_changed/2, add_binding/3,
          remove_bindings/3, assert_args_equivalence/2]).
--export([fetch_server_queues/1]).
+-export([fetch_routing_queues/1]).
 -export([info/1, info/2]).
 
 -rabbit_boot_step({?MODULE,
@@ -46,12 +46,15 @@ description() ->
 serialise_events() -> false.
 
 %%huotianjun 提取Routing最新的Queues
-fetch_server_queues(RoutingWords) when is_list(RoutingWords) ->
+fetch_routing_queues(RoutingWords) when is_list(RoutingWords) ->
     mnesia:async_dirty(fun trie_match/2, [?EXCHANGE_WEBMQX, RoutingWords]).
 
-%% NB: This may return duplicate results in some situations (that's ok)
-%% huotianjun 这个exchange只是借用了binding及其数据库表，不用exchange的route，在应用中直接match Queues。
-route(_X, _D) -> ok.
+route(#exchange{name = X},
+		#delivery{message = #basic_message{routing_keys = Routes}}) ->
+	lists:append([begin
+						%%huotianjun faster
+						webmqx_exchange_routing:route(RKey)			
+				end || RKey <- Routes]).
 
 validate(_X) -> ok.
 validate_binding(_X, _B) -> ok.

@@ -29,7 +29,7 @@ start(_Type, _Args) ->
 	webmqx_rpc_channel_manager:start(),
 
 	%%huotianjun 管理queues of application server
-	webmqx_rpc_server_queues:start(),
+	webmqx_exchange_routing:start(),
 
 	%%huotianjun 启动核心微服务
 	webmqx_core_service:start(),

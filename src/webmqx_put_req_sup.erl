@@ -40,10 +40,10 @@ start_child1(Path) ->
   supervisor2:start_child(?MODULE,
     {binary_to_atom(Path, ?ENCODING),
       {webmqx_put_req_broker, start_link, [Path]},
-      permanent, 60, worker, [webmqx_cast_msg_broker]}).
+      permanent, 60, worker, [webmqx_put_req_broker]}).
 
 delete_child(Path) ->
-	case webmqx_rpc_server_queues:count(Path) of
+	case webmqx_exchange_routing:count(Path) of
 		0 ->
 			Id = binary_to_atom(Path, ?ENCODING),
 			ok = supervisor2:terminate_child(?MODULE, Id),
