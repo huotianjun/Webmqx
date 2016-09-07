@@ -49,7 +49,7 @@ serialise_events() -> false.
 fetch_routing_queues(RoutingWords) when is_list(RoutingWords) ->
     mnesia:async_dirty(fun trie_match/2, [?EXCHANGE_WEBMQX, RoutingWords]).
 
-route(#exchange{name = X},
+route(#exchange{name = ?WEBMQX_EXCHANGE},
 		#delivery{message = #basic_message{routing_keys = Routes}}) ->
 	lists:append([begin
 						%%huotianjun faster
