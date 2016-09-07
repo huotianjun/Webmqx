@@ -118,7 +118,7 @@ rpc_publish(Path, Payload, From,
                 continuations = dict:store(EncodedCorrelationId, From, Continuations)}.
 
 normal_publish(Path, Payload,
-        State = #state{rabbit_channel = {_ChannelRef, Channel}}) ->
+        _State = #state{rabbit_channel = {_ChannelRef, Channel}}) ->
     Publish = #'basic.publish'{exchange = <<"">>,
                                routing_key = Path,
                                mandatory = true},
@@ -177,7 +177,7 @@ terminate(_Reason, #state{connection = {ConnectionRef, Connection}, rabbit_chann
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
 
-handle_call({publish, Path, Payload}, From, State) ->
+handle_call({publish, Path, Payload}, _From, State) ->
 	{reply, normal_publish(Path, Payload, State), State};
 
 %% @private
