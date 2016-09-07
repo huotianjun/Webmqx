@@ -22,6 +22,7 @@
 -module(webmqx_rpc_channel).
 
 -include_lib("amqp_client/include/amqp_client.hrl").
+-inculde("webmqx.hrl").
 
 -behaviour(gen_server2).
 
@@ -117,7 +118,7 @@ rpc_publish(Path, Payload, From,
                 continuations = dict:store(EncodedCorrelationId, From, Continuations)}.
 
 normal_publish(Path, Payload,
-        State = #state{rabbit_channel = {_ChannelRef, Channel}) ->
+        State = #state{rabbit_channel = {_ChannelRef, Channel}}) ->
     Publish = #'basic.publish'{exchange = <<"">>,
                                routing_key = Path,
                                mandatory = true},
@@ -182,7 +183,7 @@ handle_call({publish, Path, Payload}, From, State) ->
 %% @private
 handle_call({rpc_call, Path, Payload}, From, State) ->
 	NewState = rpc_publish(Path, Payload, _From = {rpc_call, From}, State),
-	{noreply, NewState}
+	{noreply, NewState}.
 
 %% @private
 handle_cast({rpc_cast, From, SeqId, Path, Payload}, State) -> 
