@@ -71,7 +71,7 @@ queues_count(Path) ->
 
 %%huotianjun 结果是gb_trees
 get_queue_trees(Path) when is_binary(Path) ->
-	Words = webmqx_util:split_path_key(Path),
+	Words = webmqx_util:path_to_words(Path),
 	get_queue_trees1(Words).
 
 get_queue_trees1([]) -> undefined;

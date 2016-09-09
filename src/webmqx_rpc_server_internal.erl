@@ -1,17 +1,4 @@
-%% The contents of this file are subject to the Mozilla Public License
-%% Version 1.1 (the "License"); you may not use this file except in
-%% compliance with the License. You may obtain a copy of the License at
-%% http://www.mozilla.org/MPL/
-%%
-%% Software distributed under the License is distributed on an "AS IS"
-%% basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-%% License for the specific language governing rights and limitations
-%% under the License.
-%%
-%% The Original Code is RabbitMQ.
-%%
-%% The Initial Developer of the Original Code is GoPivotal, Inc.
-%% Copyright (c) 2007-2016 Pivotal Software, Inc.  All rights reserved.
+%% This is the version of rabbit_rpc_server from RabbitMQ.
 %%
 
 %% @doc This is a utility module that is used to expose an arbitrary function
@@ -19,7 +6,7 @@
 %% a simple function from having to plumb this into AMQP. Note that the
 %% RPC server does not handle any data encoding, so it is up to the callback
 %% function to marshall and unmarshall message payloads accordingly.
--module(webmqx_rpc_server).
+-module(webmqx_rpc_server_internal).
 
 -behaviour(gen_server2).
 
@@ -79,17 +66,14 @@ init([ServerName, RoutingKey, Fun]) ->
 	#'exchange.declare_ok'{} = 
 		amqp_channel:call(Channel, ExchangeDeclare),
 
-	%%huotianjun 用一个临时的Q
 	#'queue.declare_ok'{queue = Q} =
 		amqp_channel:call(Channel, #'queue.declare'{exclusive   = true,
 													durable		= false,
 													auto_delete = true}),
 
-	%%huotianjun 记录到topics node数据库中 
-	Bind = #'queue.bind'{queue = Q, exchange = ?EXCHANGE_WEBMQX, routing_key = RoutingKey, arguments = [ServerName]},
+	Bind = #'queue.bind'{queue = Q, exchange = ?EXCHANGE_WEBMQX, routing_key = RoutingKey, arguments = [{server_name, ServerName}]},
 	#'queue.bind_ok'{} = amqp_channel:call(Channel, Bind),
 
-	%%huotianjun 效率第一，不用ack。（这个需要再权衡一下，如果channel启用basic.qos，需要设置prefetch_count。可以根据consumer的处理能力来发消息）
     amqp_channel:call(Channel, #'basic.consume'{queue = Q, no_ack = true}),
 
 	ConnectionRef = erlang:monitor(process, Connection),
@@ -125,17 +109,12 @@ handle_info({#'basic.deliver'{delivery_tag = _DeliveryTag},
             State = #state{handler = Fun, channel = {_Ref, Channel}}) ->
 	#'P_basic'{correlation_id = CorrelationId,
                reply_to = Q} = Props,
-	%%io:format("rpc server received: ~p ~p ~n", [CorrelationId, Q]),
-	%%worker_pool:submit_async(
-%%		fun() ->
-			Response = Fun(Payload),
-			%%huotianjun 这个重要，把CorrelationId再打回到返回详细中，让接收的channel知道这个消息给谁
-			Properties = #'P_basic'{correlation_id = CorrelationId},
-			Publish = #'basic.publish'{exchange = <<>>,
+	Response = Fun(Payload),
+	Properties = #'P_basic'{correlation_id = CorrelationId},
+	Publish = #'basic.publish'{exchange = <<>>,
                                routing_key = Q},
-			amqp_channel:call(Channel, Publish, #amqp_msg{props = Properties,
+	amqp_channel:call(Channel, Publish, #amqp_msg{props = Properties,
                                                   payload = Response}),
-%%		end),
     {noreply, State};
 
 handle_info({'EXIT', _Pid, Reason}, State) ->

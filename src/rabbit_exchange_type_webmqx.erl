@@ -85,7 +85,7 @@ remove_bindings(transaction, _X, Bs) ->
                          rabbit_topic_trie_edge,
                          rabbit_topic_trie_binding]]
     end,
-    [case follow_down_get_path(X, SplitedPath = webmqx_util:split_path_key(K)) of
+    [case follow_down_get_path(X, SplitedPath = webmqx_util:path_to_words(K)) of
          {ok, Path = [{FinalNode, _} | _]} ->
              trie_remove_binding(X, FinalNode, D, Args),
 
@@ -109,7 +109,7 @@ assert_args_equivalence(X, Args) ->
 
 internal_add_binding(#binding{source = X, key = K, destination = D,
                               args = Args}) ->
-    FinalNode = follow_down_create(X, SplitedPath = webmqx_util:split_path_key(K)),
+    FinalNode = follow_down_create(X, SplitedPath = webmqx_util:path_to_words(K)),
     trie_add_binding(X, FinalNode, D, Args),
 
 	%%huotianjun

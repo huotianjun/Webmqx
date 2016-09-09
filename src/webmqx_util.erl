@@ -8,17 +8,15 @@
 %% the License for the specific language governing rights and
 %% limitations under the License.
 %%
-%% The Original Code is RabbitMQ.
+%% The Original Code is Webmqx.
 %%
-%% The Initial Developer of the Original Code is GoPivotal, Inc.
-%% Copyright (c) 2007-2016 Pivotal Software, Inc.  All rights reserved.
+%% Copyright Webmqx.  All rights reserved.
 %%
 
 -module(webmqx_util).
 
 -include_lib("amqp_client/include/amqp_client.hrl").
 -include("webmqx.hrl").
--include_lib("amqp_client/include/amqp_client.hrl").
 
 -compile(export_all).
 
@@ -28,26 +26,26 @@ env(Key) ->
         undefined -> undefined
     end.
 
-words_to_path(Words) ->
+words_to_path(Words) when is_list(Words)->
 	words_to_path(Words, []).
 
 words_to_path([], Acc) -> list_to_binary(lists:reverse(Acc));
 words_to_path([Word|Rest], Acc) ->
 	words_to_path(Rest, [Word | ["/" | Acc]]).
 
-split_path_key(Key) ->
-    split_path_key(Key, [], []).
+path_to_words(Path) when is_binary(Path)->
+    path_to_words(Path, [], []).
 
-split_path_key(<<>>, [], []) ->
+path_to_words(<<>>, [], []) ->
     [];
-split_path_key(<<>>, [], RevResAcc) ->
-    lists:reverse(RevResAcc);
-split_path_key(<<>>, RevWordAcc, RevResAcc) ->
-    lists:reverse([lists:reverse(RevWordAcc) | RevResAcc]);
+path_to_words(<<>>, [], Acc) ->
+    lists:reverse(Acc);
+path_to_words(<<>>, Word, Acc) ->
+    lists:reverse([lists:reverse(Word) | Acc]);
 %%huotianjun split by '/'
-split_path_key(<<$/, Rest/binary>>, [], RevResAcc) ->
-    split_path_key(Rest, [], RevResAcc);
-split_path_key(<<$/, Rest/binary>>, RevWordAcc, RevResAcc) ->
-    split_path_key(Rest, [], [lists:reverse(RevWordAcc) | RevResAcc]);
-split_path_key(<<C:8, Rest/binary>>, RevWordAcc, RevResAcc) ->
-    split_path_key(Rest, [C | RevWordAcc], RevResAcc).
+path_to_words(<<$/, Rest/binary>>, [], Acc) ->
+    path_to_words(Rest, [], Acc);
+path_to_words(<<$/, Rest/binary>>, Word, Acc) ->
+    path_to_words(Rest, [], [lists:reverse(Word) | Acc]);
+path_to_words(<<C:8, Rest/binary>>, Word, Acc) ->
+    path_to_words(Rest, [C | Word], Acc).

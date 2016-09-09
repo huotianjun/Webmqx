@@ -11,7 +11,7 @@
 %%----------------------------------------------------------------------------
 
 start() ->
-	webmqx_sup:start_restartable_child(webmqx_rpc_server, [<<"core-service">>, <<"core-service">>, fun core_service/1]),
+	webmqx_sup:start_restartable_child(webmqx_rpc_server_internal, [<<"core-service">>, <<"core-service">>, fun core_service/1]),
 	ok.
 
 %%huotianjun rpc callback
