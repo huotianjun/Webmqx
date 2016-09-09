@@ -144,7 +144,7 @@ handle_call(stop, _From, State) ->
 %%			{stop, normal, State};
 
 %%huotianjun return from webmqx_rpc_channel 
-handle_cast({rpc_ok, ReqId, {ok, Response}}, 
+handle_cast({rpc_ok, ReqId, {ok, _Response}}, 
 				State = #state{channel = {_Ref, Channel},
 								unacked_rpc_reqs = UnackedReqs}) ->
 	DeliveryTag =  dict:fetch(ReqId, UnackedReqs),
