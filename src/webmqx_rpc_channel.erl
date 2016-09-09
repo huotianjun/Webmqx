@@ -57,11 +57,11 @@ start_link(N) ->
 	{ok, Pid}.
 
 
-rpc(call, ChannelPid, Path, Payload) ->
-    gen_server2:call(ChannelPid, {rpc_call, Path, Payload}, infinity).
+rpc(sync, ChannelPid, Path, Payload) ->
+    gen_server2:call(ChannelPid, {rpc_sync, Path, Payload}, infinity).
 
-rpc(cast, ChannelPid, SeqId, Path, Payload) ->
-    gen_server2:cast(ChannelPid, {rpc_cast, self(), SeqId, Path, Payload}).
+rpc(async, ChannelPid, SeqId, Path, Payload) ->
+    gen_server2:cast(ChannelPid, {rpc_async, self(), SeqId, Path, Payload}).
 
 %%huotianjun return ok if ok
 publish(ChannelPid, Path, Payload) ->
@@ -194,13 +194,13 @@ handle_call({publish, Path, Payload}, _From, State) ->
 	{reply, R, NewState};
 
 %% @private
-handle_call({rpc_call, Path, Payload}, From, State) ->
-	NewState = rpc_publish(Path, Payload, _From = {rpc_call, From}, State),
+handle_call({rpc_sync, Path, Payload}, From, State) ->
+	NewState = rpc_publish(Path, Payload, _From = {rpc_sync, From}, State),
 	{noreply, NewState}.
 
 %% @private
-handle_cast({rpc_cast, From, SeqId, Path, Payload}, State) -> 
-	NewState = rpc_publish(Path, Payload, _From = {rpc_cast, {From, SeqId}}, State),
+handle_cast({rpc_async, From, SeqId, Path, Payload}, State) -> 
+	NewState = rpc_publish(Path, Payload, _From = {rpc_async, {From, SeqId}}, State),
 	{noreply, NewState};
 
 handle_cast(_Msg, State) ->
@@ -233,9 +233,9 @@ handle_info({#'basic.deliver'{},
 	%%error_logger:info_msg("channel get reply : ~p ~n", [Msg]), 
 	{CallOrCast, From} =  dict:fetch(Id, Conts), 
 	case CallOrCast of
-		rpc_call ->	
+		rpc_sync ->	
 			gen_server2:reply(From, {ok, Payload});
-		rpc_cast ->
+		rpc_async ->
 			{FromPid, SeqId} = From,
 			gen_server2:cast(FromPid, {rpc_ok, SeqId, {ok, Payload}})
 	end,

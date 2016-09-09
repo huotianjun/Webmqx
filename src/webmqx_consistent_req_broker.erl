@@ -111,7 +111,7 @@ handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
 				amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag}),
 				State;
 			{ok, RpcChannelPid} ->
-				webmqx_rpc_channel:rpc(cast, RpcChannelPid, ReqId, Path, PayloadJson),
+				webmqx_rpc_channel:rpc(async, RpcChannelPid, ReqId, Path, PayloadJson),
 				State#state{req_id = ReqId + 1,
 					unacked_rpc_reqs = dict:store(ReqId, DeliveryTag, UnackedReqs)}
 		end

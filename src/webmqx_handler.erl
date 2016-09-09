@@ -35,7 +35,7 @@ init(Req , Opts) ->
 								<<"ERROR">>
 						end;
 					false ->	
-						case webmqx_rpc_channel:rpc(call, RpcChannelPid, Path, PayloadJson) of
+						case webmqx_rpc_channel:rpc(sync, RpcChannelPid, Path, PayloadJson) of
 							undefined ->
 								<<"ERROR">>;
 							{ok, Response1} -> 
