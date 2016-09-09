@@ -235,7 +235,7 @@ routing_table_update(PathSplitWords, QueueTrees) ->
 		true ->
 			ok;
 		false ->
-			ets:update_element(?TAB, {path, PathSplitWords}, {2, QueueTrees}})
+			ets:update_element(?TAB, {{path, PathSplitWords}, {2, QueueTrees}})
 	end.
 
 %%huotianjun gm's callback
