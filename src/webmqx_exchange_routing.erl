@@ -87,7 +87,7 @@ get_queue_trees1(PathSplitWords) ->
 					gen_server2:call(?MODULE, {get_routing_queues, PathSplitWords}, infinity);
 				true -> undefined	
 			end;
-		[{path, PathSplitWords}, QueueTrees}] ->
+		[{{path, _PathSplitWords}, QueueTrees}] ->
 			{ok, QueueTrees}
 	end.
 
@@ -149,7 +149,7 @@ handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queu
 							routing_table_update(PathSplitWords, {none, NowTimeStamp}),
 							{reply, undefined, 
 								State#state{routing_queues =
-												dict:store({path, PathSplitWord}, gb_trees:empty(), RoutingQeues)}};
+												dict:store({path, PathSplitWords}, gb_trees:empty(), RoutingQeues)}};
 						Queues ->
 							QueueTrees = queue_trees_new(Queues),
 							routing_table_update(PathSplitWords, QueueTrees),
