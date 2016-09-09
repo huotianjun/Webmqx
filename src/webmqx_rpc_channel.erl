@@ -124,7 +124,7 @@ normal_publish(Path, Payload,
 	case gb_sets:is_element(Path, ConsReqQueues) of
 		true -> State;
 		false ->
-			#'queue.declare_ok'{queue = Q} =
+			#'queue.declare_ok'{queue = _Q} =
 				amqp_channel:call(Channel, #'queue.declare'{queue       = Path,
 															durable     = true,
 															auto_delete = false}),	 
