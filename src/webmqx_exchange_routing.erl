@@ -149,7 +149,7 @@ handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queu
 							routing_table_update(PathSplitWords, {none, NowTimeStamp}),
 							{reply, undefined, 
 								State#state{routing_queues =
-												dict:store({path, PathSplitWords}, gb_trees:empty(), RoutingQeues)}};
+												dict:store({path, PathSplitWords}, gb_trees:empty(), RoutingQueues)}};
 						Queues ->
 							QueueTrees = queue_trees_new(Queues),
 							routing_table_update(PathSplitWords, QueueTrees),
@@ -231,7 +231,7 @@ queue_trees_new1([Queue|Rest], QueueTrees, Count) ->
 	queue_trees_new1(Rest, queue_trees_enter(Count, Queue, QueueTrees), Count+1). 
 	
 routing_table_update(PathSplitWords, QueueTrees) ->
-	case ets:insert_new(?TAB, {{path, PathSplitWords}, QueuesTrees}) of
+	case ets:insert_new(?TAB, {{path, PathSplitWords}, QueueTrees}) of
 		true ->
 			ok;
 		false ->
