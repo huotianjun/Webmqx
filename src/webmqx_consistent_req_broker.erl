@@ -106,7 +106,7 @@ handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
 								unacked_rpc_reqs = UnackedReqs}) ->
 	NewState = 
 	try 
-		case webmqx_rpc_channel_manager:get_a_pid() of
+		case webmqx_rpc_channel_manager:get_a_channel() of
 			undefined -> 
 				amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag}),
 				State;

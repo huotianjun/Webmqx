@@ -23,7 +23,7 @@ init(Req , Opts) ->
 
 	Response =
 	try 
-		case webmqx_rpc_channel_manager:get_a_pid() of
+		case webmqx_rpc_channel_manager:get_a_channel() of
 			undefined -> <<"no rpc channel">>;
 			{ok, RpcChannelPid} ->
 				case IsConsistentReq of

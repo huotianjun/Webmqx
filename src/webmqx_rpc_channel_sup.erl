@@ -34,7 +34,7 @@
 %%----------------------------------------------------------------------------
 start_link() ->
     {ok, SupPid} = supervisor2:start_link(?MODULE, []),
-	error_logger:info_msg("webmqx_rpc_channel_sup : ~p~n", [SupPid]),
+	%%error_logger:info_msg("webmqx_rpc_channel_sup : ~p~n", [SupPid]),
 	{ok, SupPid}.
 
 init([]) -> 
