@@ -33,31 +33,17 @@
 -export([stop/1]).
 
 -record(state, {connection, channel, path,
-				continuations = dict:new(),
+				unacked_rpc_reqs = dict:new(),
 				req_id = 0}).
 
 %%--------------------------------------------------------------------------
 %% API
 %%--------------------------------------------------------------------------
 
-%% @spec (Connection, Queue, RpcHandler) -> RpcServer
-%% where
-%%      Connection = pid()
-%%      Queue = binary()
-%%      RpcHandler = function()
-%%      RpcServer = pid()
-%% @doc Starts, and links to, a new RPC server instance that receives
-%% requests via a specified queue and dispatches them to a specified
-%% handler function. This function returns the pid of the RPC server that
-%% can be used to stop the server.
 start_link(Path) ->
     {ok, Pid} = gen_server2:start_link(?MODULE, [Path], []),
 	{ok, Pid}.
 
-%% @spec (RpcServer) -> ok
-%% where
-%%      RpcServer = pid()
-%% @doc Stops an exisiting RPC server.
 stop(Pid) ->
     gen_server2:call(Pid, stop, infinity).
 
@@ -117,17 +103,17 @@ handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
 				#amqp_msg{payload = PayloadJson}},
 				State = #state{path = Path, channel = {_Ref, Channel},
 								req_id = ReqId,
-								continuations = Continuations}) ->
+								unacked_rpc_reqs = UnackedReqs}) ->
 	NewState = 
 	try 
 		case webmqx_rpc_channel_manager:get_a_pid() of
 			undefined -> 
 				amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag}),
 				State;
-			{ok, ChannelPid} ->
-				webmqx_rpc_channel:rpc(cast, ChannelPid, ReqId, Path, PayloadJson),
+			{ok, RpcChannelPid} ->
+				webmqx_rpc_channel:rpc(cast, RpcChannelPid, ReqId, Path, PayloadJson),
 				State#state{req_id = ReqId + 1,
-					continuations = dict:store(ReqId, DeliveryTag, Continuations)}
+					unacked_rpc_reqs = dict:store(ReqId, DeliveryTag, UnackedReqs)}
 		end
 	catch 
 		_Error:_Reason -> 
@@ -151,19 +137,19 @@ handle_call(stop, _From, State) ->
 %% Rest of the gen_server callbacks
 %%--------------------------------------------------------------------------
 
-%%huotianjun no send，must handle
+%%huotianjun not send，must handle
 %%			dict:fold(fun (_ReqId, Tag, ok) ->
 %%							amqp_channel:call(Channel, #'basic.nack'{delivery_tag = Tag})
-%%						end, ok, Continuations),
+%%						end, ok, UnackedReqs),
 %%			{stop, normal, State};
 
 %%huotianjun return from webmqx_rpc_channel 
-handle_cast({rpc_reply, ReqId, {ok, Response}}, 
+handle_cast({rpc_ok, ReqId, {ok, Response}}, 
 				State = #state{channel = {_Ref, Channel},
-								continuations = Continuations}) ->
-	DeliveryTag =  dict:fetch(ReqId, Continuations),
+								unacked_rpc_reqs = UnackedReqs}) ->
+	DeliveryTag =  dict:fetch(ReqId, UnackedReqs),
 	amqp_channel:call(Channel, #'basic.ack'{delivery_tag = DeliveryTag}),
-	{noreply, State#state{continuations = dict:erase(ReqId, Continuations)}};
+	{noreply, State#state{unacked_rpc_reqs = dict:erase(ReqId, UnackedReqs)}};
 
 %% @private
 handle_cast(_Message, State) ->
@@ -173,10 +159,10 @@ handle_cast(_Message, State) ->
 %% @private
 terminate(_Reason, #state{connection = {_ConnectionRef, Connection}, 
 							channel = {_ChannelRef, Channel},
-							continuations = Continuations}) ->
+							unacked_rpc_reqs = UnackedReqs}) ->
 	dict:fold(fun (_ReqId, Tag, ok) ->
 				amqp_channel:call(Channel, #'basic.nack'{delivery_tag = Tag})
-			end, ok, Continuations),
+			end, ok, UnackedReqs),
 
     amqp_channel:close(Channel),
 	amqp_direct_connection:server_close(Connection, <<"404">>, <<"close">>),

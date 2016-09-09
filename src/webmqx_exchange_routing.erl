@@ -15,7 +15,7 @@
 -module(webmqx_exchange_routing).
 -behaviour(gen_server2).
 
-%%huotianjun 用于同步server queues变更的消息
+%%huotianjun handle exchange binding events
 -behaviour(gm).
 
 %% API.
@@ -52,7 +52,7 @@ start() ->
 		ordered_set, public, named_table]),
     ensure_started().
 
-%%huotianjun called by rabbit_exchange_type_webmqx
+%%huotianjun called by rabbit_exchange_type_webmqx:route
 route(Path) ->
 	case get_queue_trees(Path) of
 		undefined -> [];
@@ -80,18 +80,18 @@ get_queue_trees1(PathSplitWords) ->
 		[] ->
 			gen_server2:call(?MODULE, {get_routing_queues, PathSplitWords}, infinity);
 
-		[{none, LastTryStamp}] -> 
+		[{{path, PathSplitWords}, {none, LastTryStamp}}] -> 
 			NowTimeStamp = now_timestamp_counter(),
 			if
 				(NowTimeStamp - LastTryStamp) > 10 ->
 					gen_server2:call(?MODULE, {get_routing_queues, PathSplitWords}, infinity);
 				true -> undefined	
 			end;
-		[QueuesTree] ->
-			{ok, QueuesTree}
+		[{path, PathSplitWords}, QueueTrees}] ->
+			{ok, QueueTrees}
 	end.
-				
-%%huotianjun rabbit event	
+
+%%huotianjun from rabbit exchange binding event	
 flush_routing_queues(PathSplitWords) ->
 	gen_server2:cast(?MODULE, {flush_routing_queues, PathSplitWords}).
 
@@ -132,8 +132,8 @@ handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queu
 			NowTimeStamp = now_timestamp_counter(),
 			GoFetch = 
 			case ets:lookup(?TAB, {path, PathSplitWords}) of
-				%%huotianjun 上次没有读到的情况
-				[{none, LastTryStamp}] -> 
+				%%huotianjun last fetch just before is null
+				[{{path, PathSplitWords}, {none, LastTryStamp}}] -> 
 					if
 						%%huotianjun 10 seconds
 						(NowTimeStamp - LastTryStamp) > 10 -> true;
@@ -146,11 +146,13 @@ handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queu
 				true ->
 					case rabbit_exchange_type_webmqx:fetch_routing_queues(PathSplitWords) of
 						[] ->
-							true = ets:insert(?TAB, {{path, PathSplitWords}, {none, NowTimeStamp}}),
-							{reply, undefined, State};
+							routing_table_update(PathSplitWords, {none, NowTimeStamp}),
+							{reply, undefined, 
+								State#state{routing_queues =
+												dict:store({path, PathSplitWord}, gb_trees:empty(), RoutingQeues)}};
 						Queues ->
 							QueueTrees = queue_trees_new(Queues),
-							true = ets:insert(?TAB, {{path, PathSplitWords}, QueueTrees}),
+							routing_table_update(PathSplitWords, QueueTrees),
 							{reply, {ok, QueueTrees}, 
 								State#state{routing_queues = 
 												dict:store({path, PathSplitWords}, QueueTrees, RoutingQueues)}} 
@@ -173,11 +175,11 @@ handle_cast({gm, {flush_routing_queues, PathSplitWords}}, State = #state{routing
 	QueueTrees =
 	case rabbit_exchange_type_webmqx:fetch_routing_queues(PathSplitWords) of
 		[] ->
-			true = ets:insert(?TAB, {{path, PathSplitWords}, {none, now_timestamp_counter()}}),
+			routing_table_update(PathSplitWords, {none, now_timestamp_counter()}),
 			gb_trees:empty();
 		Queues ->
 			QueueTrees1 = queue_trees_new(Queues),
-			true = ets:insert(?TAB, {{path, PathSplitWords}, QueueTrees1}),
+			routing_table_update(PathSplitWords, QueueTrees1),
 			QueueTrees1 
 	end,
 	{noreply, State#state{routing_queues = dict:store({path, PathSplitWords}, QueueTrees, RoutingQueues)}};
@@ -225,9 +227,16 @@ queue_trees_new(Queues) ->
 	queue_trees_new1(Queues, gb_trees:empty(), 1).
 
 queue_trees_new1([], QueueTrees, _Count) -> {ok, QueueTrees};
-queue_trees_new1([Queue|Left], QueueTrees, Count) ->
-	queue_trees_new1(Left, queue_trees_enter(Count, Queue, QueueTrees), Count+1). 
+queue_trees_new1([Queue|Rest], QueueTrees, Count) ->
+	queue_trees_new1(Rest, queue_trees_enter(Count, Queue, QueueTrees), Count+1). 
 	
+routing_table_update(PathSplitWords, QueueTrees) ->
+	case ets:insert_new(?TAB, {{path, PathSplitWords}, QueuesTrees}) of
+		true ->
+			ok;
+		false ->
+			ets:update_element(?TAB, {path, PathSplitWords}, {2, QueueTrees}})
+	end.
 
 %%huotianjun gm's callback
 joined([SPid], _Members) -> SPid ! {joined, self()}, ok.

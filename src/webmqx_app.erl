@@ -25,10 +25,10 @@
 start(_Type, _Args) ->
 	Result = webmqx_sup:start_link(),
 
-	%%huotianjun start manager, null 
+	%%huotianjun start manager 
 	webmqx_rpc_channel_manager:start(),
 
-	%%huotianjun webmqx exchange routing server
+	%%huotianjun webmqx exchange routing queues manager
 	webmqx_exchange_routing:start(),
 
 	%%huotianjun start core internal rpc server
@@ -37,7 +37,7 @@ start(_Type, _Args) ->
 	%%huotianjun start all RPC channels, and regstry in manager
 	webmqx_sup:start_supervisor_child(webmqx_rpc_channel_sup),
 
-	webmqx_sup:start_supervisor_child(webmqx_cast_msg_sup),
+	webmqx_sup:start_supervisor_child(webmqx_consistent_req_sup),
 
 	%%huotianjun 启动测试微服务
 	%%huotianjun 第一个参数会记录在binding的arg信息里面

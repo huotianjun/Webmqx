@@ -11,10 +11,10 @@
 %%----------------------------------------------------------------------------
 
 start() ->
-	%%huotianjun 默认的入口Fun是start_link
 	webmqx_sup:start_restartable_child(webmqx_rpc_server, [<<"core-service">>, <<"core-service">>, fun core_service/1]),
 	ok.
 
+%%huotianjun rpc callback
 core_service(PayloadEncode) when is_binary(PayloadEncode) ->
 	Payload = jiffy:decode(PayloadEncode, [return_maps]),
 	%%error_logger:info_msg("Payload map : ~p~n", [Payload]),

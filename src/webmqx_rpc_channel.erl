@@ -35,6 +35,7 @@
 				connection,	
 				rabbit_channel,
                 reply_queue,
+				consistent_req_queues = gb_sets:new(),
                 continuations = dict:new(),
                 correlation_id = 0}).
 
@@ -118,16 +119,27 @@ rpc_publish(Path, Payload, From,
                 continuations = dict:store(EncodedCorrelationId, From, Continuations)}.
 
 normal_publish(Path, Payload,
-        _State = #state{rabbit_channel = {_ChannelRef, Channel}}) ->
+        State = #state{rabbit_channel = {_ChannelRef, Channel}, consistent_req_queues = ConsReqQueues}) ->
+	NewState = 
+	case gb_sets:is_element(Path, ConsReqQueues) of
+		true -> State;
+		false ->
+			#'queue.declare_ok'{queue = Q} =
+				amqp_channel:call(Channel, #'queue.declare'{queue       = Path,
+															durable     = true,
+															auto_delete = false}),	 
+			State#state{consistent_req_queues = gb_sets:add(Path, ConsReqQueues)}
+	end,
+
     Publish = #'basic.publish'{exchange = <<"">>,
                                routing_key = Path,
                                mandatory = true},
 
     case amqp_channel:call(Channel, Publish, #amqp_msg{payload = Payload}) of
 		ok ->
-			ok;
+			{ok, NewState};
 		Error ->
-			Error	
+			{Error, NewState}	
 	end.
 
 %%--------------------------------------------------------------------------
@@ -178,7 +190,8 @@ handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
 
 handle_call({publish, Path, Payload}, _From, State) ->
-	{reply, normal_publish(Path, Payload, State), State};
+	{R, NewState} = normal_publish(Path, Payload, State),
+	{reply, R, NewState};
 
 %% @private
 handle_call({rpc_call, Path, Payload}, From, State) ->
@@ -210,7 +223,7 @@ handle_info(#'basic.cancel_ok'{}, State) ->
     {stop, normal, State};
 
 %% @private
-%% huotianjun 收到返回消息
+%% huotianjun rpc return info
 handle_info({#'basic.deliver'{},
 			 %%huotianjun 这个Id非常重要，根据它可以知道，这个返回是给哪个进程的
              _Msg = #amqp_msg{props = #'P_basic'{correlation_id = Id},
@@ -224,7 +237,7 @@ handle_info({#'basic.deliver'{},
 			gen_server2:reply(From, {ok, Payload});
 		rpc_cast ->
 			{FromPid, SeqId} = From,
-			gen_server2:cast(FromPid, {rpc_reply, SeqId, {ok, Payload}})
+			gen_server2:cast(FromPid, {rpc_ok, SeqId, {ok, Payload}})
 	end,
     {noreply, State#state{continuations = dict:erase(Id, Conts) }};
 

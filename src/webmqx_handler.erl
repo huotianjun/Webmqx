@@ -13,7 +13,7 @@ init(Req , Opts) ->
 	%%huotianjun 解析Req
 	{ok, {_Host, Path, Method, PayloadJson, Req2}} = req_parse(Req),
 
-	IsPutReq = case Method of
+	IsConsistentReq = case Method of
 				   <<"GET">> -> false;
 				   <<"POST">> -> false;
 				   <<"PUT">> -> true;
@@ -25,19 +25,19 @@ init(Req , Opts) ->
 	try 
 		case webmqx_rpc_channel_manager:get_a_pid() of
 			undefined -> <<"no rpc channel">>;
-			{ok, ChannelPid} ->
-				case IsPutReq of
+			{ok, RpcChannelPid} ->
+				case IsConsistentReq of
 					true ->
-						case webmqx_rpc_channel:publish(ChannelPid, Path, PayloadJson) of
+						case webmqx_rpc_channel:publish(RpcChannelPid, Path, PayloadJson) of
 							ok ->	
 								<<"OK">>;
 							_ ->
-								<<"ERROR:not published">>
+								<<"ERROR">>
 						end;
 					false ->	
-						case webmqx_rpc_channel:rpc(call, ChannelPid, Path, PayloadJson) of
+						case webmqx_rpc_channel:rpc(call, RpcChannelPid, Path, PayloadJson) of
 							undefined ->
-								<<"ERROR:no rpc routing queues">>;
+								<<"ERROR">>;
 							{ok, Response1} -> 
 								Response1
 						end

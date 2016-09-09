@@ -38,6 +38,7 @@ start_child(Path) when is_binary(Path) ->
 
 start_child1(Path) ->
 	supervisor2:start_child(?MODULE,
+		%%huotianjun unique id of req's path.
 		{binary_to_atom(Path, ?ENCODING),
 		{webmqx_consistent_req_broker, start_link, [Path]},
 		permanent, 60, worker, [webmqx_consistent_req_broker]}).
