@@ -13,6 +13,9 @@
 %% OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 -module(webmqx_exchange_routing).
+
+-include("webmqx.hrl").
+
 -behaviour(gen_server2).
 
 %%huotianjun handle exchange binding events
