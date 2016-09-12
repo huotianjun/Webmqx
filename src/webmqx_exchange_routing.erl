@@ -144,7 +144,7 @@ handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queu
 			
 			case GoFetch of		
 				true ->
-					case rabbit_exchange_type_webmqx:fetch_routing_queues(PathSplitWords) of
+					case rabbit_exchange_type_webmqx:fetch_routing_queues(<<"/">>, ?EXCHANGE_WEBMQX, PathSplitWords) of
 						[] ->
 							routing_table_update(PathSplitWords, {none, NowTimeStamp}),
 							{reply, undefined, 
@@ -173,7 +173,7 @@ handle_cast({flush_routing_queues, PathSplitWords}, State = #state{gm = GM}) ->
 %%huotianjun all nodes flush in here
 handle_cast({gm, {flush_routing_queues, PathSplitWords}}, State = #state{routing_queues = RoutingQueues}) ->
 	QueueTrees =
-	case rabbit_exchange_type_webmqx:fetch_routing_queues(PathSplitWords) of
+	case rabbit_exchange_type_webmqx:fetch_routing_queues(<<"/">>, ?EXCHANGE_WEBMQX, PathSplitWords) of
 		[] ->
 			routing_table_update(PathSplitWords, {none, now_timestamp_counter()}),
 			gb_trees:empty();

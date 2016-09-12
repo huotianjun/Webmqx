@@ -25,7 +25,7 @@
 -export([validate/1, validate_binding/2,
          create/2, delete/3, policy_changed/2, add_binding/3,
          remove_bindings/3, assert_args_equivalence/2]).
--export([fetch_routing_queues/1]).
+-export([fetch_routing_queues/3]).
 -export([info/1, info/2]).
 
 -rabbit_boot_step({?MODULE,
@@ -46,8 +46,8 @@ description() ->
 serialise_events() -> false.
 
 %%huotianjun 提取Routing最新的Queues
-fetch_routing_queues(SplitedRoutingWords) when is_list(SplitedRoutingWords) ->
-    mnesia:async_dirty(fun trie_match/2, [#exchange{name = ?EXCHANGE_WEBMQX}, SplitedRoutingWords]).
+fetch_routing_queues(VHost, Exchange, SplitedRoutingWords) when is_list(SplitedRoutingWords) ->
+    mnesia:async_dirty(fun trie_match/2, [#resource{virtual_host = <<"/">>, type = exchange, name = Exchange}, SplitedRoutingWords]).
 
 route(#exchange{name = _X},
 		#delivery{message = #basic_message{routing_keys = Routes}}) ->
