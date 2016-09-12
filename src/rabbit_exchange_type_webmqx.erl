@@ -119,15 +119,17 @@ internal_add_binding(#binding{source = X, key = K, destination = D,
 trie_match(X, Words) ->
     trie_match(X, root, Words, []).
 
-trie_match(X, Node, [], ResAcc) ->
-	trie_bindings(X, Node) ++ ResAcc;
-trie_match(X, Node, [W | RestW], ResAcc) ->
-	trie_match_part(X, Node, W, fun trie_match/4, RestW, ResAcc).
+trie_match(X, Node, []) ->
+	trie_bindings(X, Node);
+trie_match(X, Node, [W | RestW]) ->
+	trie_match_part(X, Node, W, fun trie_match/4, RestW).
 
-trie_match_part(X, Node, Search, MatchFun, RestW, ResAcc) ->
+trie_match_part(X, Node, Search, MatchFun, RestW) ->
     case trie_child(X, Node, Search) of
-        {ok, NextNode} -> MatchFun(X, NextNode, RestW, ResAcc);
-        error          -> ResAcc
+        {ok, NextNode} -> 
+			rabbit_log:info("NextNode : ~p ~n", [NextNode]),
+			MatchFun(X, NextNode, RestW, ResAcc);
+        error          -> []
     end.
 
 follow_down_create(X, Words) ->

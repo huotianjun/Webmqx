@@ -26,25 +26,23 @@ start(_Type, _Args) ->
 	Result = webmqx_sup:start_link(),
 
 	%%huotianjun start manager 
-	Result1 = webmqx_rpc_channel_manager:start(),
+	webmqx_rpc_channel_manager:start(),
 
 	%%huotianjun webmqx exchange routing queues manager
-	Result2 = webmqx_exchange_routing:start(),
+	webmqx_exchange_routing:start(),
 
 	%%huotianjun start core internal rpc server
-	Result3 = webmqx_core_service:start(),
+	webmqx_core_service:start(),
 
 	%%huotianjun start all RPC channels, and regstry in manager
-	Result4 = webmqx_sup:start_supervisor_child(webmqx_rpc_channel_sup),
+	webmqx_sup:start_supervisor_child(webmqx_rpc_channel_sup),
 
-	Result5 = webmqx_sup:start_supervisor_child(webmqx_consistent_req_sup),
+	webmqx_sup:start_supervisor_child(webmqx_consistent_req_sup),
 
 	%%huotianjun 启动测试微服务
 	%%huotianjun 第一个参数会记录在binding的arg信息里面
-	Result6 = webmqx_rpc_server_internal:start_link(<<"test">>, <<"/1/2/3">>, fun micro_service_test/1), 
-	Result7 = webmqx_rpc_server_internal:start_link(<<"report">>, <<"report">>, fun tsung_report/1),
-
-	error_logger:info_msg("~p ~n ~p ~n ~p~n ~p~n ~p~n ~p~n ~p~n ~p ~n" , [Result, Result1, Result2, Result3, Result4, Result5, Result6, Result7]),
+	webmqx_rpc_server_internal:start_link(<<"test">>, <<"/1/2/3">>, fun micro_service_test/1), 
+	webmqx_rpc_server_internal:start_link(<<"report">>, <<"report">>, fun tsung_report/1),
 
 	Dispatch = cowboy_router:compile([
 		{'_', [
