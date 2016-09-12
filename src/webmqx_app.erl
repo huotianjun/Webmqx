@@ -41,7 +41,7 @@ start(_Type, _Args) ->
 
 	%%huotianjun 启动测试微服务
 	%%huotianjun 第一个参数会记录在binding的arg信息里面
-	webmqx_rpc_server_internal:start_link(<<"test">>, <<"test1/2/3">>, fun micro_service_test/1), 
+	webmqx_rpc_server_internal:start_link(<<"test">>, <<"/1/2/3">>, fun micro_service_test/1), 
 	webmqx_rpc_server_internal:start_link(<<"report">>, <<"report">>, fun tsung_report/1),
 
 	Dispatch = cowboy_router:compile([

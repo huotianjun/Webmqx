@@ -19,7 +19,7 @@
 -behaviour(supervisor2).
 
 %% API.
--export([start_link/0, start_child/1, start_child/2, start_child/3,
+-export([start_link/0, 
          start_supervisor_child/1, start_supervisor_child/2,
          start_supervisor_child/3,
          start_restartable_child/1, start_restartable_child/2,
@@ -38,16 +38,6 @@
 -spec start_link() -> {ok, pid()}.
 start_link() ->
 	supervisor2:start_link({local, ?MODULE}, ?MODULE, []).
-
-start_child(Mod) -> start_child(Mod, []).
-
-start_child(Mod, Args) -> start_child(Mod, Mod, Args).
-
-start_child(ChildId, Mod, Args) ->
-    child_reply(supervisor2:start_child(
-                  ?SERVER,
-                  {ChildId, {Mod, start_link, Args},
-                   transient, ?WORKER_WAIT, worker, [Mod]})).
 
 start_supervisor_child(Mod) -> start_supervisor_child(Mod, []).
 
