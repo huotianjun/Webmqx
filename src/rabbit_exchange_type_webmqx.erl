@@ -122,13 +122,13 @@ trie_match(X, Words) ->
 trie_match(X, Node, []) ->
 	trie_bindings(X, Node);
 trie_match(X, Node, [W | RestW]) ->
-	trie_match_part(X, Node, W, fun trie_match/4, RestW).
+	trie_match_part(X, Node, W, fun trie_match/3, RestW).
 
 trie_match_part(X, Node, Search, MatchFun, RestW) ->
     case trie_child(X, Node, Search) of
         {ok, NextNode} -> 
 			rabbit_log:info("NextNode : ~p ~n", [NextNode]),
-			MatchFun(X, NextNode, RestW, ResAcc);
+			MatchFun(X, NextNode, RestW);
         error          -> []
     end.
 
