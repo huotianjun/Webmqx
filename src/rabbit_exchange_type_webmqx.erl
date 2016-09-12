@@ -47,7 +47,7 @@ serialise_events() -> false.
 
 %%huotianjun 提取Routing最新的Queues
 fetch_routing_queues(VHost, Exchange, SplitedRoutingWords) when is_list(SplitedRoutingWords) ->
-    mnesia:async_dirty(fun trie_match/2, [#resource{virtual_host = VHost, type = exchange, name = Exchange}, SplitedRoutingWords]).
+    mnesia:async_dirty(fun trie_match/2, [#resource{virtual_host = VHost, kind = exchange, name = Exchange}, SplitedRoutingWords]).
 
 route(#exchange{name = _X},
 		#delivery{message = #basic_message{routing_keys = Routes}}) ->
