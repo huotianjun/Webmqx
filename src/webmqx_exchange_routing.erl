@@ -154,7 +154,7 @@ handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queu
 								State#state{routing_queues =
 												dict:store({path, PathSplitWords}, gb_trees:empty(), RoutingQueues)}};
 						Queues ->
-							QueueTrees = queue_trees_new(Queues),
+							{ok, QueueTrees} = queue_trees_new(Queues),
 							routing_table_update(PathSplitWords, QueueTrees),
 							{reply, {ok, QueueTrees}, 
 								State#state{routing_queues = 
@@ -181,7 +181,7 @@ handle_cast({gm, {flush_routing_queues, PathSplitWords}}, State = #state{routing
 			routing_table_update(PathSplitWords, {none, now_timestamp_counter()}),
 			gb_trees:empty();
 		Queues ->
-			QueueTrees1 = queue_trees_new(Queues),
+			{ok, QueueTrees1} = queue_trees_new(Queues),
 			routing_table_update(PathSplitWords, QueueTrees1),
 			QueueTrees1 
 	end,
