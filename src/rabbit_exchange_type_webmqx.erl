@@ -117,7 +117,7 @@ internal_add_binding(#binding{source = X, key = K, destination = D,
     ok.
 
 trie_match(X, Words) ->
-    trie_match(X, root, Words, []).
+    trie_match(X, root, Words).
 
 trie_match(X, Node, []) ->
 	trie_bindings(X, Node);
