@@ -127,7 +127,7 @@ trie_match(X, Node, [W | RestW]) ->
 trie_match_part(X, Node, Search, MatchFun, RestW) ->
     case trie_child(X, Node, Search) of
         {ok, NextNode} -> 
-			rabbit_log:info("NextNode : ~p ~n", [NextNode]),
+			error_logger:info_msg("NextNode : ~p ~n", [NextNode]),
 			MatchFun(X, NextNode, RestW);
         error          -> []
     end.
