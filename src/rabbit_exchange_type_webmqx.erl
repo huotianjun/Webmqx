@@ -26,7 +26,6 @@
          create/2, delete/3, policy_changed/2, add_binding/3,
          remove_bindings/3, assert_args_equivalence/2]).
 -export([fetch_routing_queues/1]).
--export([trie_match/2]).
 -export([info/1, info/2]).
 
 -rabbit_boot_step({?MODULE,
@@ -123,6 +122,7 @@ trie_match(X, Words) ->
 trie_match(X, Node, []) ->
 	trie_bindings(X, Node);
 trie_match(X, Node, [W | RestW]) ->
+	error_logger:info_msg("try :~p  ~p ~n", [Node, W]),
 	trie_match_part(X, Node, W, fun trie_match/3, RestW).
 
 trie_match_part(X, Node, Search, MatchFun, RestW) ->
