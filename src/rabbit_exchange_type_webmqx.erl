@@ -55,7 +55,6 @@ route(#exchange{name = _X},
 						%%huotianjun faster
 						webmqx_exchange_routing:route(RKey)			
 				end || RKey <- Routes]),
-	error_logger:info_msg("routing " ~p ~n", [R]),
 	R.
 
 validate(_X) -> ok.
@@ -129,7 +128,6 @@ trie_match(X, Node, [W | RestW]) ->
 trie_match_part(X, Node, Search, MatchFun, RestW) ->
     case trie_child(X, Node, Search) of
         {ok, NextNode} -> 
-			error_logger:info_msg("NextNode : ~p ~n", [NextNode]),
 			MatchFun(X, NextNode, RestW);
         error          -> []
     end.
@@ -175,7 +173,6 @@ remove_path_if_empty(X, [{Node, W} | [{Parent, _} | _] = RestPath]) ->
     end.
 
 trie_child(X, Node, Word) ->
-	error_logger:info_msg("try :~p ~p  ~p ~n", [X, Node, Word]),
     case mnesia:read({rabbit_topic_trie_edge,
                       #trie_edge{exchange_name = X,
                                  node_id       = Node,
