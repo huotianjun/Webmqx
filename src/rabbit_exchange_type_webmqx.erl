@@ -122,7 +122,6 @@ trie_match(X, Words) ->
 trie_match(X, Node, []) ->
 	trie_bindings(X, Node);
 trie_match(X, Node, [W | RestW]) ->
-	error_logger:info_msg("try :~p  ~p ~n", [Node, W]),
 	trie_match_part(X, Node, W, fun trie_match/3, RestW).
 
 trie_match_part(X, Node, Search, MatchFun, RestW) ->
@@ -174,6 +173,7 @@ remove_path_if_empty(X, [{Node, W} | [{Parent, _} | _] = RestPath]) ->
     end.
 
 trie_child(X, Node, Word) ->
+	error_logger:info_msg("try :~p ~p  ~p ~n", [X, Node, Word]),
     case mnesia:read({rabbit_topic_trie_edge,
                       #trie_edge{exchange_name = X,
                                  node_id       = Node,
