@@ -51,10 +51,12 @@ fetch_routing_queues(VHost, Exchange, SplitedRoutingWords) when is_list(SplitedR
 
 route(#exchange{name = _X},
 		#delivery{message = #basic_message{routing_keys = Routes}}) ->
-	lists:append([begin
+	R = lists:append([begin
 						%%huotianjun faster
 						webmqx_exchange_routing:route(RKey)			
-				end || RKey <- Routes]).
+				end || RKey <- Routes]),
+	error_logger:info_msg("routing " ~p ~n", [R]),
+	R.
 
 validate(_X) -> ok.
 validate_binding(_X, _B) -> ok.
