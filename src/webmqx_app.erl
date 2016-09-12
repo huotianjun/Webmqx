@@ -54,8 +54,7 @@ start(_Type, _Args) ->
 	]),
 
 	{ok, _Cowboy} = cowboy:start_clear(http, 100, [{port, 80}], 
-		#{env => #{dispatch => Dispatch}, 
-		  middlewares => [cowboy_router, cowboy_handler]}
+		#{env => #{dispatch => Dispatch}} 
 	),
 
 	EventPid = case rabbit_event:start_link() of
