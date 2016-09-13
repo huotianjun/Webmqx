@@ -66,7 +66,7 @@ start(_Type, _Args) ->
 	Result.
 
 %%huotianjun 测试微服务的server's callback
-micro_service_test(PayloadJSON) -> PayloadJSON.
+micro_service_test(PayloadJSON) -> <<"Hello World!">>. %%PayloadJSON.
 
 tsung_report(PayloadJSON) when is_binary(PayloadJSON) ->
 	Payload = jiffy:decode(PayloadJSON, [return_maps]),
