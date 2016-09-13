@@ -65,13 +65,6 @@ route(Path) ->
 			queue_trees_lookup(N, QueueTrees)
 	end.
 
-queues_count(Path) ->
-	case get_queue_trees(Path) of
-		undefined -> 0;
-		{ok, QueueTrees} ->
-			_Size = queue_trees_size(QueueTrees)
-	end.
-
 %%huotianjun 结果是gb_trees
 get_queue_trees(Path) when is_binary(Path) ->
 	Words = webmqx_util:path_to_words(Path),
@@ -92,6 +85,13 @@ get_queue_trees1(PathSplitWords) ->
 			end;
 		[{{path, _PathSplitWords}, QueueTrees}] ->
 			{ok, QueueTrees}
+	end.
+
+queues_count(Path) ->
+	case get_queue_trees(Path) of
+		undefined -> 0;
+		{ok, QueueTrees} ->
+			_Size = queue_trees_size(QueueTrees)
 	end.
 
 %%huotianjun from rabbit exchange binding event	
@@ -154,7 +154,9 @@ handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queu
 								State#state{routing_queues =
 												dict:store({path, PathSplitWords}, gb_trees:empty(), RoutingQueues)}};
 						Queues ->
+							error_logger:info_msg("fetch : ~p~n", [Queues]),
 							{ok, QueueTrees} = queue_trees_new(Queues),
+							error_logger:info_msg("queue_trees_new : ~p~n", [QueueTrees]),
 							routing_table_update(PathSplitWords, QueueTrees),
 							{reply, {ok, QueueTrees}, 
 								State#state{routing_queues = 
