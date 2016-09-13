@@ -57,15 +57,15 @@ start_link(N) ->
 	{ok, Pid}.
 
 
-rpc(sync, ChannelPid, Path, Payload) ->
-    gen_server2:call(ChannelPid, {rpc_sync, Path, Payload}, infinity).
+rpc(sync, WorkerPid, Path, Payload) ->
+    gen_server2:call(WorkerPid, {rpc_sync, Path, Payload}, infinity).
 
-rpc(async, ChannelPid, SeqId, Path, Payload) ->
-    gen_server2:cast(ChannelPid, {rpc_async, self(), SeqId, Path, Payload}).
+rpc(async, WorkerPid, SeqId, Path, Payload) ->
+    gen_server2:cast(WorkerPid, {rpc_async, self(), SeqId, Path, Payload}).
 
 %%huotianjun return ok if ok
-publish(ChannelPid, Path, Payload) ->
-	gen_server2:call(ChannelPid, {publish, Path, Payload}, infinity).
+publish(WorkerPid, Path, Payload) ->
+	gen_server2:call(WorkerPid, {publish, Path, Payload}, infinity).
 
 %% @spec (RpcClient) -> ok
 %% where
