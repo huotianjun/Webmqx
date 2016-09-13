@@ -55,6 +55,7 @@ route(#exchange{name = _X},
 						%%huotianjun faster
 						webmqx_exchange_routing:route(RKey)			
 				end || RKey <- Routes]),
+	error_logger:info_msg("route : ~p~n", [R]),
 	R.
 
 validate(_X) -> ok.
