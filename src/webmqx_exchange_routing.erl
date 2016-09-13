@@ -48,7 +48,7 @@
 
 -spec start_link() -> {ok, pid()}.
 start_link() ->
-	gen_server2:start_link({local, ?MODULE}, ?MODULE, [], []).
+	gen_server2:start_link(?MODULE, [], []).
 
 start() ->
 	?TAB = ets:new(?TAB, [
@@ -107,11 +107,10 @@ init([]) ->
 							 fun rabbit_misc:execute_mnesia_transaction/1),
 	MRef = erlang:monitor(process, GM),
 
-	error_logger:info_msg("webmqx exchange routing is starting"),
 	receive
 		{joined, GM}            -> rabbit_log:info("webmqx_exchange_routing_gm ~p is joined~n", [GM]),
 									erlang:demonitor(MRef, [flush]),
-								   ok;
+									ok;
 		{'DOWN', MRef, _, _, _} -> rabbit_log:info("start link gm DOWN!"),		
 									ok 
 	end,
