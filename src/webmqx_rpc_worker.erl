@@ -19,7 +19,7 @@
 %% plumbing. Note that the this module does not handle any data encoding,
 %% so it is up to the caller to marshall and unmarshall message payloads
 %% accordingly.
--module(webmqx_rpc_channel).
+-module(webmqx_rpc_worker).
 
 -include_lib("amqp_client/include/amqp_client.hrl").
 -include("webmqx.hrl").
@@ -169,7 +169,7 @@ init([N]) ->
     setup_consumer(State),
 
 	%%huotianjun 在管理器上注册一下本Client
-	webmqx_rpc_channel_manager:join(N, self()),
+	webmqx_rpc_worker_manager:join(N, self()),
     {ok, State}.
 
 %% Closes the channel this gen_server instance started

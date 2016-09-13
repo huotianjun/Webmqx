@@ -1,4 +1,4 @@
--module(webmqx_rpc_channel_manager).
+-module(webmqx_rpc_worker_manager).
 -behaviour(gen_server2).
 
 -include("webmqx.hrl").
@@ -9,7 +9,7 @@
 
 %%----------------------------------------------------------------------------
 %%
--define(TAB, rpc_channel_table).
+-define(TAB, rpc_worker_table).
 
 -ifdef(use_specs).
 

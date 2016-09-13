@@ -14,7 +14,7 @@
 %% Copyright (c) 2007-2016 Pivotal Software, Inc.  All rights reserved.
 %%
 
--module(webmqx_rpc_channel_sup).
+-module(webmqx_rpc_worker_sup).
 
 -behaviour(supervisor2).
 
@@ -34,12 +34,12 @@
 %%----------------------------------------------------------------------------
 start_link() ->
     {ok, SupPid} = supervisor2:start_link(?MODULE, []),
-	%%error_logger:info_msg("webmqx_rpc_channel_sup : ~p~n", [SupPid]),
+	%%error_logger:info_msg("webmqx_rpc_worker_sup : ~p~n", [SupPid]),
 	{ok, SupPid}.
 
 init([]) -> 
 	Procs = [
-		{{webmqx_rpc_channel, N}, {webmqx_rpc_channel, start_link, [N]},
+		{{webmqx_rpc_worker, N}, {webmqx_rpc_worker, start_link, [N]},
 			permanent, 16#ffffffff, worker, []}
 			|| N <- lists:seq(1, ?DEFAULT_RPC_CHANNEL_MAX)],
 	{ok, {{one_for_one, 1, 5}, Procs}}.

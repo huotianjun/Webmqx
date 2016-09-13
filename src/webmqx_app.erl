@@ -26,7 +26,7 @@ start(_Type, _Args) ->
 	Result = webmqx_sup:start_link(),
 
 	%%huotianjun start manager 
-	webmqx_rpc_channel_manager:start(),
+	webmqx_rpc_worker_manager:start(),
 
 	%%huotianjun webmqx exchange routing queues manager
 	webmqx_exchange_routing:start(),
@@ -35,7 +35,7 @@ start(_Type, _Args) ->
 	webmqx_core_service:start(),
 
 	%%huotianjun start all RPC channels, and regstry in manager
-	webmqx_sup:start_supervisor_child(webmqx_rpc_channel_sup),
+	webmqx_sup:start_supervisor_child(webmqx_rpc_worker_sup),
 
 	webmqx_sup:start_supervisor_child(webmqx_consistent_req_sup),
 

@@ -106,12 +106,12 @@ handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
 								unacked_rpc_reqs = UnackedReqs}) ->
 	NewState = 
 	try 
-		case webmqx_rpc_channel_manager:get_a_channel() of
+		case webmqx_rpc_worker_manager:get_a_channel() of
 			undefined -> 
 				amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag}),
 				State;
 			{ok, RpcChannelPid} ->
-				webmqx_rpc_channel:rpc(async, RpcChannelPid, ReqId, Path, PayloadJson),
+				webmqx_rpc_worker:rpc(async, RpcChannelPid, ReqId, Path, PayloadJson),
 				State#state{req_id = ReqId + 1,
 					unacked_rpc_reqs = dict:store(ReqId, DeliveryTag, UnackedReqs)}
 		end
@@ -143,7 +143,7 @@ handle_call(stop, _From, State) ->
 %%						end, ok, UnackedReqs),
 %%			{stop, normal, State};
 
-%%huotianjun return from webmqx_rpc_channel 
+%%huotianjun return from webmqx_rpc_worker 
 handle_cast({rpc_ok, ReqId, {ok, _Response}}, 
 				State = #state{channel = {_Ref, Channel},
 								unacked_rpc_reqs = UnackedReqs}) ->

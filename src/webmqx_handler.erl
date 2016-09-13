@@ -23,19 +23,19 @@ init(Req , Opts) ->
 
 	Response =
 	try 
-		case webmqx_rpc_channel_manager:get_a_channel() of
+		case webmqx_rpc_worker_manager:get_a_channel() of
 			undefined -> <<"no rpc channel">>;
 			{ok, RpcChannelPid} ->
 				case IsConsistentReq of
 					true ->
-						case webmqx_rpc_channel:publish(RpcChannelPid, Path, PayloadJson) of
+						case webmqx_rpc_worker:publish(RpcChannelPid, Path, PayloadJson) of
 							ok ->	
 								<<"OK">>;
 							_ ->
 								<<"ERROR">>
 						end;
 					false ->	
-						case webmqx_rpc_channel:rpc(sync, RpcChannelPid, Path, PayloadJson) of
+						case webmqx_rpc_worker:rpc(sync, RpcChannelPid, Path, PayloadJson) of
 							undefined ->
 								<<"ERROR">>;
 							{ok, Response1} -> 
