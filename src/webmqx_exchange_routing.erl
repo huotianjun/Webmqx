@@ -62,7 +62,8 @@ route(Path) ->
 		{ok, QueueTrees} ->
 			Size = queue_trees_size(QueueTrees),
 			N = erlang:phash2(self(), Size) + 1,
-			queue_trees_lookup(N, QueueTrees)
+			{ok, Queue} = queue_trees_lookup(N, QueueTrees),
+			[Queue]
 	end.
 
 %%huotianjun 结果是gb_trees
@@ -154,9 +155,7 @@ handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queu
 								State#state{routing_queues =
 												dict:store({path, PathSplitWords}, gb_trees:empty(), RoutingQueues)}};
 						Queues ->
-							error_logger:info_msg("fetch : ~p~n", [Queues]),
 							{ok, QueueTrees} = queue_trees_new(Queues),
-							error_logger:info_msg("queue_trees_new : ~p~n", [QueueTrees]),
 							routing_table_update(PathSplitWords, QueueTrees),
 							{reply, {ok, QueueTrees}, 
 								State#state{routing_queues = 
