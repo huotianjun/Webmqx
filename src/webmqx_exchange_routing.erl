@@ -111,11 +111,13 @@ init([]) ->
 	error_logger:info_msg("webmqx exchange routing ~p~n", [self()]),
 
 	receive
-		{joined, GM}            -> rabbit_log:info("webmqx_exchange_routing_gm ~p is joined~n", [GM]),
+		{joined, GM}            -> error_logger:info_msg("webmqx_exchange_routing_gm ~p is joined~n", [GM]),
 									erlang:demonitor(MRef, [flush]),
 									ok;
-		{'DOWN', MRef, _, _, _} -> rabbit_log:info("start link gm DOWN!"),		
-									ok 
+		{'DOWN', MRef, _, _, _} -> error_logger:info_msg("start link gm DOWN!"),		
+									ok; 
+		M -> error_logger:info_msg("webmqx exchange routing receive ~p~n", [M])
+
 	end,
 	error_logger:info_msg("webmqx exchange routing is started"),
 
