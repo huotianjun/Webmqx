@@ -14,7 +14,9 @@
 
 -module(webmqx_exchange_routing).
 
+-include("gm_specs.hrl").
 -include("webmqx.hrl").
+
 
 -behaviour(gen_server2).
 
