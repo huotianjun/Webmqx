@@ -29,6 +29,8 @@ env(Key) ->
 words_to_path(Words) when is_list(Words)->
 	words_to_path(Words, []).
 
+words_to_path(["/"], []) -> <<"/">>;
+words_to_path([], []) -> <<"/">>;
 words_to_path([], Acc) -> list_to_binary(lists:reverse(Acc));
 words_to_path([Word|Rest], Acc) ->
 	words_to_path(Rest, [Word | ["/" | Acc]]).
@@ -36,8 +38,10 @@ words_to_path([Word|Rest], Acc) ->
 path_to_words(Path) when is_binary(Path)->
     path_to_words(Path, [], []).
 
+path_to_words(<<$/>>, [], []) ->
+	["/"];
 path_to_words(<<>>, [], []) ->
-    [];
+    ["/"];
 path_to_words(<<>>, [], Acc) ->
     lists:reverse(Acc);
 path_to_words(<<>>, Word, Acc) ->
