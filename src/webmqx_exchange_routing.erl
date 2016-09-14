@@ -108,6 +108,8 @@ init([]) ->
 							 fun rabbit_misc:execute_mnesia_transaction/1),
 	MRef = erlang:monitor(process, GM),
 
+	error_logger:info_msg("webmqx exchange routing ~p~n", [self()]),
+
 	receive
 		{joined, GM}            -> rabbit_log:info("webmqx_exchange_routing_gm ~p is joined~n", [GM]),
 									erlang:demonitor(MRef, [flush]),
@@ -246,7 +248,7 @@ routing_table_update(PathSplitWords, QueueTrees) ->
 
 %%huotianjun gm's callback
 joined([SPid], _Members) -> 
-	error_logger:info_msg("call joined~n"),
+	error_logger:info_msg("call joined to ~p ~n", [SPid]),
 	SPid ! {joined, self()}, ok.
 
 members_changed([_SPid], _Births, _) ->
