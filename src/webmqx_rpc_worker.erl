@@ -144,7 +144,7 @@ init([N]) ->
 %% Closes the channel this gen_server instance started
 %% @private
 %% huotianjun RoutingKey在rpc 调用中，其实就是Queue
-terminate(_Reason, #state{n = N, connection = {ConnectionRef, Connection}, rabbit_channel = {ChannelRef, Channel}}) ->
+terminate(_Reason, #state{connection = {ConnectionRef, Connection}, rabbit_channel = {ChannelRef, Channel}}) ->
 	erlang:demonitor(ConnectionRef),
 	erlang:demonitor(ChannelRef),
 
