@@ -14,7 +14,7 @@
 
 -module(webmqx_exchange_routing).
 
--include("gm_specs.hrl").
+-include_lib("rabbit_common/include/gm_specs.hrl").
 -include("webmqx.hrl").
 
 
