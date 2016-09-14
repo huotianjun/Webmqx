@@ -17,7 +17,6 @@
 -include_lib("rabbit/include/gm_specs.hrl").
 -include("webmqx.hrl").
 
-
 -behaviour(gen_server2).
 
 %%huotianjun handle exchange binding events
@@ -246,7 +245,9 @@ routing_table_update(PathSplitWords, QueueTrees) ->
 	end.
 
 %%huotianjun gm's callback
-joined([SPid], _Members) -> SPid ! {joined, self()}, ok.
+joined([SPid], _Members) -> 
+	error_logger:info_msg("call joined~n"),
+	SPid ! {joined, self()}, ok.
 
 members_changed([_SPid], _Births, _) ->
     ok.
