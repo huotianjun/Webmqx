@@ -18,7 +18,7 @@ words_to_path(Words) when is_list(Words)->
 
 words_to_path1([], Acc) -> list_to_binary(lists:reverse(Acc));
 words_to_path1([Word|Rest], Acc) ->
-	words_to_path(Rest, [Word | ["/" | Acc]]).
+	words_to_path1(Rest, [Word | ["/" | Acc]]).
 
 path_to_words(<<$/>>) ->
 	["/"];
