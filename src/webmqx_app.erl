@@ -25,16 +25,16 @@
 start(_Type, _Args) ->
 	Result = webmqx_sup:start_link(),
 
-	%%huotianjun start manager 
+	%%huotianjun start rpc workers manager 
 	webmqx_rpc_worker_manager:start(),
 
 	%%huotianjun webmqx exchange routing queues manager
 	webmqx_exchange_routing:start(),
 
-	%%huotianjun start core internal rpc server
+	%%huotianjun start internal rpc core server
 	webmqx_core_service:start(),
 
-	%%huotianjun start all RPC channels, and regstry in manager
+	%%huotianjun start all RPC workers, and regstry in manager
 	webmqx_sup:start_supervisor_child(webmqx_rpc_worker_sup),
 
 	webmqx_sup:start_supervisor_child(webmqx_consistent_req_sup),
@@ -46,9 +46,6 @@ start(_Type, _Args) ->
 
 	Dispatch = cowboy_router:compile([
 		{'_', [
-			%%huotianjun []是Opts，会传入toppage_handler
-			%%{"/", toppage_handler, []},
-			%%{"/[...]", webmqx_handler, []}
 			{'_', webmqx_handler, []}
 		]}
 	]),
@@ -57,6 +54,7 @@ start(_Type, _Args) ->
 		#{env => #{dispatch => Dispatch}} 
 	),
 
+	%%huotianjun update webmqx_exchange_routing when bindings change.
 	EventPid = case rabbit_event:start_link() of
 					{ok, Pid}                       -> Pid;
 					{error, {already_started, Pid}} -> Pid
@@ -65,7 +63,7 @@ start(_Type, _Args) ->
 
 	Result.
 
-%%huotianjun 测试微服务的server's callback
+%%huotianjun test's callback
 micro_service_test(_PayloadJSON) -> <<"Hello World!">>. %%PayloadJSON.
 
 tsung_report(PayloadJSON) when is_binary(PayloadJSON) ->

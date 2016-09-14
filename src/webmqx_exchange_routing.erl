@@ -1,17 +1,3 @@
-%% Copyright (c) 2012-2015, Loïc Hoguin <essen@ninenines.eu>
-%%
-%% Permission to use, copy, modify, and/or distribute this software for any
-%% purpose with or without fee is hereby granted, provided that the above
-%% copyright notice and this permission notice appear in all copies.
-%%
-%% THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-%% WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-%% MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-%% ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-%% WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-%% ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-%% OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-
 -module(webmqx_exchange_routing).
 
 -include_lib("rabbit/include/gm_specs.hrl").
@@ -19,7 +5,7 @@
 
 -behaviour(gen_server2).
 
-%%huotianjun handle exchange binding events
+%%huotianjun for update exchange bindings of all clusters.
 -behaviour(gm).
 
 %% API.
@@ -56,18 +42,18 @@ start() ->
 		ordered_set, public, named_table]),
     ensure_started().
 
-%%huotianjun called by rabbit_exchange_type_webmqx:route
+%%huotianjun callback of rabbit_exchange_type_webmqx:route
 route(Path) ->
 	case get_queue_trees(Path) of
 		undefined -> [];
 		{ok, QueueTrees} ->
+			%%houtianjun random a queue. 
 			Size = queue_trees_size(QueueTrees),
 			N = erlang:phash2(self(), Size) + 1,
 			{ok, Queue} = queue_trees_lookup(N, QueueTrees),
 			[Queue]
 	end.
 
-%%huotianjun 结果是gb_trees
 get_queue_trees(Path) when is_binary(Path) ->
 	Words = webmqx_util:path_to_words(Path),
 	get_queue_trees1(Words).
@@ -108,8 +94,6 @@ init([]) ->
 							 fun rabbit_misc:execute_mnesia_transaction/1),
 	MRef = erlang:monitor(process, GM),
 
-	%%error_logger:info_msg("webmqx exchange routing ~p~n", [self()]),
-
 	receive
 		{joined, GM}            -> error_logger:info_msg("webmqx_exchange_routing_gm ~p is joined~n", [GM]),
 									erlang:demonitor(MRef, [flush]),
@@ -117,7 +101,7 @@ init([]) ->
 		{'DOWN', MRef, _, _, _} -> error_logger:info_msg("start link gm DOWN!"),		
 									ok 
 	end,
-	error_logger:info_msg("webmqx exchange routing is started"),
+	error_logger:info_msg("webmqx_exchange_routing is started"),
 
 	{ok, #state{gm = GM}}.
 
@@ -178,7 +162,7 @@ handle_cast({flush_routing_queues, PathSplitWords}, State = #state{gm = GM}) ->
 	gm:broadcast(GM, {flush_routing_queues, PathSplitWords}),
 	{noreply, State};
 
-%%huotianjun all nodes flush in here
+%%huotianjun all clusters update in here
 handle_cast({gm, {flush_routing_queues, PathSplitWords}}, State = #state{routing_queues = RoutingQueues}) ->
 	QueueTrees =
 	case rabbit_exchange_type_webmqx:fetch_routing_queues(<<"/">>, ?EXCHANGE_WEBMQX, PathSplitWords) of
@@ -212,8 +196,7 @@ ensure_started() ->
             {ok, Pid}
     end.
 
-%%% Local Functions
-
+%% Local Functions
 now_timestamp_counter() ->
 	{{_, _, _},{NowHour, NowMinute, NowSecond}} = calendar:now_to_local_time(os:timestamp()),
 	(NowHour*3600 + NowMinute*60 + NowSecond).
@@ -248,7 +231,6 @@ routing_table_update(PathSplitWords, QueueTrees) ->
 
 %%huotianjun gm's callback
 joined([SPid], _Members) -> 
-	%%error_logger:info_msg("call joined to ~p ~n", [SPid]),
 	SPid ! {joined, self()}, ok.
 
 members_changed([_SPid], _Births, _) ->
@@ -258,5 +240,5 @@ handle_msg([SPid], _From, Msg) ->
     ok = gen_server2:cast(SPid, {gm, Msg}).
 
 handle_terminate([_SPid], Reason) ->
-	ladar_log:info("handle_terminate Reason : ~p ~n", [Reason]),
+	error_logger:info_msg("handle_terminate Reason : ~p ~n", [Reason]),
     ok.

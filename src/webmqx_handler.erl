@@ -6,25 +6,24 @@
 %% Standard callbacks.
 -export([init/2]).
 
-%%huotianjun 每一个请求会创建一个进程用这个init处理Request
+%%huotianjun http request handler 
 init(Req , Opts) ->
 	%%error_logger:info_msg("Req : ~p ~n", [Req]),
 
-	%%huotianjun 解析Req
 	{ok, {_Host, Path, Method, PayloadJson, Req2}} = req_parse(Req),
 
 	IsConsistentReq = case Method of
-				   <<"GET">> -> false;
-				   <<"POST">> -> false;
-				   <<"PUT">> -> true;
-				   <<"DELETE">> -> true;
-				   _ -> false
-				end,
+						<<"GET">>		-> false;
+						<<"POST">>		-> false;
+						<<"PUT">>		-> true;
+						<<"DELETE">>	-> true;
+						_				-> false
+					end,
 
 	Response =
 	try 
 		case webmqx_rpc_worker_manager:get_a_channel() of
-			undefined -> <<"no rpc channel">>;
+			undefined -> <<"ERROR">>;
 			{ok, RpcChannelPid} ->
 				case IsConsistentReq of
 					true ->
@@ -83,8 +82,6 @@ req_parse(Req) ->
 					  ]}}, 
 				{body, Body}
 			   ]}, 
-
-	%%error_logger:info_msg("Payload : ~p ~n", [Payload]),
 
 	{ok, {Host, Path, Method, jiffy:encode(Payload), Req2}}.
 

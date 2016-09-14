@@ -1,24 +1,3 @@
-%% The contents of this file are subject to the Mozilla Public License
-%% Version 1.1 (the "License"); you may not use this file except in
-%% compliance with the License. You may obtain a copy of the License at
-%% http://www.mozilla.org/MPL/
-%%
-%% Software distributed under the License is distributed on an "AS IS"
-%% basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-%% License for the specific language governing rights and limitations
-%% under the License.
-%%
-%% The Original Code is RabbitMQ.
-%%
-%% The Initial Developer of the Original Code is GoPivotal, Inc.
-%% Copyright (c) 2007-2016 Pivotal Software, Inc.  All rights reserved.
-%%
-
-%% @doc This module allows the simple execution of an asynchronous RPC over
-%% AMQP. It frees a client programmer of the necessary having to AMQP
-%% plumbing. Note that the this module does not handle any data encoding,
-%% so it is up to the caller to marshall and unmarshall message payloads
-%% accordingly.
 -module(webmqx_rpc_worker).
 
 -include_lib("amqp_client/include/amqp_client.hrl").
@@ -35,6 +14,7 @@
 				connection,	
 				rabbit_channel,
                 reply_queue,
+				n,
 				consistent_req_queues = gb_sets:new(),
                 continuations = dict:new(),
                 correlation_id = 0}).
@@ -43,19 +23,9 @@
 %% API
 %%--------------------------------------------------------------------------
 
-%% @spec (Connection, Queue) -> RpcClient
-%% where
-%%      Connection = pid()
-%%      Queue = binary()
-%%      RpcClient = pid()
-%% @doc Starts, and links to, a new RPC channel instance that sends requests
-%% to a specified queue. This function returns the pid of the RPC channel 
-%% process that can be used to invoke RPCs and stop the client.
 start_link(N) ->
     {ok, Pid} = gen_server2:start_link(?MODULE, [N], []),
-	%%huotianjun 注意：如果这里不返回{ok, Pid}，在supstart_child的时候会出问题的
 	{ok, Pid}.
-
 
 rpc(sync, WorkerPid, Path, Payload) ->
     gen_server2:call(WorkerPid, {rpc_sync, Path, Payload}, infinity).
@@ -168,14 +138,13 @@ init([N]) ->
     State = setup_reply_queue(InitialState),
     setup_consumer(State),
 
-	%%huotianjun 在管理器上注册一下本Client
 	webmqx_rpc_worker_manager:join(N, self()),
-    {ok, State}.
+    {ok, State#state{n = N}}.
 
 %% Closes the channel this gen_server instance started
 %% @private
 %% huotianjun RoutingKey在rpc 调用中，其实就是Queue
-terminate(_Reason, #state{connection = {ConnectionRef, Connection}, rabbit_channel = {ChannelRef, Channel}}) ->
+terminate(_Reason, #state{n = N, connection = {ConnectionRef, Connection}, rabbit_channel = {ChannelRef, Channel}}) ->
 	erlang:demonitor(ConnectionRef),
 	erlang:demonitor(ChannelRef),
 
