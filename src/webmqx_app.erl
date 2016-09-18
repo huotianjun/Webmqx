@@ -32,17 +32,12 @@ start(_Type, _Args) ->
 	webmqx_exchange_routing:start(),
 
 	%%huotianjun start internal rpc core server
-	webmqx_core_service:start(),
+	webmqx_service_internal:start(),
 
 	%%huotianjun start all RPC workers, and regstry in manager
 	webmqx_sup:start_supervisor_child(webmqx_rpc_worker_sup),
 
 	webmqx_sup:start_supervisor_child(webmqx_consistent_req_sup),
-
-	%%huotianjun 启动测试微服务
-	%%huotianjun 第一个参数会记录在binding的arg信息里面
-	webmqx_rpc_server_internal:start_link(<<"test">>, <<"/1/2/3">>, fun micro_service_test/1), 
-	webmqx_rpc_server_internal:start_link(<<"report">>, <<"report">>, fun tsung_report/1),
 
 	Dispatch = cowboy_router:compile([
 		{'_', [
@@ -62,24 +57,6 @@ start(_Type, _Args) ->
 	gen_event:add_handler(EventPid, webmqx_binding_event_handler, []),
 
 	Result.
-
-%%huotianjun test's callback
-micro_service_test(_PayloadJSON) -> <<"Hello World!">>. %%PayloadJSON.
-
-tsung_report(PayloadJSON) when is_binary(PayloadJSON) ->
-	Payload = jiffy:decode(PayloadJSON, [return_maps]),
-	tsung_report1(Payload).
-
-tsung_report1(_Payload = #{<<"req">> := #{<<"host">> := _Host, <<"method">> := _Method, <<"path">> := Path, <<"qs">> := _Qs}, <<"body">> := _Body}) ->
-	%%error_logger:info_msg("Payload map : ~p ~n", [Payload]),
-	read_file(Path).
-
-%%huotianjun 取到path的/，与/root/.tsung拼起来
-read_file(<<"/", Name/binary>>) ->
-	case file:read_file(filename:join(<<"/root/.tsung">>, Name)) of
-		{ok, Binary} -> Binary;
-		_ -> <<"no such file">>
-	end.
 
 stop(_State) ->
 	ok.
