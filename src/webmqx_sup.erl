@@ -23,8 +23,8 @@
          start_supervisor_child/1, start_supervisor_child/2,
          start_supervisor_child/3,
          start_restartable_child/1, start_restartable_child/2,
-         start_delayed_restartable_child/1, start_delayed_restartable_child/2,
-         stop_child/1]).
+         start_delayed_restartable_child/1, start_delayed_restartable_child/2
+         ]).
 
 %% supervisor.
 -export([init/1]).
