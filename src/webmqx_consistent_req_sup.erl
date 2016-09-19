@@ -7,8 +7,11 @@
 -define(ENCODING, utf8).
 
 -ifdef(use_specs).
--spec(start_child/1 :: (binary()) -> supervisor2:startchild_ret()).
--spec(start_child/2 :: (term(), binary()) -> supervisor2:startchild_ret()).
+
+-spec(start_link/0 :: () -> rabbit_types:ok_pid_or_error()).
+-spec(start_child/1 :: (binary()) -> pid()).
+-spec(delete_child/1 :: (binary()) -> 'ok').
+
 -endif.
 
 start_link() ->

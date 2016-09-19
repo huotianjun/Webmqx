@@ -33,6 +33,19 @@
 
 -define(SERVER, ?MODULE).
 
+-ifdef(use_specs).
+
+-spec(start_link/0 :: () -> rabbit_types:ok_pid_or_error()).
+-spec(start_supervisor_child/1 :: (atom()) -> 'ok').
+-spec(start_supervisor_child/2 :: (atom(), [any()]) -> 'ok').
+-spec(start_supervisor_child/3 :: (atom(), atom(), [any()]) -> 'ok').
+-spec(start_restartable_child/1 :: (atom()) -> 'ok').
+-spec(start_restartable_child/2 :: (atom(), [any()]) -> 'ok').
+-spec(start_delayed_restartable_child/1 :: (atom()) -> 'ok').
+-spec(start_delayed_restartable_child/2 :: (atom(), [any()]) -> 'ok').
+
+-endif.
+
 %% API.
 
 -spec start_link() -> {ok, pid()}.
@@ -61,12 +74,6 @@ start_restartable_child(Mod, Args, Delay) ->
                   {Name, {webmqx_restartable_sup, start_link,
                           [Name, {Mod, start_link, Args}, Delay]},
                    transient, infinity, supervisor, [webmqx_restartable_sup]})).
-
-stop_child(ChildId) ->
-    case supervisor2:terminate_child(?SERVER, ChildId) of
-        ok -> supervisor2:delete_child(?SERVER, ChildId);
-        E  -> E
-    end.
 
 init([]) -> {ok, {{one_for_all, 0, 1}, []}}.
 

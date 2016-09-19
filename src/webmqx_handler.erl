@@ -22,12 +22,12 @@ init(Req , Opts) ->
 
 	Response =
 	try 
-		case webmqx_rpc_worker_manager:get_a_channel() of
+		case webmqx_rpc_worker_manager:get_a_worker() of
 			undefined -> <<"ERROR">>;
 			{ok, RpcChannelPid} ->
 				case IsConsistentReq of
 					true ->
-						case webmqx_rpc_worker:publish(RpcChannelPid, Path, PayloadJson) of
+						case webmqx_rpc_worker:normal_publish(RpcChannelPid, Path, PayloadJson) of
 							ok ->	
 								<<"OK">>;
 							_ ->

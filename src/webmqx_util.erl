@@ -3,7 +3,15 @@
 -include_lib("amqp_client/include/amqp_client.hrl").
 -include("webmqx.hrl").
 
--compile(export_all).
+-export([env/1, words_to_path/1, path_to_words/1]).
+
+-ifdef(use_specs).
+
+-spec(env/1 :: (atom()) -> 'undefined' | any()).
+-spec(words_to_path/1 :: ([string()]) -> binary()).
+-spec(path_to_words/1 :: (binary()) -> [string()]). 
+
+-endif.
 
 env(Key) ->
     case application:get_env(?APP, Key) of

@@ -15,6 +15,13 @@
 				unacked_rpc_reqs = dict:new(),
 				req_id = 0}).
 
+-ifdef(use_specs).
+
+-specs(start_link/1 :: (binary()) -> {'ok', pid()}).
+-specs(stop/1 :: (pid()) -> 'ok').
+
+-endif.
+
 %%--------------------------------------------------------------------------
 %% API
 %%--------------------------------------------------------------------------
@@ -85,12 +92,12 @@ handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
 								unacked_rpc_reqs = UnackedReqs}) ->
 	NewState = 
 	try 
-		case webmqx_rpc_worker_manager:get_a_channel() of
+		case webmqx_rpc_worker_manager:get_a_worker() of
 			undefined -> 
 				amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag}),
 				State;
-			{ok, RpcChannelPid} ->
-				webmqx_rpc_worker:rpc(async, RpcChannelPid, ReqId, Path, PayloadJson),
+			{ok, RpcWorkerPid} ->
+				webmqx_rpc_worker:rpc(async, RpcWorkerPid, ReqId, Path, PayloadJson),
 				State#state{req_id = ReqId + 1,
 					unacked_rpc_reqs = dict:store(ReqId, DeliveryTag, UnackedReqs)}
 		end

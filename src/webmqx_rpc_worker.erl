@@ -6,7 +6,7 @@
 -behaviour(gen_server2).
 
 -export([start_link/1, stop/1]).
--export([rpc/4, rpc/5, publish/3]).
+-export([rpc/4, rpc/5, normal_publish/3]).
 -export([init/1, terminate/2, code_change/3, handle_call/3,
          handle_cast/2, handle_info/2]).
 
@@ -19,6 +19,15 @@
                 continuations = dict:new(),
                 correlation_id = 0}).
 
+-ifdef(use_specs).
+
+-spec(start_link/1 :: (non_neg_integer()) -> rabbit_types::ok(pid())). 
+-spec(rpc/4 :: ('sync', pid(), binary(), binary()) -> rabbit_types::ok(binary()) | undefined).
+-spec(rpc/5 :: ('async', pid(), non_neg_integer(), binary(), binary()) -> 'ok').
+-spec(normal_publish/3 :: (pid(), binary(), binary()) -> rabbit_types::ok_or_error(any())).
+
+-endif.
+
 %%--------------------------------------------------------------------------
 %% API
 %%--------------------------------------------------------------------------
@@ -27,15 +36,17 @@ start_link(N) ->
     {ok, Pid} = gen_server2:start_link(?MODULE, [N], []),
 	{ok, Pid}.
 
+%%huotianjun called by webmqx_handler
 rpc(sync, WorkerPid, Path, Payload) ->
     gen_server2:call(WorkerPid, {rpc_sync, Path, Payload}, infinity).
 
+%%huotianjun called by webmqx_webmqx_consistent_req_broker
 rpc(async, WorkerPid, SeqId, Path, Payload) ->
     gen_server2:cast(WorkerPid, {rpc_async, self(), SeqId, Path, Payload}).
 
 %%huotianjun return ok if ok
-publish(WorkerPid, Path, Payload) ->
-	gen_server2:call(WorkerPid, {publish, Path, Payload}, infinity).
+normal_publish(WorkerPid, Path, Payload) ->
+	gen_server2:call(WorkerPid, {normal_publish, Path, Payload}, infinity).
 
 %% @spec (RpcClient) -> ok
 %% where
@@ -65,7 +76,7 @@ setup_consumer(#state{rabbit_channel = {_Ref, Channel}, reply_queue = Q}) ->
 %% Publishes to the broker, stores the From address against
 %% the correlation id and increments the correlationid for
 %% the next request
-rpc_publish(Path, Payload, From,
+internal_rpc_publish(Path, Payload, From,
         State = #state{rabbit_channel = {_ChannelRef, Channel},
                        reply_queue = Q,
                        correlation_id = CorrelationId,
@@ -88,7 +99,7 @@ rpc_publish(Path, Payload, From,
 				%%huotianjun 记录一下，这个Id的RPC消息返回后，交给哪个From
                 continuations = dict:store(EncodedCorrelationId, From, Continuations)}.
 
-normal_publish(Path, Payload,
+internal_normal_publish(Path, Payload,
         State = #state{rabbit_channel = {_ChannelRef, Channel}, consistent_req_queues = ConsReqQueues}) ->
 	NewState = 
 	case gb_sets:is_element(Path, ConsReqQueues) of
@@ -158,18 +169,18 @@ terminate(_Reason, #state{connection = {ConnectionRef, Connection}, rabbit_chann
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
 
-handle_call({publish, Path, Payload}, _From, State) ->
-	{R, NewState} = normal_publish(Path, Payload, State),
+handle_call({normal_publish, Path, Payload}, _From, State) ->
+	{R, NewState} = internal_normal_publish(Path, Payload, State),
 	{reply, R, NewState};
 
 %% @private
 handle_call({rpc_sync, Path, Payload}, From, State) ->
-	NewState = rpc_publish(Path, Payload, _From = {rpc_sync, From}, State),
+	NewState = internal_rpc_publish(Path, Payload, _From = {rpc_sync, From}, State),
 	{noreply, NewState}.
 
 %% @private
 handle_cast({rpc_async, From, SeqId, Path, Payload}, State) -> 
-	NewState = rpc_publish(Path, Payload, _From = {rpc_async, {From, SeqId}}, State),
+	NewState = internal_rpc_publish(Path, Payload, _From = {rpc_async, {From, SeqId}}, State),
 	{noreply, NewState};
 
 handle_cast(_Msg, State) ->

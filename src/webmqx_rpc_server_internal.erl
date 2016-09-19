@@ -24,28 +24,19 @@
 				server_name,
                 handler}).
 
+-ifdef(use_specs).
+
+-spec(start_link/3 :: (binary(), binary(), function()) -> rabbit_types:ok(pid())). 
+
+-endif.
 %%--------------------------------------------------------------------------
 %% API
 %%--------------------------------------------------------------------------
 
-%% @spec (Connection, Queue, RpcHandler) -> RpcServer
-%% where
-%%      Connection = pid()
-%%      Queue = binary()
-%%      RpcHandler = function()
-%%      RpcServer = pid()
-%% @doc Starts, and links to, a new RPC server instance that receives
-%% requests via a specified queue and dispatches them to a specified
-%% handler function. This function returns the pid of the RPC server that
-%% can be used to stop the server.
 start_link(ServerName, RoutingKey, Fun) ->
     {ok, Pid} = gen_server2:start_link(?MODULE, [ServerName, RoutingKey, Fun], []),
 	{ok, Pid}.
 
-%% @spec (RpcServer) -> ok
-%% where
-%%      RpcServer = pid()
-%% @doc Stops an exisiting RPC server.
 stop(Pid) ->
     gen_server2:call(Pid, stop, infinity).
 

@@ -34,6 +34,13 @@
                                    [exchange, ?EXCHANGE_WEBMQX_TYPE, ?MODULE]}},
                     {requires,    rabbit_registry},
                     {enables,     kernel_ready}]}).
+-ifdef(use_specs).
+
+-type(match_result() :: [rabbit_types:binding_destination()]).
+-spec(fetch_routing_queues/3 :: (binary()), binary(), [string()]) -> match_result()).
+
+-endif.
+
 
 %%----------------------------------------------------------------------------
 

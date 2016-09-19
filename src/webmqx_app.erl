@@ -49,7 +49,7 @@ start(_Type, _Args) ->
 		#{env => #{dispatch => Dispatch}} 
 	),
 
-	%%huotianjun update webmqx_exchange_routing when bindings change.
+	%%huotianjun update webmqx_exchange_routing when bindings changed.
 	EventPid = case rabbit_event:start_link() of
 					{ok, Pid}                       -> Pid;
 					{error, {already_started, Pid}} -> Pid

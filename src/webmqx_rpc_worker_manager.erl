@@ -3,7 +3,7 @@
 
 -include("webmqx.hrl").
 
--export([join/2, get_a_channel/0]).
+-export([join/2, get_a_worker/0]).
 -export([start/0, start_link/0, init/1, handle_call/3, handle_cast/2,
          handle_info/2, terminate/2, code_change/3]).
 
@@ -12,6 +12,11 @@
 -define(TAB, rpc_worker_table).
 
 -ifdef(use_specs).
+
+-spec(start_link/0 :: () -> rabbit_types:ok_pid_or_error().
+-spec(start/0 :: () -> rabbit_types:ok_or_error(any())).
+-spec(join/2 :: (non_neg_integer(), pid()) -> 'ok').
+-spec(get_a_worker/0 :: () -> rabbit_types:ok(pid()) | undefined). 
 
 -endif.
 
@@ -32,14 +37,14 @@ join(N, Pid) when is_pid(Pid) ->
     gen_server2:cast(?MODULE, {join, N, Pid}).
 
 %%huotianjun 用Req进程的进程id随机生成一个N，均衡调用
-get_a_channel() ->
+get_a_worker() ->
 	N = erlang:phash2(self(), ?DEFAULT_RPC_CHANNEL_MAX) + 1,
-	get_a_channel1(N, {undefined, undefined}).
+	get_a_worker1(N, {undefined, undefined}).
 
 %%huotianjun 如果没有命中，看下一个，找到为止
-get_a_channel1(_N, {L, _}) when L =/= undefined andalso L =< 0 ->
+get_a_worker1(_N, {L, _}) when L =/= undefined andalso L =< 0 ->
 	undefined;
-get_a_channel1(N, {L, Count}) ->
+get_a_worker1(N, {L, Count}) ->
 	case ets:lookup(?TAB, {n, N}) of
 		[{{n, N}, {Pid, _Ref}}] ->
 			{ok, Pid};
@@ -47,9 +52,9 @@ get_a_channel1(N, {L, Count}) ->
 			case L of
 				undefined ->
 					Count0 = ?DEFAULT_RPC_CHANNEL_MAX,
-					get_a_channel1(case N+1 > Count0 of true -> 1; false -> N+1 end, {Count0 - 1, Count0});
+					get_a_worker1(case N+1 > Count0 of true -> 1; false -> N+1 end, {Count0 - 1, Count0});
 				_ ->
-					get_a_channel1(case N+1 > Count of true -> 1; false -> N+1 end, {L - 1, Count})
+					get_a_worker1(case N+1 > Count of true -> 1; false -> N+1 end, {L - 1, Count})
 			end
 	end.
 
@@ -69,7 +74,7 @@ handle_call(sync, _From, S) ->
     {reply, ok, S};
 
 handle_call(Request, From, S) ->
-    error_logger:warning_msg("The rpc channel manager server received an unexpected message:\n"
+    error_logger:warning_msg("The rpc worker manager server received an unexpected message:\n"
                              "handle_call(~p, ~p, _)\n",
                              [Request, From]),
     {noreply, S}.
@@ -138,5 +143,5 @@ ensure_started() ->
         undefined ->
 			webmqx_sup:start_restartable_child(?MODULE);
         Pid ->
-            {ok, Pid}
+            ok
     end.

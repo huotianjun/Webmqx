@@ -14,12 +14,7 @@
 -export([route/1, flush_routing_queues/1, queues_count/1]).
 
 %% gen_server.
--export([init/1]).
--export([handle_call/3]).
--export([handle_cast/2]).
--export([handle_info/2]).
--export([terminate/2]).
--export([code_change/3]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 %%huotianjun gm callback 
 -export([joined/2, members_changed/3, handle_msg/3, handle_terminate/2]).
@@ -31,9 +26,19 @@
 				routing_queues= dict:new() %%huotianjun value is gb_trees, key is splited path.
 				}). 
 
+-ifdef(use_specs).
+
+-spec(start_link/0 :: () -> rabbit_types:ok_pid_or_error().
+-spec(start/0 :: () -> rabbit_types:ok_or_error(any())).
+
+-spec(route/1 :: (binary()) -> [rabbit_types:binding_destination()]).
+-spec(flush_routing_queues/1 :: (binary()) -> 'ok').
+-spec(queues_count/1 :: (binary()) -> non_neg_integer()).
+
+-endif.
+
 %% API.
 
--spec start_link() -> {ok, pid()}.
 start_link() ->
 	gen_server2:start_link({local, ?MODULE}, ?MODULE, [], []).
 
@@ -193,7 +198,7 @@ ensure_started() ->
         undefined ->
 			webmqx_sup:start_restartable_child(?MODULE);
         Pid ->
-            {ok, Pid}
+            ok
     end.
 
 %% Local Functions
