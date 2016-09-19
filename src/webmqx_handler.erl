@@ -31,20 +31,20 @@ init(Req , Opts) ->
 							ok ->	
 								<<"OK">>;
 							_ ->
-								<<"ERROR">>
+								<<"ERROR:normal_publish">>
 						end;
 					false ->	
 						case webmqx_rpc_worker:rpc(sync, RpcChannelPid, Path, PayloadJson) of
 							undefined ->
-								<<"ERROR">>;
+								<<"ERROR:rpc_sync">>;
 							{ok, Response1} -> 
 								Response1
 						end
 				end
 		end
 	catch 
-		_Error:Reason -> 
-			Reason 
+		_Error:_Reason -> 
+			<<"ERROR:rpc crash">> 
 	end,
 
 	cowboy_req:reply(200, #{
