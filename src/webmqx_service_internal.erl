@@ -15,7 +15,7 @@ start() ->
 
 	%%huotianjun 启动测试微服务
 	%%huotianjun 第一个参数会记录在binding的arg信息里面
-	webmqx_sup:start_restartable_child(webmqx_rpc_server_internal, [<<"test">>, <<"1/2/3">>, fun micro_service_test/1]),
+	webmqx_sup:start_restartable_child(webmqx_rpc_server_internal, [<<"test">>, <<"/1/2/3">>, fun micro_service_test/1]),
 	webmqx_sup:start_restartable_child(webmqx_rpc_server_internal, [<<"report">>, <<"report">>, fun tsung_report/1]),
 	ok.
 
