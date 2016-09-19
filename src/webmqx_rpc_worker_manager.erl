@@ -142,6 +142,6 @@ ensure_started() ->
     case whereis(?MODULE) of
         undefined ->
 			webmqx_sup:start_restartable_child(?MODULE);
-        Pid ->
+        _Pid ->
             ok
     end.
