@@ -11,12 +11,12 @@
 %%----------------------------------------------------------------------------
 
 start() ->
-	webmqx_sup:start_restartable_child(core_service, webmqx_rpc_server_internal, [<<"core-service">>, <<"core-service">>, fun core_service/1]),
+	webmqx_sup:start_restartable_child(core_service, webmqx_rpc_server_internal, [<<"core-service">>, <<"core-service">>, fun core_service/1], false),
 
 	%%huotianjun 启动测试微服务
 	%%huotianjun 第一个参数会记录在binding的arg信息里面
-	webmqx_sup:start_restartable_child(test, webmqx_rpc_server_internal, [<<"test">>, <<"/1/2/3">>, fun micro_service_test/1]),
-	webmqx_sup:start_restartable_child(report, webmqx_rpc_server_internal, [<<"report">>, <<"report">>, fun tsung_report/1]),
+	webmqx_sup:start_restartable_child(test, webmqx_rpc_server_internal, [<<"test">>, <<"/1/2/3">>, fun micro_service_test/1], false),
+	webmqx_sup:start_restartable_child(report, webmqx_rpc_server_internal, [<<"report">>, <<"report">>, fun tsung_report/1], false),
 	ok.
 
 %%huotianjun core_service callbacks
