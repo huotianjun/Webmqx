@@ -1,7 +1,7 @@
 %% This is the version of rabbit_rpc_server from RabbitMQ.
 %%
 
--module(webmqx_rpc_server_internal).
+-module(webmqx_rpc_server).
 
 -behaviour(gen_server2).
 
