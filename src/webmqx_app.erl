@@ -46,10 +46,11 @@ start(_Type, _Args) ->
 		#{env => #{dispatch => Dispatch}} 
 	),
 
-	EventPid = case rabbit_event:start_link() of
-					{ok, Pid}                       -> Pid;
-					{error, {already_started, Pid}} -> Pid
-				end,
+	EventPid =
+	case rabbit_event:start_link() of
+		{ok, Pid}                       -> Pid;
+		{error, {already_started, Pid}} -> Pid
+	end,
 	gen_event:add_handler(EventPid, webmqx_binding_event_handler, []),
 
 	Result.
