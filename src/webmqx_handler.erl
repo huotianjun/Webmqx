@@ -8,6 +8,9 @@
 %%%
 
 init(Req , Opts) ->
+
+	error_logger:info_msg("Opts : ~p~n", [Opts]),
+
 	{ok, {_Host, Path, Method, PayloadJson, Req2}} = req_parse(Req),
 
 	IsConsistentReq = case Method of
