@@ -17,5 +17,6 @@
                  ]},
   {mod, { webmqx_app, []}},
   {env, [
+			{rpc_workers_num, 10}
 		]}
  ]}.

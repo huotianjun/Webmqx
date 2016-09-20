@@ -38,7 +38,7 @@ join(N, Pid) when is_pid(Pid) ->
     gen_server2:cast(?MODULE, {join, N, Pid}).
 
 get_a_worker() ->
-	N = erlang:phash2(self(), ?DEFAULT_RPC_CHANNEL_MAX) + 1,
+	N = erlang:phash2(self(), ?DEFAULT_RPC_WORKERS_NUM) + 1,
 	get_a_worker1(N, {undefined, undefined}).
 
 get_a_worker1(_N, {L, _}) when L =/= undefined andalso L =< 0 ->
@@ -50,7 +50,7 @@ get_a_worker1(N, {L, Count}) ->
 		_ ->
 			case L of
 				undefined ->
-					Count0 = ?DEFAULT_RPC_CHANNEL_MAX,
+					Count0 = ?DEFAULT_RPC_WORKERS_NUM,
 					get_a_worker1(case N+1 > Count0 of true -> 1; false -> N+1 end, {Count0 - 1, Count0});
 				_ ->
 					get_a_worker1(case N+1 > Count of true -> 1; false -> N+1 end, {L - 1, Count})
