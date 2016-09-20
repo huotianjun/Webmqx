@@ -38,12 +38,12 @@ start(_Type, _Args) ->
 
 	Dispatch = cowboy_router:compile([
 		{'_', [
-			{'_', webmqx_handler, []}
+			{'_', webmqx_handler, ["opts test"]}
 		]}
 	]),
 
 	{ok, _Cowboy} = cowboy:start_clear(http, 100, [{port, 80}], 
-		#{env => #{dispatch => Dispatch, handler_opts => "test opts"}} 
+		#{env => #{dispatch => Dispatch}} 
 	),
 
 	EventPid =
