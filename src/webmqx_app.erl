@@ -40,7 +40,7 @@ start(_Type, _Args) ->
 
 	Dispatch = cowboy_router:compile([
 		{'_', [
-			{'_', webmqx_handler, [#{rpc_workers_num => RpcWorkersNum}]}
+			{'_', webmqx_handler, #{rpc_workers_num => RpcWorkersNum}}
 		]}
 	]),
 
