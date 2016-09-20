@@ -19,6 +19,8 @@
                 continuations = dict:new(),
                 correlation_id = 0}).
 
+%%----------------------------------------------------------------------------
+
 -ifdef(use_specs).
 
 -spec(start_link/1 :: (non_neg_integer()) -> rabbit_types::ok(pid())). 
@@ -28,54 +30,132 @@
 
 -endif.
 
-%%--------------------------------------------------------------------------
-%% API
-%%--------------------------------------------------------------------------
+%%----------------------------------------------------------------------------
+
+%%%
+%%% Exported functions
+%%%
 
 start_link(N) ->
     {ok, Pid} = gen_server2:start_link(?MODULE, [N], []),
 	{ok, Pid}.
 
-%%huotianjun called by webmqx_handler
 rpc(sync, WorkerPid, Path, Payload) ->
     gen_server2:call(WorkerPid, {rpc_sync, Path, Payload}, infinity).
 
-%%huotianjun called by webmqx_webmqx_consistent_req_broker
 rpc(async, WorkerPid, SeqId, Path, Payload) ->
     gen_server2:cast(WorkerPid, {rpc_async, self(), SeqId, Path, Payload}).
 
-%%huotianjun return ok if ok
 normal_publish(WorkerPid, Path, Payload) ->
 	gen_server2:call(WorkerPid, {normal_publish, Path, Payload}, infinity).
 
-%% @spec (RpcClient) -> ok
-%% where
-%%      RpcClient = pid()
-%% @doc Stops an exisiting RPC client.
 stop(Pid) ->
     gen_server2:call(Pid, stop, infinity).
 
+%%%
+%%% Callbacks of gen_server
+%%%
 
-%%--------------------------------------------------------------------------
-%% Plumbing
-%%--------------------------------------------------------------------------
+init([N]) ->
+	process_flag(trap_exit, true),
 
-%% Sets up a reply queue for this client to listen on
-%% huotianjun Q<<"amq.rabbitmq.reply-to">>是个虚拟Queue
+	{ok, Connection} = amqp_connection:start(#amqp_params_direct{}),
+
+    {ok, Channel} = amqp_connection:open_channel(
+                        Connection, {amqp_direct_consumer, [self()]}),
+
+	ConnectionRef = erlang:monitor(process, Connection),
+	ChannelRef = erlang:monitor(process, Channel),
+
+    InitialState = #state{
+							connection  = {ConnectionRef, Connection},
+							rabbit_channel     = {ChannelRef, Channel},
+							reply_queue = <<"amq.rabbitmq.reply-to">>
+						 },
+
+    State = setup_reply_queue(InitialState),
+    setup_consumer(State),
+
+	webmqx_rpc_worker_manager:join(N, self()),
+    {ok, State#state{n = N}}.
+
+terminate(_Reason, #state{connection = {ConnectionRef, Connection}, rabbit_channel = {ChannelRef, Channel}}) ->
+	erlang:demonitor(ConnectionRef),
+	erlang:demonitor(ChannelRef),
+
+    amqp_channel:close(Channel),
+	amqp_direct_connection:server_close(Connection, <<"404">>, <<"close">>),
+	amqp_connection:close(Connection),
+    ok.
+
+handle_call(stop, _From, State) ->
+    {stop, normal, ok, State};
+
+handle_call({normal_publish, Path, Payload}, _From, State) ->
+	{R, NewState} = internal_normal_publish(Path, Payload, State),
+	{reply, R, NewState};
+
+handle_call({rpc_sync, Path, Payload}, From, State) ->
+	NewState = internal_rpc_publish(Path, Payload, _From = {rpc_sync, From}, State),
+	{noreply, NewState}.
+
+handle_cast({rpc_async, From, SeqId, Path, Payload}, State) -> 
+	NewState = internal_rpc_publish(Path, Payload, _From = {rpc_async, {From, SeqId}}, State),
+	{noreply, NewState};
+
+handle_cast(_Msg, State) ->
+    {noreply, State}.
+
+handle_info({#'basic.consume'{}, _Pid}, State) ->
+    {noreply, State};
+
+handle_info(#'basic.consume_ok'{}, State) ->
+    {noreply, State};
+
+handle_info(#'basic.cancel'{}, State) ->
+    {noreply, State};
+
+handle_info(#'basic.cancel_ok'{}, State) ->
+    {stop, normal, State};
+
+handle_info({#'basic.deliver'{},
+             _Msg = #amqp_msg{props = #'P_basic'{correlation_id = Id},
+                       payload = Payload}},
+            State = #state{continuations = Conts}) ->
+
+	{CallOrCast, From} =  dict:fetch(Id, Conts), 
+	case CallOrCast of
+		rpc_sync ->	
+			gen_server2:reply(From, {ok, Payload});
+		rpc_async ->
+			{FromPid, SeqId} = From,
+			gen_server2:cast(FromPid, {rpc_ok, SeqId, {ok, Payload}})
+	end,
+    {noreply, State#state{continuations = dict:erase(Id, Conts) }};
+
+handle_info({'EXIT', _Pid, Reason}, State) ->
+	{stop, Reason, State};
+
+handle_info({'DOWN', _MRef, process, _Pid, Reason}, State) ->
+	{stop, {error, Reason}, State}.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
+
+
+%%%
+%%% Local functions
+%%%
+
 setup_reply_queue(State = #state{rabbit_channel = {_Ref, Channel}, reply_queue = Q}) ->
     #'queue.declare_ok'{} =
         amqp_channel:call(Channel, #'queue.declare'{queue = Q}),
     State.
 
-%% Registers this RPC client instance as a consumer to handle rpc responses
 setup_consumer(#state{rabbit_channel = {_Ref, Channel}, reply_queue = Q}) ->
-	%%huotianjun Q必须是<<"amq.rabbitmq.reply-to">>，channel里面要特殊准备一下，会补充特殊信息到Props中。这个channel发送的所有RPC的reply_to都会回到这个channel
     #'basic.consume_ok'{} =
 		amqp_channel:call(Channel, #'basic.consume'{queue = Q, no_ack = true}).
 
-%% Publishes to the broker, stores the From address against
-%% the correlation id and increments the correlationid for
-%% the next request
 internal_rpc_publish(Path, Payload, From,
         State = #state{rabbit_channel = {_ChannelRef, Channel},
                        reply_queue = Q,
@@ -93,10 +173,7 @@ internal_rpc_publish(Path, Payload, From,
     amqp_channel:call(Channel, Publish, #amqp_msg{props = Props,
                                                   payload = Payload}),
 
-	%%huotianjun 这个Id非常重要，RPC的返回消息中还保留它，根据它可以知道，消息是返回是给哪个进程的
-	%%huotianjun 因为rpc的call是cast方式发起的！
     State#state{correlation_id = CorrelationId + 1,
-				%%huotianjun 记录一下，这个Id的RPC消息返回后，交给哪个From
                 continuations = dict:store(EncodedCorrelationId, From, Continuations)}.
 
 internal_normal_publish(Path, Payload,
@@ -122,111 +199,3 @@ internal_normal_publish(Path, Payload,
 		Error ->
 			{Error, NewState}	
 	end.
-
-%%--------------------------------------------------------------------------
-%% gen_server callbacks
-%%--------------------------------------------------------------------------
-
-%% Sets up a reply queue and consumer within an existing channel
-%% @private
-init([N]) ->
-	process_flag(trap_exit, true),
-
-	{ok, Connection} = amqp_connection:start(#amqp_params_direct{}),
-
-    {ok, Channel} = amqp_connection:open_channel(
-                        Connection, {amqp_direct_consumer, [self()]}),
-
-	ConnectionRef = erlang:monitor(process, Connection),
-	ChannelRef = erlang:monitor(process, Channel),
-
-    InitialState = #state{
-							connection  = {ConnectionRef, Connection},
-							rabbit_channel     = {ChannelRef, Channel},
-							reply_queue = <<"amq.rabbitmq.reply-to">>
-						 },
-
-    State = setup_reply_queue(InitialState),
-    setup_consumer(State),
-
-	webmqx_rpc_worker_manager:join(N, self()),
-    {ok, State#state{n = N}}.
-
-%% Closes the channel this gen_server instance started
-%% @private
-%% huotianjun RoutingKey在rpc 调用中，其实就是Queue
-terminate(_Reason, #state{connection = {ConnectionRef, Connection}, rabbit_channel = {ChannelRef, Channel}}) ->
-	erlang:demonitor(ConnectionRef),
-	erlang:demonitor(ChannelRef),
-
-    amqp_channel:close(Channel),
-	amqp_direct_connection:server_close(Connection, <<"404">>, <<"close">>),
-	amqp_connection:close(Connection),
-    ok.
-
-%% Handle the application initiated stop by just stopping this gen server
-%% @private
-handle_call(stop, _From, State) ->
-    {stop, normal, ok, State};
-
-handle_call({normal_publish, Path, Payload}, _From, State) ->
-	{R, NewState} = internal_normal_publish(Path, Payload, State),
-	{reply, R, NewState};
-
-%% @private
-handle_call({rpc_sync, Path, Payload}, From, State) ->
-	NewState = internal_rpc_publish(Path, Payload, _From = {rpc_sync, From}, State),
-	{noreply, NewState}.
-
-%% @private
-handle_cast({rpc_async, From, SeqId, Path, Payload}, State) -> 
-	NewState = internal_rpc_publish(Path, Payload, _From = {rpc_async, {From, SeqId}}, State),
-	{noreply, NewState};
-
-handle_cast(_Msg, State) ->
-    {noreply, State}.
-
-%% @private
-handle_info({#'basic.consume'{}, _Pid}, State) ->
-    {noreply, State};
-
-%% @private
-handle_info(#'basic.consume_ok'{}, State) ->
-    {noreply, State};
-
-%% @private
-handle_info(#'basic.cancel'{}, State) ->
-    {noreply, State};
-
-%% @private
-handle_info(#'basic.cancel_ok'{}, State) ->
-    {stop, normal, State};
-
-%% @private
-%% huotianjun rpc return info
-handle_info({#'basic.deliver'{},
-			 %%huotianjun 这个Id非常重要，根据它可以知道，这个返回是给哪个进程的
-             _Msg = #amqp_msg{props = #'P_basic'{correlation_id = Id},
-                       payload = Payload}},
-            State = #state{continuations = Conts}) ->
-
-	%%error_logger:info_msg("channel get reply : ~p ~n", [Msg]), 
-	{CallOrCast, From} =  dict:fetch(Id, Conts), 
-	case CallOrCast of
-		rpc_sync ->	
-			gen_server2:reply(From, {ok, Payload});
-		rpc_async ->
-			{FromPid, SeqId} = From,
-			gen_server2:cast(FromPid, {rpc_ok, SeqId, {ok, Payload}})
-	end,
-    {noreply, State#state{continuations = dict:erase(Id, Conts) }};
-
-handle_info({'EXIT', _Pid, Reason}, State) ->
-	{stop, Reason, State};
-
-handle_info({'DOWN', _MRef, process, _Pid, Reason}, State) ->
-	{stop, {error, Reason}, State}.
-
-%% @private
-code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.

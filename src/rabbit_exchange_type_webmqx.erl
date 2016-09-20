@@ -34,6 +34,9 @@
                                    [exchange, ?EXCHANGE_WEBMQX_TYPE, ?MODULE]}},
                     {requires,    rabbit_registry},
                     {enables,     kernel_ready}]}).
+
+%%----------------------------------------------------------------------------
+
 -ifdef(use_specs).
 
 -type(match_result() :: [rabbit_types:binding_destination()]).
@@ -41,8 +44,19 @@
 
 -endif.
 
-
 %%----------------------------------------------------------------------------
+
+%%%
+%%% Exported functions
+%%%
+
+%% from webmqx_exchange_routing 
+fetch_routing_queues(VHost, Exchange, SplitedRoutingWords) when is_list(SplitedRoutingWords) ->
+    mnesia:async_dirty(fun trie_match/2, [#resource{virtual_host = VHost, kind = exchange, name = Exchange}, SplitedRoutingWords]).
+
+%%%
+%%% Callbacks of rabbit_exchange
+%%%
 
 info(_X) -> [].
 info(_X, _) -> [].
@@ -52,14 +66,10 @@ description() ->
 
 serialise_events() -> false.
 
-%%huotianjun for webmqx_exchange_routing 
-fetch_routing_queues(VHost, Exchange, SplitedRoutingWords) when is_list(SplitedRoutingWords) ->
-    mnesia:async_dirty(fun trie_match/2, [#resource{virtual_host = VHost, kind = exchange, name = Exchange}, SplitedRoutingWords]).
-
 route(#exchange{name = _X},
 		#delivery{message = #basic_message{routing_keys = Routes}}) ->
 	R = lists:append([begin
-						%%huotianjun faster
+						%% for faster
 						webmqx_exchange_routing:route(RKey)			
 				end || RKey <- Routes]),
 	R.
@@ -113,7 +123,6 @@ remove_bindings(none, _X, _Bs) ->
 assert_args_equivalence(X, Args) ->
     rabbit_exchange:assert_args_equivalence(X, Args).
 
-%%----------------------------------------------------------------------------
 
 internal_add_binding(#binding{source = X, key = K, destination = D,
                               args = Args}) ->

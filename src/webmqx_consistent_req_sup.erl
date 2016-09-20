@@ -6,6 +6,8 @@
 
 -define(ENCODING, utf8).
 
+%%----------------------------------------------------------------------------
+
 -ifdef(use_specs).
 
 -spec(start_link/0 :: () -> rabbit_types:ok_pid_or_error()).
@@ -13,6 +15,12 @@
 -spec(delete_child/1 :: (binary()) -> 'ok').
 
 -endif.
+
+%%----------------------------------------------------------------------------
+
+%%%
+%%% Exported functions
+%%%
 
 start_link() ->
 	supervisor2:start_link({local, ?MODULE}, ?MODULE, []).
@@ -38,6 +46,10 @@ delete_child(Path) ->
 			ok = supervisor2:delete_child(?MODULE, Id);
 		_ -> ok
 	end.
+
+%%%
+%%% Callback of supervisor
+%%%
 
 init([]) ->
   {ok, {{one_for_one, 5, 10}, []}}.

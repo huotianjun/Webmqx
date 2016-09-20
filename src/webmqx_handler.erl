@@ -1,15 +1,13 @@
-%% Feel free to use, reuse and abuse the code in this file.
-
-%% @doc Pastebin handler.
 -module(webmqx_handler).
 
 %% Standard callbacks.
 -export([init/2]).
 
-%%huotianjun http request handler 
-init(Req , Opts) ->
-	%%error_logger:info_msg("Req : ~p ~n", [Req]),
+%%%
+%%% Callback of cowboy
+%%%
 
+init(Req , Opts) ->
 	{ok, {_Host, Path, Method, PayloadJson, Req2}} = req_parse(Req),
 
 	IsConsistentReq = case Method of
@@ -49,7 +47,6 @@ init(Req , Opts) ->
 
 	cowboy_req:reply(200, #{
 				<<"content-type">> => <<"text/html">>
-				%%<<"content-type">> => <<"text/plain">>
 				}, Response, Req2),
 
 	{ok, Req2, Opts}.

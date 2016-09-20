@@ -22,21 +22,18 @@
 -export([start/2]).
 -export([stop/1]).
 
+%%%
+%%% Callbacks of application
+%%%
+
 start(_Type, _Args) ->
 	Result = webmqx_sup:start_link(),
 
-	%%huotianjun start rpc workers manager 
 	webmqx_rpc_worker_manager:start(),
-
-	%%huotianjun webmqx exchange routing queues manager
 	webmqx_exchange_routing:start(),
-
-	%%huotianjun start internal rpc core server
 	webmqx_service_internal:start(),
 
-	%%huotianjun start all RPC workers, and regstry in manager
 	webmqx_sup:start_supervisor_child(webmqx_rpc_worker_sup),
-
 	webmqx_sup:start_supervisor_child(webmqx_consistent_req_sup),
 
 	Dispatch = cowboy_router:compile([
@@ -49,7 +46,6 @@ start(_Type, _Args) ->
 		#{env => #{dispatch => Dispatch}} 
 	),
 
-	%%huotianjun update webmqx_exchange_routing when bindings changed.
 	EventPid = case rabbit_event:start_link() of
 					{ok, Pid}                       -> Pid;
 					{error, {already_started, Pid}} -> Pid

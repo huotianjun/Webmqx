@@ -15,6 +15,8 @@
 				unacked_rpc_reqs = dict:new(),
 				req_id = 0}).
 
+%%----------------------------------------------------------------------------
+
 -ifdef(use_specs).
 
 -specs(start_link/1 :: (binary()) -> {'ok', pid()}).
@@ -22,9 +24,12 @@
 
 -endif.
 
-%%--------------------------------------------------------------------------
-%% API
-%%--------------------------------------------------------------------------
+%%----------------------------------------------------------------------------
+
+
+%%%
+%%% Exported functions
+%%%
 
 start_link(Path) ->
     {ok, Pid} = gen_server2:start_link(?MODULE, [Path], []),
@@ -33,9 +38,9 @@ start_link(Path) ->
 stop(Pid) ->
     gen_server2:call(Pid, stop, infinity).
 
-%%--------------------------------------------------------------------------
-%% gen_server callbacks
-%%--------------------------------------------------------------------------
+%%%
+%%% Callbacks of gen_server
+%%%
 
 %% @private
 init([Path]) ->
@@ -43,12 +48,9 @@ init([Path]) ->
 	
 	{ok, Connection} = amqp_connection:start(#amqp_params_direct{}),
 
-    {ok, Channel} = amqp_connection:open_channel(
-                        Connection, {amqp_direct_consumer, [self()]}),
+    {ok, Channel} = amqp_connection:open_channel(Connection, {amqp_direct_consumer, [self()]}),
 
-	%%huotianjun rabbit_limiter enable.
-	#'basic.qos_ok'{} = amqp_channel:call(
-							Channel, #'basic.qos'{prefetch_count = 10}),
+	#'basic.qos_ok'{} = amqp_channel:call(Channel, #'basic.qos'{prefetch_count = 10}),
 
 	#'queue.declare_ok'{queue = Q} =
 		amqp_channel:call(Channel, #'queue.declare'{queue		= Path,
@@ -60,31 +62,25 @@ init([Path]) ->
 	ConnectionRef = erlang:monitor(process, Connection),
 	ChannelRef = erlang:monitor(process, Channel),
 
-    {ok, #state{connection = {ConnectionRef, Connection}, channel = {ChannelRef, Channel}, 
+    {ok, #state{connection = {ConnectionRef, Connection}, 
+				channel = {ChannelRef, Channel}, 
 				path = Path}}.
 
-%% @private
 handle_info(shutdown, State) ->
     {stop, normal, State};
 
-%% @private
 handle_info({#'basic.consume'{}, _}, State) ->
     {noreply, State};
 
-%% @private
 handle_info(#'basic.consume_ok'{}, State) ->
     {noreply, State};
 
-%% @private
 handle_info(#'basic.cancel'{}, State) ->
     {noreply, State};
 
-%% @private
 handle_info(#'basic.cancel_ok'{}, State) ->
     {stop, normal, State};
 
-%% @private
-%% huotianjun from Consistent Req Queue named Path
 handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
 				#amqp_msg{payload = PayloadJson}},
 				State = #state{path = Path, channel = {_Ref, Channel},
@@ -99,7 +95,7 @@ handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
 			{ok, RpcWorkerPid} ->
 				webmqx_rpc_worker:rpc(async, RpcWorkerPid, ReqId, Path, PayloadJson),
 				State#state{req_id = ReqId + 1,
-					unacked_rpc_reqs = dict:store(ReqId, DeliveryTag, UnackedReqs)}
+							unacked_rpc_reqs = dict:store(ReqId, DeliveryTag, UnackedReqs)}
 		end
 	catch 
 		_Error:_Reason -> 
@@ -119,13 +115,6 @@ handle_info({'DOWN', _MRef, process, _Pid, Reason}, State) ->
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State}.
 
-%%huotianjun not send，must handle
-%%			dict:fold(fun (_ReqId, Tag, ok) ->
-%%							amqp_channel:call(Channel, #'basic.nack'{delivery_tag = Tag})
-%%						end, ok, UnackedReqs),
-%%			{stop, normal, State};
-
-%%huotianjun return from webmqx_rpc_worker 
 handle_cast({rpc_ok, ReqId, {ok, _Response}}, 
 				State = #state{channel = {_Ref, Channel},
 								unacked_rpc_reqs = UnackedReqs}) ->
@@ -133,12 +122,9 @@ handle_cast({rpc_ok, ReqId, {ok, _Response}},
 	amqp_channel:call(Channel, #'basic.ack'{delivery_tag = DeliveryTag}),
 	{noreply, State#state{unacked_rpc_reqs = dict:erase(ReqId, UnackedReqs)}};
 
-%% @private
 handle_cast(_Message, State) ->
     {noreply, State}.
 
-%% Closes the channel this gen_server instance started
-%% @private
 terminate(_Reason, #state{connection = {_ConnectionRef, Connection}, 
 							channel = {_ChannelRef, Channel},
 							unacked_rpc_reqs = UnackedReqs}) ->
@@ -154,6 +140,3 @@ terminate(_Reason, #state{connection = {_ConnectionRef, Connection},
 %% @private
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
-
-
-

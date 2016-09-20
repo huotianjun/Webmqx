@@ -5,6 +5,8 @@
 
 -export([env/1, words_to_path/1, path_to_words/1]).
 
+%%----------------------------------------------------------------------------
+
 -ifdef(use_specs).
 
 -spec(env/1 :: (atom()) -> 'undefined' | any()).
@@ -12,6 +14,12 @@
 -spec(path_to_words/1 :: (binary()) -> [string()]). 
 
 -endif.
+
+%%----------------------------------------------------------------------------
+
+%%%
+%%% Exported funcitons
+%%%
 
 env(Key) ->
     case application:get_env(?APP, Key) of
@@ -39,7 +47,6 @@ path_to_words1(<<>>, [], Acc) ->
     lists:reverse(Acc);
 path_to_words1(<<>>, Word, Acc) ->
     lists:reverse([lists:reverse(Word) | Acc]);
-%%huotianjun split by '/'
 path_to_words1(<<$/, Rest/binary>>, [], Acc) ->
     path_to_words1(Rest, [], Acc);
 path_to_words1(<<$/, Rest/binary>>, Word, Acc) ->

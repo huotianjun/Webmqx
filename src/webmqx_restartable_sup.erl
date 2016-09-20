@@ -36,13 +36,21 @@
 -endif.
 
 %%----------------------------------------------------------------------------
-%%
+
+
+%%%
+%%% Exported function
+%%%
+
 start_link(Name, {_M, _F, _A} = Fun, Delay) ->
     supervisor2:start_link({local, Name}, ?MODULE, [Fun, Delay]).
 
+%%%
+%%% Callback of supervisor
+%%%
+
 init([{Mod, _F, _A} = Fun, Delay]) ->
     {ok, {{one_for_one, 10, 10},
-		  %%huotianjun meaning while, a child
           [{Mod, Fun, case Delay of
                           true  -> {transient, 1};
                           false -> transient

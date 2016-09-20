@@ -8,7 +8,7 @@
          handle_info/2, terminate/2, code_change/3]).
 
 %%----------------------------------------------------------------------------
-%%
+
 -define(TAB, rpc_worker_table).
 
 -ifdef(use_specs).
@@ -25,6 +25,7 @@
 %%%
 %%% Exported functions
 %%%
+
 start_link() ->
     gen_server2:start_link({local, ?MODULE}, ?MODULE, [], []).
 
@@ -36,12 +37,10 @@ start() ->
 join(N, Pid) when is_pid(Pid) ->
     gen_server2:cast(?MODULE, {join, N, Pid}).
 
-%%huotianjun 用Req进程的进程id随机生成一个N，均衡调用
 get_a_worker() ->
 	N = erlang:phash2(self(), ?DEFAULT_RPC_CHANNEL_MAX) + 1,
 	get_a_worker1(N, {undefined, undefined}).
 
-%%huotianjun 如果没有命中，看下一个，找到为止
 get_a_worker1(_N, {L, _}) when L =/= undefined andalso L =< 0 ->
 	undefined;
 get_a_worker1(N, {L, Count}) ->
@@ -59,13 +58,12 @@ get_a_worker1(N, {L, Count}) ->
 	end.
 
 %%%
-%%% Callback functions from gen_server
+%%% Callbacks of gen_server
 %%%
 
 -record(state, {}).
 
 init([]) ->
-	%%huotianjun 重启的时候，把之前的内容重新join一下。Ref变了
 	[join_rpc(N, Pid) ||
 		[N, {Pid, _Ref}] <- ets:match(?TAB, {{n, '$1'}, '$2'})],
     {ok, #state{}}.

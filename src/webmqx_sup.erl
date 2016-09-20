@@ -33,6 +33,8 @@
 
 -define(SERVER, ?MODULE).
 
+%%----------------------------------------------------------------------------
+
 -ifdef(use_specs).
 
 -spec(start_link/0 :: () -> rabbit_types:ok_pid_or_error()).
@@ -47,9 +49,12 @@
 
 -endif.
 
-%% API.
+%%----------------------------------------------------------------------------
 
--spec start_link() -> {ok, pid()}.
+%%%
+%%% Exported functions
+%%%
+
 start_link() ->
 	supervisor2:start_link({local, ?MODULE}, ?MODULE, []).
 
@@ -76,11 +81,15 @@ start_restartable_child(Name0, Mod, Args, Delay) ->
                           [Name, {Mod, start_link, Args}, Delay]},
                    transient, infinity, supervisor, [webmqx_restartable_sup]})).
 
+%%%
+%%% Callback of supervisor
+%%%
+
 init([]) -> {ok, {{one_for_all, 0, 1}, []}}.
 
 
-%%----------------------------------------------------------------------------
-
+%%%
+%%% Local functions
+%%%
 child_reply({ok, _}) -> ok;
 child_reply(X)       -> X.
-%% supervisor.

@@ -5,7 +5,7 @@
 
 -behaviour(gen_server2).
 
-%%huotianjun for update exchange bindings of all clusters.
+%% for update exchange bindings of all nodes.
 -behaviour(gm).
 
 %% API.
@@ -26,6 +26,8 @@
 				routing_queues= dict:new() %%huotianjun value is gb_trees, key is splited path.
 				}). 
 
+%%----------------------------------------------------------------------------
+
 -ifdef(use_specs).
 
 -spec(start_link/0 :: () -> rabbit_types:ok_pid_or_error().
@@ -37,7 +39,11 @@
 
 -endif.
 
-%% API.
+%%----------------------------------------------------------------------------
+
+%%%
+%%% Exported functions
+%%%
 
 start_link() ->
 	gen_server2:start_link({local, ?MODULE}, ?MODULE, [], []).
@@ -47,7 +53,7 @@ start() ->
 		ordered_set, public, named_table]),
     ensure_started().
 
-%%huotianjun callback of rabbit_exchange_type_webmqx:route
+%% callback from rabbit_exchange_type_webmqx:route
 route(Path) ->
 	case get_queue_trees(Path) of
 		undefined -> [];
@@ -87,11 +93,13 @@ queues_count(Path) ->
 			_Size = queue_trees_size(QueueTrees)
 	end.
 
-%%huotianjun from rabbit exchange binding event	
+%% from webmqx_binding_event_handler
 flush_routing_queues(PathSplitWords) ->
 	gen_server2:cast(?MODULE, {flush_routing_queues, PathSplitWords}).
 
-%% gen_server.
+%%%
+%%% Callbacks of gen_server
+%%%
 
 init([]) ->
 	%%huotianjun group name is MODULE
@@ -110,7 +118,6 @@ init([]) ->
 
 	{ok, #state{gm = GM}}.
 
-%%huotianjun no gm broadcast.
 handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queues = RoutingQueues}) ->
 	QueueTrees1=
 	case dict:find({path, PathSplitWords}, RoutingQueues) of
@@ -125,14 +132,13 @@ handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queu
 
 	case QueueTrees1 of 
 		undefined ->
-			%%huotianjun
 			NowTimeStamp = now_timestamp_counter(),
 			GoFetch = 
 			case ets:lookup(?TAB, {path, PathSplitWords}) of
 				%%huotianjun last fetch just before is null
 				[{{path, PathSplitWords}, {none, LastTryStamp}}] -> 
 					if
-						%%huotianjun 10 seconds
+						%% interval : 10 seconds
 						(NowTimeStamp - LastTryStamp) > 10 -> true;
 						true -> false
 					end;
@@ -167,7 +173,6 @@ handle_cast({flush_routing_queues, PathSplitWords}, State = #state{gm = GM}) ->
 	gm:broadcast(GM, {flush_routing_queues, PathSplitWords}),
 	{noreply, State};
 
-%%huotianjun all clusters update in here
 handle_cast({gm, {flush_routing_queues, PathSplitWords}}, State = #state{routing_queues = RoutingQueues}) ->
 	QueueTrees =
 	case rabbit_exchange_type_webmqx:fetch_routing_queues(<<"/">>, ?EXCHANGE_WEBMQX, PathSplitWords) of
@@ -201,7 +206,10 @@ ensure_started() ->
             ok
     end.
 
-%% Local Functions
+%%%
+%%% Local Functions
+%%%
+
 now_timestamp_counter() ->
 	{{_, _, _},{NowHour, NowMinute, NowSecond}} = calendar:now_to_local_time(os:timestamp()),
 	(NowHour*3600 + NowMinute*60 + NowSecond).
@@ -218,7 +226,6 @@ queue_trees_lookup(Number, QueueTrees) ->
 queue_trees_enter(Number, Queue, QueueTrees) ->
 	gb_trees:enter(Number, Queue, QueueTrees).
 
-%%huotianjun new from queues list
 queue_trees_new(Queues) ->
 	queue_trees_new1(Queues, gb_trees:empty(), 1).
 
@@ -234,7 +241,10 @@ routing_table_update(PathSplitWords, QueueTrees) ->
 			ets:update_element(?TAB, {path, PathSplitWords}, {2, QueueTrees})
 	end.
 
-%%huotianjun gm's callback
+%%%
+%%% Callbacks of GM
+%%%
+
 joined([SPid], _Members) -> 
 	SPid ! {joined, self()}, ok.
 

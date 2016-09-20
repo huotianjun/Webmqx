@@ -19,9 +19,19 @@
 -endif.
 
 %%----------------------------------------------------------------------------
+
+
+%%%
+%%% Exported function
+%%%
+
 start_link() ->
     {ok, SupPid} = supervisor2:start_link(?MODULE, []),
 	{ok, SupPid}.
+
+%%%
+%%% Callback of supervisor
+%%%
 
 init([]) -> 
 	Procs = [
