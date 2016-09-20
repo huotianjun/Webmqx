@@ -22,7 +22,7 @@
 -export([start_link/0, 
          start_supervisor_child/1, start_supervisor_child/2,
          start_supervisor_child/3,
-         start_restartable_child/1, start_restartable_child/2,
+         start_restartable_child/1, start_restartable_child/2, start_restartable_child/4,
          start_delayed_restartable_child/1, start_delayed_restartable_child/2
          ]).
 
@@ -40,7 +40,8 @@
 -spec(start_supervisor_child/2 :: (atom(), [any()]) -> 'ok').
 -spec(start_supervisor_child/3 :: (atom(), atom(), [any()]) -> 'ok').
 -spec(start_restartable_child/1 :: (atom()) -> 'ok').
--spec(start_restartable_child/2 :: (atom(), [any()]) -> 'ok').
+-spec(start_restartable_child/2 :: (atom(), atom(), [any()], boolean()) -> 'ok').
+-spec(start_restartable_child/4 :: (atom(), [any()]) -> 'ok').
 -spec(start_delayed_restartable_child/1 :: (atom()) -> 'ok').
 -spec(start_delayed_restartable_child/2 :: (atom(), [any()]) -> 'ok').
 
@@ -62,13 +63,13 @@ start_supervisor_child(ChildId, Mod, Args) ->
                   {ChildId, {Mod, start_link, Args},
                    transient, infinity, supervisor, [Mod]})).
 
-start_restartable_child(M)            -> start_restartable_child(M, [], false).
-start_restartable_child(M, A)         -> start_restartable_child(M, A,  false).
-start_delayed_restartable_child(M)    -> start_restartable_child(M, [], true).
-start_delayed_restartable_child(M, A) -> start_restartable_child(M, A,  true).
+start_restartable_child(M)            -> start_restartable_child(M, M, [], false).
+start_restartable_child(M, A)         -> start_restartable_child(M, M, A,  false).
+start_delayed_restartable_child(M)    -> start_restartable_child(M, M, [], true).
+start_delayed_restartable_child(M, A) -> start_restartable_child(M, M, A,  true).
 
-start_restartable_child(Mod, Args, Delay) ->
-    Name = list_to_atom(atom_to_list(Mod) ++ "_sup"),
+start_restartable_child(Name0, Mod, Args, Delay) ->
+    Name = list_to_atom(atom_to_list(Name0) ++ "_sup"),
     child_reply(supervisor2:start_child(
                   ?SERVER,
                   {Name, {webmqx_restartable_sup, start_link,
