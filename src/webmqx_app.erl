@@ -43,7 +43,7 @@ start(_Type, _Args) ->
 	]),
 
 	{ok, _Cowboy} = cowboy:start_clear(http, 100, [{port, 80}], 
-		#{env => #{dispatch => Dispatch}} 
+		#{env => #{dispatch => Dispatch, handler_opts => "test opts"}} 
 	),
 
 	EventPid =
