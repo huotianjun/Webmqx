@@ -37,6 +37,6 @@ init([]) ->
 	Procs = [
 		{{webmqx_rpc_worker, N}, {webmqx_rpc_worker, start_link, [N]},
 			permanent, 16#ffffffff, worker, []}
-			|| N <- lists:seq(1, ?DEFAULT_RPC_WORKERS_NUM)],
+			|| N <- lists:seq(1, webmqx_util:get_rpc_workers_num())],
 	{ok, {{one_for_one, 1, 5}, Procs}}.
 

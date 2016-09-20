@@ -9,7 +9,7 @@
 
 init(Req , Opts) ->
 
-	error_logger:info_msg("Opts : ~p~n", [Opts]),
+	#{rpc_workers_num := WorkersNum} = Opts,
 
 	{ok, {_Host, Path, Method, PayloadJson, Req2}} = req_parse(Req),
 
@@ -23,7 +23,7 @@ init(Req , Opts) ->
 
 	Response =
 	try 
-		case webmqx_rpc_worker_manager:get_a_worker() of
+		case webmqx_rpc_worker_manager:get_a_worker(WorkersNum) of
 			undefined -> <<"ERROR">>;
 			{ok, RpcChannelPid} ->
 				case IsConsistentReq of

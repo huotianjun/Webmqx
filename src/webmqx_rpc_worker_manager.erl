@@ -3,7 +3,7 @@
 
 -include("webmqx.hrl").
 
--export([join/2, get_a_worker/0]).
+-export([join/2, get_a_worker/1]).
 -export([start/0, start_link/0, init/1, handle_call/3, handle_cast/2,
          handle_info/2, terminate/2, code_change/3]).
 
@@ -16,7 +16,7 @@
 -spec(start_link/0 :: () -> rabbit_types:ok_pid_or_error().
 -spec(start/0 :: () -> rabbit_types:ok_or_error(any())).
 -spec(join/2 :: (non_neg_integer(), pid()) -> 'ok').
--spec(get_a_worker/0 :: () -> rabbit_types:ok(pid()) | undefined). 
+-spec(get_a_worker/1 :: (non_neg_integer()) -> rabbit_types:ok(pid()) | undefined). 
 
 -endif.
 
@@ -37,23 +37,23 @@ start() ->
 join(N, Pid) when is_pid(Pid) ->
     gen_server2:cast(?MODULE, {join, N, Pid}).
 
-get_a_worker() ->
-	N = erlang:phash2(self(), ?DEFAULT_RPC_WORKERS_NUM) + 1,
-	get_a_worker1(N, {undefined, undefined}).
+get_a_worker(WorkersNum) ->
+	N = erlang:phash2(self(), WorkersNum) + 1,
+	get_a_worker1(N, {undefined, undefined}, WorkersNum).
 
-get_a_worker1(_N, {L, _}) when L =/= undefined andalso L =< 0 ->
+get_a_worker1(_N, {L, _}, WorkersNum) when L =/= undefined andalso L =< 0 ->
 	undefined;
-get_a_worker1(N, {L, Count}) ->
+get_a_worker1(N, {L, Count}, WorkersNum) ->
 	case ets:lookup(?TAB, {n, N}) of
 		[{{n, N}, {Pid, _Ref}}] ->
 			{ok, Pid};
 		_ ->
 			case L of
 				undefined ->
-					Count0 = ?DEFAULT_RPC_WORKERS_NUM,
-					get_a_worker1(case N+1 > Count0 of true -> 1; false -> N+1 end, {Count0 - 1, Count0});
+					Count0 = WorkersNum,
+					get_a_worker1(case N+1 > Count0 of true -> 1; false -> N+1 end, {Count0 - 1, Count0}, WorkersNum);
 				_ ->
-					get_a_worker1(case N+1 > Count of true -> 1; false -> N+1 end, {L - 1, Count})
+					get_a_worker1(case N+1 > Count of true -> 1; false -> N+1 end, {L - 1, Count}, WorkersNum)
 			end
 	end.
 
