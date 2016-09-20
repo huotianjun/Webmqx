@@ -41,7 +41,7 @@ get_a_worker(WorkersNum) ->
 	N = erlang:phash2(self(), WorkersNum) + 1,
 	get_a_worker1(N, {undefined, undefined}, WorkersNum).
 
-get_a_worker1(_N, {L, _}, WorkersNum) when L =/= undefined andalso L =< 0 ->
+get_a_worker1(_N, {L, _}, _WorkersNum) when L =/= undefined andalso L =< 0 ->
 	undefined;
 get_a_worker1(N, {L, Count}, WorkersNum) ->
 	case ets:lookup(?TAB, {n, N}) of
