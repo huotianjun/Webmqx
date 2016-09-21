@@ -33,7 +33,7 @@ handle_event({event, remove, {PathSplited, _X, _D, _Args}, _, _}, State) ->
 	webmqx_consistent_req_sup:delete_child(Path),
 	{ok, State};
 
-handle_event(Event, State) ->
+handle_event(_Event, State) ->
 	{ok, State}.
 
 handle_call(_Request, State) ->
