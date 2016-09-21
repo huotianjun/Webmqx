@@ -96,7 +96,7 @@ http_reply(error, Headers, Body) ->
 				"\" is not the path you are looking for.\n"],
 	Headers2 = lists:keyreplace(<<"content-length">>, 1, Headers,
 									{<<"content-length">>, integer_to_list(iolist_size(Body))}),
-	cowboy_req:reply(404, Headers2, Body, Req);
+	cowboy_req:reply(404, Headers2, Body, Req).
 
 
 
