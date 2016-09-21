@@ -15,7 +15,7 @@ handle_event({event, binding_add, Info, _, _}, State) ->
 	error_logger:info_msg("event : ~p~n", [Info]),
 	{ok, State};
 
-handle_event({event, binding_add, {PathSplited, _X, _D, _Args}, _, _}, State) ->
+handle_event({event, add, {PathSplited, _X, _D, _Args}, _, _}, State) ->
 	error_logger:info_msg("binding_add ~p~n", [PathSplited]),
 	webmqx_exchange_routing:flush_routing_queues(PathSplited),
 	Path = webmqx_util:words_to_path(PathSplited),
@@ -26,7 +26,7 @@ handle_event({event, binding_remove, Info, _, _}, State) ->
 	error_logger:info_msg("event : ~p~n", [Info]),
 	{ok, State};
 
-handle_event({event, binding_remove, {PathSplited, _X, _D, _Args}, _, _}, State) ->
+handle_event({event, remove, {PathSplited, _X, _D, _Args}, _, _}, State) ->
 	error_logger:info_msg("binding_remove ~p~n", [PathSplited]),
 	webmqx_exchange_routing:flush_routing_queues(PathSplited),
 	Path = webmqx_util:words_to_path(PathSplited),
