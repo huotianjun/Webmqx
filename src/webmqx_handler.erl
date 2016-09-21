@@ -21,7 +21,7 @@ init(Req , Opts) ->
 						_				-> false
 					end,
 
-	Response =
+	_Response =
 	try 
 		case webmqx_rpc_worker_manager:get_a_worker(WorkersNum) of
 			undefined -> {error, #{}, <<"">>};
