@@ -23,7 +23,7 @@ reponse_to_json(Headers, Body) ->
 			]},
 	jiffy:encode(Response).
 
-mircro_service_test(Body) -> 
+micro_service_test(Body) -> 
 	reponse_to_json([{<<"content-type">>, <<"text/html">>}], Body).
 
 core_service(PayloadEncode) when is_binary(PayloadEncode) ->
