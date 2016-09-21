@@ -12,26 +12,28 @@ init([]) ->
   {ok, []}.
 
 handle_event({event, binding_add, {PathSplited, _X, _D, _Args}, _, _}, State) ->
-  Path = webmqx_util:words_to_path(PathSplited),
-  webmqx_consistent_req_sup:start_child(Path),
-  {ok, State};
+	Path = webmqx_util:words_to_path(PathSplited),
+	webmqx_exchange_routing:flush_routing_queues(Path),
+	webmqx_consistent_req_sup:start_child(Path),
+	{ok, State};
 
 handle_event({event, binding_remove, {PathSplited, _X, _D, _Args}, _, _}, State) ->
-  Path = webmqx_util:words_to_path(PathSplited),
-  webmqx_consistent_req_sup:delete_child(Path),
-  {ok, State};
+	Path = webmqx_util:words_to_path(PathSplited),
+	webmqx_exchange_routing:flush_routing_queues(Path),
+	webmqx_consistent_req_sup:delete_child(Path),
+	{ok, State};
 
 handle_event(_Event, State) ->
-  {ok, State}.
+	{ok, State}.
 
 handle_call(_Request, State) ->
-  {ok, State}.
+	{ok, State}.
 
 handle_info(_Info, State) ->
-  {ok, State}.
+	{ok, State}.
 
 terminate(_Reason, _State) ->
-  ok.
+	ok.
 
 code_change(_OldVsn, State, _Extra) ->
-  {ok, State}.
+	{ok, State}.
