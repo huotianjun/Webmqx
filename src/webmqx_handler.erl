@@ -21,7 +21,7 @@ init(Req , Opts) ->
 						_				-> false
 					end,
 
-	_Response =
+	Response =
 	try 
 		case webmqx_rpc_worker_manager:get_a_worker(WorkersNum) of
 			undefined -> {error, #{}, <<"">>};
@@ -87,7 +87,7 @@ req_parse(Req) ->
 	{ok, {Host, Path, Method, jiffy:encode(Payload), Req2}}.
 
 http_reply({error, Headers, Body}, Req) ->
-	Body = ["404 Not Found: \"", Body],
+	Body = <<"404 Not Found: \"", Body/binary>>,
 	Headers2 = Headers#{<<"content-length">> => integer_to_list(iolist_size(Body))}, 
 	cowboy_req:reply(404, Headers2, Body, Req);
 
