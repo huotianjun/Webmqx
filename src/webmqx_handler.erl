@@ -42,7 +42,7 @@ init(Req , Opts) ->
 								%%#{<<"headers">> := #{<<"host">> := Host, <<"method">> := Method, <<"path">> := Path, <<"qs">> := Qs},     <<"body">> := Body}
 							   	R1= jiffy:decode(R, [return_maps]),	
 								error_logger:info_msg("test jiffy decode response", [R1]),
-								{ok, Header, Body}
+								{ok, headers, body}
 						end
 				end
 		end
