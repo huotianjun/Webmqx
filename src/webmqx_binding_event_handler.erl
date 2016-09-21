@@ -12,14 +12,14 @@ init([]) ->
   {ok, []}.
 
 handle_event({event, binding_add, {PathSplited, _X, _D, _Args}, _, _}, State) ->
+	webmqx_exchange_routing:flush_routing_queues(PathSplited),
 	Path = webmqx_util:words_to_path(PathSplited),
-	webmqx_exchange_routing:flush_routing_queues(Path),
 	webmqx_consistent_req_sup:start_child(Path),
 	{ok, State};
 
 handle_event({event, binding_remove, {PathSplited, _X, _D, _Args}, _, _}, State) ->
+	webmqx_exchange_routing:flush_routing_queues(PathSplited),
 	Path = webmqx_util:words_to_path(PathSplited),
-	webmqx_exchange_routing:flush_routing_queues(Path),
 	webmqx_consistent_req_sup:delete_child(Path),
 	{ok, State};
 
