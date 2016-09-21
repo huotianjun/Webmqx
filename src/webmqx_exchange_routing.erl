@@ -177,7 +177,7 @@ handle_cast({gm, {flush_routing_queues, PathSplitWords}}, State = #state{routing
 	QueueTrees =
 	case rabbit_exchange_type_webmqx:fetch_routing_queues(<<"/">>, ?EXCHANGE_WEBMQX, PathSplitWords) of
 		[] ->
-			error_logger:info_msg("gm binding update : ~p~n", [SplitedPath]),
+			error_logger:info_msg("gm binding update : ~p~n", [PathSplitWords]),
 			routing_table_update(PathSplitWords, {none, now_timestamp_counter()}),
 			gb_trees:empty();
 		Queues ->
