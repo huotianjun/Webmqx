@@ -39,10 +39,10 @@ init(Req , Opts) ->
 							undefined ->
 								{error, #{}, <<"rpc_sync error">>};
 							{ok, R} -> 
+								%% #{<<"content-type">> => <<"text/html">>}
 								#{<<"headers">> := Headers, <<"body">> := Body}
 									= jiffy:decode(R, [return_maps]),	
-								error_logger:info_msg("test jiffy decode response : ~p ~p~n", [Headers, Body]),
-								{ok, headers, body}
+								{ok, Headers, Body}
 						end
 				end
 		end
@@ -51,11 +51,7 @@ init(Req , Opts) ->
 			{error, #{}, <<"rpc crash">>} 
 	end,
 
-	cowboy_req:reply(200, #{
-				<<"content-type">> => <<"text/html">>
-				}, <<"ok">>, Req2),
-
-	%%http_reply(Response),
+	http_reply(Response, Req2),
 
 	{ok, Req2, Opts}.
 
@@ -90,12 +86,12 @@ req_parse(Req) ->
 
 	{ok, {Host, Path, Method, jiffy:encode(Payload), Req2}}.
 
-%%http_reply(error, Headers, Body) ->
-	%%Body = ["404 Not Found: \"", Path,
-%%				"\" is not the path you are looking for.\n"],
-%%	Headers2 = lists:keyreplace(<<"content-length">>, 1, Headers,
-%%									{<<"content-length">>, integer_to_list(iolist_size(Body))}),
-%%	cowboy_req:reply(404, Headers2, Body, Req).
+http_reply({error, Headers, Body}, Req) ->
+	Body = ["404 Not Found: \"", Body],
+	Headers2 = Headers#{<<"content-length">> => integer_to_list(iolist_size(Body))}, 
+	cowboy_req:reply(404, Headers2, Body, Req);
 
-
+http_reply({ok, Headers, Body}, Req) ->
+	Headers2 = Headers#{<<"content-length">> => integer_to_list(iolist_size(Body))}, 
+	cowboy_req:reply(200, Headers2, Body, Req).
 
