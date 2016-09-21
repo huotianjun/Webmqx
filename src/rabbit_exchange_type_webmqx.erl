@@ -108,6 +108,7 @@ remove_bindings(transaction, _X, Bs) ->
              trie_remove_binding(X, FinalNode, D, Args),
 
 			 %%huotianjun for update webmqx_exchange_routing of clusters 
+			 error_logger:info_msg("type binding_remove : ~p~n", [SplitedPath]),
 			 rabbit_event:notify(binding_remove, {SplitedPath, X, D, Args}),
 
              remove_path_if_empty(X, Path);
@@ -130,6 +131,7 @@ internal_add_binding(#binding{source = X, key = K, destination = D,
     trie_add_binding(X, FinalNode, D, Args),
 
 	%%huotianjun for update webmqx_exchange_routing of clusters
+	error_logger:info_msg("type binding_add : ~p~n", [SplitedPath]),
 	rabbit_event:notify(binding_add, {SplitedPath, X, D, Args}),
     ok.
 
