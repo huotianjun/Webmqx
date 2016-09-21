@@ -170,6 +170,7 @@ handle_call(_Request, _From, State) ->
 	{reply, ignore, State}.
 
 handle_cast({flush_routing_queues, PathSplitWords}, State = #state{gm = GM}) ->
+	error_logger:info_msg("handle_cast flush_routing_queues : ~p~n", [PathSplitWords]),
 	gm:broadcast(GM, {flush_routing_queues, PathSplitWords}),
 	{noreply, State};
 
@@ -253,6 +254,7 @@ members_changed([_SPid], _Births, _) ->
     ok.
 
 handle_msg([SPid], _From, Msg) ->
+	error_logger:info_msg("gm handle_msg : ~p~n", [Msg]),
     ok = gen_server2:cast(SPid, {gm, Msg}).
 
 handle_terminate([_SPid], Reason) ->
