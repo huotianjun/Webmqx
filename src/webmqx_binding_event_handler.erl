@@ -34,7 +34,6 @@ handle_event({event, remove, {PathSplited, _X, _D, _Args}, _, _}, State) ->
 	{ok, State};
 
 handle_event(Event, State) ->
-	error_logger:info_msg("unknown event : ~p ~n", [Event]),
 	{ok, State}.
 
 handle_call(_Request, State) ->
