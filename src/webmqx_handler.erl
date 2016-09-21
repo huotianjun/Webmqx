@@ -32,12 +32,12 @@ init(Req , Opts) ->
 							ok ->	
 								{ok, #{}, <<>>};
 							_ ->
-								{error, #{},  <<"normal_publish error">>
+								{error, #{},  <<"normal_publish error">>}
 						end;
 					false ->	
 						case webmqx_rpc_worker:rpc(sync, RpcWorkerPid, Path, PayloadJson) of
 							undefined ->
-								{error, #{}, <<"rpc_sync error">>;
+								{error, #{}, <<"rpc_sync error">>};
 							{ok, R} -> 
 								%%#{<<"headers">> := #{<<"host">> := Host, <<"method">> := Method, <<"path">> := Path, <<"qs">> := Qs},     <<"body">> := Body}
 							   	R1= jiffy:decode(PayloadEncode, [return_maps])	
@@ -48,7 +48,7 @@ init(Req , Opts) ->
 		end
 	catch 
 		_Error:_Reason -> 
-			{error, #{}, <<"rpc crash">> 
+			{error, #{}, <<"rpc crash">>} 
 	end,
 
 	cowboy_req:reply(200, #{
