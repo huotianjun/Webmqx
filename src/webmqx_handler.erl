@@ -39,9 +39,9 @@ init(Req , Opts) ->
 							undefined ->
 								{error, #{}, <<"rpc_sync error">>};
 							{ok, R} -> 
-								%%#{<<"headers">> := #{<<"host">> := Host, <<"method">> := Method, <<"path">> := Path, <<"qs">> := Qs},     <<"body">> := Body}
-							   	R1= jiffy:decode(R, [return_maps]),	
-								error_logger:info_msg("test jiffy decode response", [R1]),
+								#{<<"headers">> := Headers, <<"body">> := Body}
+									= jiffy:decode(R, [return_maps]),	
+								error_logger:info_msg("test jiffy decode response : ~p ~p~n", [Headers, Body]),
 								{ok, headers, body}
 						end
 				end
