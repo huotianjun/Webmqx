@@ -51,8 +51,8 @@
 %%%
 
 %% from webmqx_exchange_routing 
-fetch_routing_queues(VHost, Exchange, SplitedRoutingWords) when is_list(SplitedRoutingWords) ->
-    mnesia:async_dirty(fun trie_match/2, [#resource{virtual_host = VHost, kind = exchange, name = Exchange}, SplitedRoutingWords]).
+fetch_routing_queues(VHost, Exchange, WordsOfPath) when is_list(WordsOfPath) ->
+    mnesia:async_dirty(fun trie_match/2, [#resource{virtual_host = VHost, kind = exchange, name = Exchange}, WordsOfPath]).
 
 %%%
 %%% Callbacks of rabbit_exchange
@@ -107,7 +107,7 @@ remove_bindings(transaction, _X, Bs) ->
          {ok, Path = [{FinalNode, _} | _]} ->
              trie_remove_binding(X, FinalNode, D, Args),
 
-			 %%huotianjun for update webmqx_exchange_routing of clusters 
+			 %% for update webmqx_exchange_routing of nodes 
 			 rabbit_event:notify(binding_remove, {SplitedPath, X, D, Args}),
 
              remove_path_if_empty(X, Path);
@@ -129,7 +129,7 @@ internal_add_binding(#binding{source = X, key = K, destination = D,
     FinalNode = follow_down_create(X, SplitedPath = webmqx_util:path_to_words(K)),
     trie_add_binding(X, FinalNode, D, Args),
 
-	%%huotianjun for update webmqx_exchange_routing of clusters
+	%% for update webmqx_exchange_routing of nodes
 	rabbit_event:notify(binding_add, {SplitedPath, X, D, Args}),
     ok.
 

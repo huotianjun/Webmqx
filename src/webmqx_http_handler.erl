@@ -1,4 +1,4 @@
--module(webmqx_handler).
+-module(webmqx_http_handler).
 
 %% Standard callbacks.
 -export([init/2]).
@@ -43,7 +43,6 @@ init(Req , Opts) ->
 									undefined ->
 										{error, #{}, <<"rpc_sync error">>};
 									{ok, R} -> 
-										error_logger:info_msg("rpc response : ~p~n", [R]),
 										#{<<"headers">> := Headers, <<"body">> := Body}
 											= jiffy:decode(R, [return_maps]),	
 										{ok, Headers, Body}
@@ -65,6 +64,7 @@ req_parse(Req) ->
 	Method = cowboy_req:method(Req),
 	Path = cowboy_req:path(Req),
 	Qs = cowboy_req:qs(Req),
+
 	{Body, Req2}  = 
 		case cowboy_req:has_body(Req) of
 			true -> 
@@ -79,6 +79,7 @@ req_parse(Req) ->
 				end;
 			false -> {<<"">>, Req}
 		end,
+
 	Payload = {[
 				{req, {[
 						{host, Host},

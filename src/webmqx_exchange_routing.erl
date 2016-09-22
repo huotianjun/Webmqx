@@ -23,7 +23,7 @@
 
 -record(state, {
 				gm = undefined,
-				routing_queues= dict:new() %%huotianjun value is gb_trees, key is splited path.
+				routing_queues= dict:new() %% key is words of path, value is a gb_trees.
 				}). 
 
 %%----------------------------------------------------------------------------
@@ -102,7 +102,6 @@ flush_routing_queues(WordsOfPath) ->
 %%%
 
 init([]) ->
-	%%huotianjun group name is MODULE
 	{ok, GM} = gm:start_link(?MODULE, ?MODULE, [self()],
 							 fun rabbit_misc:execute_mnesia_transaction/1),
 	MRef = erlang:monitor(process, GM),
@@ -135,7 +134,6 @@ handle_call({get_routing_queues, WordsOfPath}, _, State = #state{routing_queues 
 			NowTimeStamp = now_timestamp_counter(),
 			GoFetch = 
 			case ets:lookup(?TAB, {path, WordsOfPath}) of
-				%%huotianjun last fetch just before is null
 				[{{path, WordsOfPath}, {none, LastTryStamp}}] -> 
 					if
 						%% interval : 10 seconds

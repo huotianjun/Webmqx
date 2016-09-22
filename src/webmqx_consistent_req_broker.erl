@@ -81,6 +81,7 @@ handle_info(#'basic.cancel'{}, State) ->
 handle_info(#'basic.cancel_ok'{}, State) ->
     {stop, normal, State};
 
+%% message from MQ's queue(named as Path), and rpc to an application server.
 handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
 				#amqp_msg{payload = PayloadJson}},
 				State = #state{path = Path, channel = {_Ref, Channel},
@@ -115,6 +116,7 @@ handle_info({'DOWN', _MRef, process, _Pid, Reason}, State) ->
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State}.
 
+%% message from rpc worker, so this rpc is ok.
 handle_cast({rpc_ok, ReqId, {ok, _Response}}, 
 				State = #state{channel = {_Ref, Channel},
 								unacked_rpc_reqs = UnackedReqs}) ->

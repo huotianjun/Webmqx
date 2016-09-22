@@ -91,6 +91,7 @@ handle_info(#'basic.cancel'{}, State) ->
 handle_info(#'basic.cancel_ok'{}, State) ->
     {stop, normal, State};
 
+%% message from queues created by rpc server.
 handle_info({#'basic.deliver'{delivery_tag = _DeliveryTag},
              #amqp_msg{props = Props, payload = Payload}},
             State = #state{handler = Fun, channel = {_Ref, Channel}}) ->
