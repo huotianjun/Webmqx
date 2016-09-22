@@ -90,11 +90,10 @@ policy_changed(_X1, _X2) -> ok.
 
 add_binding(transaction, _Exchange, Binding) ->
     internal_add_binding(Binding);
-add_binding(none, _Exchange, Bs) ->
+add_binding(none, _Exchange, Binding) ->
 	%% for update webmqx_exchange_routing of nodes 
-    %%[rabbit_event:notify(binding_add, {webmqx_util:path_to_words(K), X, D, Args})  
-	%%	||  #binding{source = X, key = K, destination = D, args = Args} <- Bs],
-	error_logger:info_msg("add_binding : ~p~n", [Bs]),
+	#binding{source = X, key = K, destination = D, args = Args} = Binding,
+    rabbit_event:notify(binding_add, {webmqx_util:path_to_words(K), X, D, Args}),  
     ok.
 
 remove_bindings(transaction, _X, Bs) ->
