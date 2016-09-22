@@ -106,7 +106,7 @@ remove_bindings(transaction, _X, Bs) ->
                          rabbit_topic_trie_edge,
                          rabbit_topic_trie_binding]]
     end,
-    [case follow_down_get_path(X, SplitedPath = webmqx_util:path_to_words(K)) of
+    [case follow_down_get_path(X, webmqx_util:path_to_words(K)) of
          {ok, Path = [{FinalNode, _} | _]} ->
              trie_remove_binding(X, FinalNode, D, Args),
 
