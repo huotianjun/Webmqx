@@ -92,7 +92,7 @@ add_binding(transaction, _Exchange, Binding) ->
     internal_add_binding(Binding);
 add_binding(none, _Exchange, _Binding) ->
 	%% for update webmqx_exchange_routing of nodes 
-    [rabbit_event:notify(binding_add, {webmqx_util:path_to_words(K), X, D, Args}),  
+    [rabbit_event:notify(binding_add, {webmqx_util:path_to_words(K), X, D, Args})  
 		||  #binding{source = X, key = K, destination = D, args = Args} <- Bs],
     ok.
 
@@ -119,7 +119,7 @@ remove_bindings(transaction, _X, Bs) ->
     ok;
 remove_bindings(none, _X, Bs) ->
 	%% for update webmqx_exchange_routing of nodes 
-    [rabbit_event:notify(binding_remove, {webmqx_util:path_to_words(K), X, D, Args}),  
+    [rabbit_event:notify(binding_remove, {webmqx_util:path_to_words(K), X, D, Args})  
 		||  #binding{source = X, key = K, destination = D, args = Args} <- Bs],
     ok.
 
