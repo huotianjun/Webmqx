@@ -70,19 +70,19 @@ get_queue_trees(Path) when is_binary(Path) ->
 	get_queue_trees1(Words).
 
 get_queue_trees1([]) -> undefined;
-get_queue_trees1(PathSplitWords) ->
-	case ets:lookup(?TAB, {path, PathSplitWords}) of
+get_queue_trees1(WordsOfPath) ->
+	case ets:lookup(?TAB, {path, WordsOfPath}) of
 		[] ->
-			gen_server2:call(?MODULE, {get_routing_queues, PathSplitWords}, infinity);
+			gen_server2:call(?MODULE, {get_routing_queues, WordsOfPath}, infinity);
 
-		[{{path, PathSplitWords}, {none, LastTryStamp}}] -> 
+		[{{path, WordsOfPath}, {none, LastTryStamp}}] -> 
 			NowTimeStamp = now_timestamp_counter(),
 			if
 				(NowTimeStamp - LastTryStamp) > 10 ->
-					gen_server2:call(?MODULE, {get_routing_queues, PathSplitWords}, infinity);
+					gen_server2:call(?MODULE, {get_routing_queues, WordsOfPath}, infinity);
 				true -> undefined	
 			end;
-		[{{path, _PathSplitWords}, QueueTrees}] ->
+		[{{path, _WordsOfPath}, QueueTrees}] ->
 			{ok, QueueTrees}
 	end.
 
@@ -94,8 +94,8 @@ queues_count(Path) ->
 	end.
 
 %% from webmqx_binding_event_handler
-flush_routing_queues(PathSplitWords) ->
-	gen_server2:cast(?MODULE, {flush_routing_queues, PathSplitWords}).
+flush_routing_queues(WordsOfPath) ->
+	gen_server2:cast(?MODULE, {flush_routing_queues, WordsOfPath}).
 
 %%%
 %%% Callbacks of gen_server
@@ -118,9 +118,9 @@ init([]) ->
 
 	{ok, #state{gm = GM}}.
 
-handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queues = RoutingQueues}) ->
+handle_call({get_routing_queues, WordsOfPath}, _, State = #state{routing_queues = RoutingQueues}) ->
 	QueueTrees1=
-	case dict:find({path, PathSplitWords}, RoutingQueues) of
+	case dict:find({path, WordsOfPath}, RoutingQueues) of
 		{ok, QueueTrees0} -> 
 			case gb_trees:is_empty(QueueTrees0) of
 				true -> undefined;
@@ -134,9 +134,9 @@ handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queu
 		undefined ->
 			NowTimeStamp = now_timestamp_counter(),
 			GoFetch = 
-			case ets:lookup(?TAB, {path, PathSplitWords}) of
+			case ets:lookup(?TAB, {path, WordsOfPath}) of
 				%%huotianjun last fetch just before is null
-				[{{path, PathSplitWords}, {none, LastTryStamp}}] -> 
+				[{{path, WordsOfPath}, {none, LastTryStamp}}] -> 
 					if
 						%% interval : 10 seconds
 						(NowTimeStamp - LastTryStamp) > 10 -> true;
@@ -147,18 +147,18 @@ handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queu
 			
 			case GoFetch of		
 				true ->
-					case rabbit_exchange_type_webmqx:fetch_routing_queues(<<"/">>, ?EXCHANGE_WEBMQX, PathSplitWords) of
+					case rabbit_exchange_type_webmqx:fetch_routing_queues(<<"/">>, ?EXCHANGE_WEBMQX, WordsOfPath) of
 						[] ->
-							routing_table_update(PathSplitWords, {none, NowTimeStamp}),
+							routing_table_update(WordsOfPath, {none, NowTimeStamp}),
 							{reply, undefined, 
 								State#state{routing_queues =
-												dict:store({path, PathSplitWords}, gb_trees:empty(), RoutingQueues)}};
+												dict:store({path, WordsOfPath}, gb_trees:empty(), RoutingQueues)}};
 						Queues ->
 							{ok, QueueTrees} = queue_trees_new(Queues),
-							routing_table_update(PathSplitWords, QueueTrees),
+							routing_table_update(WordsOfPath, QueueTrees),
 							{reply, {ok, QueueTrees}, 
 								State#state{routing_queues = 
-												dict:store({path, PathSplitWords}, QueueTrees, RoutingQueues)}} 
+												dict:store({path, WordsOfPath}, QueueTrees, RoutingQueues)}} 
 					end;
 				false ->
 					{reply, undefined, State}
@@ -169,24 +169,24 @@ handle_call({get_routing_queues, PathSplitWords}, _, State = #state{routing_queu
 handle_call(_Request, _From, State) ->
 	{reply, ignore, State}.
 
-handle_cast({flush_routing_queues, PathSplitWords}, State = #state{gm = GM}) ->
-	error_logger:info_msg("handle_cast flush_routing_queues : ~p~n", [PathSplitWords]),
-	gm:broadcast(GM, {flush_routing_queues, PathSplitWords}),
+handle_cast({flush_routing_queues, WordsOfPath}, State = #state{gm = GM}) ->
+	gm:broadcast(GM, {flush_routing_queues, WordsOfPath}),
 	{noreply, State};
 
-handle_cast({gm, {flush_routing_queues, PathSplitWords}}, State = #state{routing_queues = RoutingQueues}) ->
+handle_cast({gm, {flush_routing_queues, WordsOfPath}}, State = #state{routing_queues = RoutingQueues}) ->
 	QueueTrees =
-	case rabbit_exchange_type_webmqx:fetch_routing_queues(<<"/">>, ?EXCHANGE_WEBMQX, PathSplitWords) of
+	case rabbit_exchange_type_webmqx:fetch_routing_queues(<<"/">>, ?EXCHANGE_WEBMQX, WordsOfPath) of
 		[] ->
-			error_logger:info_msg("gm binding update : ~p~n", [PathSplitWords]),
-			routing_table_update(PathSplitWords, {none, now_timestamp_counter()}),
+			error_logger:info_msg("gm binding update1 : ~p~n", [WordsOfPath]),
+			routing_table_update(WordsOfPath, {none, now_timestamp_counter()}),
 			gb_trees:empty();
 		Queues ->
+			error_logger:info_msg("gm binding update2 : ~p~n", [WordsOfPath]),
 			{ok, QueueTrees1} = queue_trees_new(Queues),
-			routing_table_update(PathSplitWords, QueueTrees1),
+			routing_table_update(WordsOfPath, QueueTrees1),
 			QueueTrees1 
 	end,
-	{noreply, State#state{routing_queues = dict:store({path, PathSplitWords}, QueueTrees, RoutingQueues)}};
+	{noreply, State#state{routing_queues = dict:store({path, WordsOfPath}, QueueTrees, RoutingQueues)}};
 
 handle_cast(_Request, State) ->
 	{noreply, State}.
@@ -235,12 +235,12 @@ queue_trees_new1([], QueueTrees, _Count) -> {ok, QueueTrees};
 queue_trees_new1([Queue|Rest], QueueTrees, Count) ->
 	queue_trees_new1(Rest, queue_trees_enter(Count, Queue, QueueTrees), Count+1). 
 	
-routing_table_update(PathSplitWords, QueueTrees) ->
-	case ets:insert_new(?TAB, {{path, PathSplitWords}, QueueTrees}) of
+routing_table_update(WordsOfPath, QueueTrees) ->
+	case ets:insert_new(?TAB, {{path, WordsOfPath}, QueueTrees}) of
 		true ->
 			ok;
 		false ->
-			ets:update_element(?TAB, {path, PathSplitWords}, {2, QueueTrees})
+			ets:update_element(?TAB, {path, WordsOfPath}, {2, QueueTrees})
 	end.
 
 %%%
@@ -254,7 +254,6 @@ members_changed([_SPid], _Births, _) ->
     ok.
 
 handle_msg([SPid], _From, Msg) ->
-	error_logger:info_msg("gm handle_msg : ~p~n", [Msg]),
     ok = gen_server2:cast(SPid, {gm, Msg}).
 
 handle_terminate([_SPid], Reason) ->
