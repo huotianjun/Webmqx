@@ -91,6 +91,9 @@ policy_changed(_X1, _X2) -> ok.
 add_binding(transaction, _Exchange, Binding) ->
     internal_add_binding(Binding);
 add_binding(none, _Exchange, _Binding) ->
+	%% for update webmqx_exchange_routing of nodes 
+    [rabbit_event:notify(binding_add, {webmqx_util:path_to_words(K), X, D, Args}),  
+		||  #binding{source = X, key = K, destination = D, args = Args} <- Bs],
     ok.
 
 remove_bindings(transaction, _X, Bs) ->
@@ -107,17 +110,17 @@ remove_bindings(transaction, _X, Bs) ->
          {ok, Path = [{FinalNode, _} | _]} ->
              trie_remove_binding(X, FinalNode, D, Args),
 
-             remove_path_if_empty(X, Path),
-
-			 %% for update webmqx_exchange_routing of nodes 
-			 rabbit_event:notify(binding_remove, {SplitedPath, X, D, Args});
+             remove_path_if_empty(X, Path);
          {error, _Node, _RestW} ->
              %% We're trying to remove a binding that no longer exists.
              %% That's unexpected, but shouldn't be a problem.
              ok
      end ||  #binding{source = X, key = K, destination = D, args = Args} <- Bs],
     ok;
-remove_bindings(none, _X, _Bs) ->
+remove_bindings(none, _X, Bs) ->
+	%% for update webmqx_exchange_routing of nodes 
+    [rabbit_event:notify(binding_remove, {webmqx_util:path_to_words(K), X, D, Args}),  
+		||  #binding{source = X, key = K, destination = D, args = Args} <- Bs],
     ok.
 
 assert_args_equivalence(X, Args) ->
