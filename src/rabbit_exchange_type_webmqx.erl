@@ -107,10 +107,10 @@ remove_bindings(transaction, _X, Bs) ->
          {ok, Path = [{FinalNode, _} | _]} ->
              trie_remove_binding(X, FinalNode, D, Args),
 
-			 %% for update webmqx_exchange_routing of nodes 
-			 rabbit_event:notify(binding_remove, {SplitedPath, X, D, Args}),
+             remove_path_if_empty(X, Path),
 
-             remove_path_if_empty(X, Path);
+			 %% for update webmqx_exchange_routing of nodes 
+			 rabbit_event:notify(binding_remove, {SplitedPath, X, D, Args});
          {error, _Node, _RestW} ->
              %% We're trying to remove a binding that no longer exists.
              %% That's unexpected, but shouldn't be a problem.
