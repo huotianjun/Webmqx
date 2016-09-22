@@ -90,7 +90,7 @@ policy_changed(_X1, _X2) -> ok.
 
 add_binding(transaction, _Exchange, Binding) ->
     internal_add_binding(Binding);
-add_binding(none, _Exchange, _Binding) ->
+add_binding(none, _Exchange, Bs) ->
 	%% for update webmqx_exchange_routing of nodes 
     [rabbit_event:notify(binding_add, {webmqx_util:path_to_words(K), X, D, Args})  
 		||  #binding{source = X, key = K, destination = D, args = Args} <- Bs],
