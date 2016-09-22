@@ -175,11 +175,11 @@ handle_cast({gm, {flush_routing_queues, WordsOfPath}}, State = #state{routing_qu
 	QueueTrees =
 	case rabbit_exchange_type_webmqx:fetch_routing_queues(<<"/">>, ?EXCHANGE_WEBMQX, WordsOfPath) of
 		[] ->
-			error_logger:info_msg("test1"),
+			error_logger:info_msg("test1 : ~p ", [WordsOfPath]),
 			routing_table_update(WordsOfPath, {none, now_timestamp_counter()}),
 			gb_trees:empty();
 		Queues ->
-			error_logger:info_msg("test2"),
+			error_logger:info_msg("test2 : ~p ~p~n", [WordsOfPath, Queues]),
 			{ok, QueueTrees1} = queue_trees_new(Queues),
 			routing_table_update(WordsOfPath, QueueTrees1),
 			QueueTrees1 
