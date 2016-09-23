@@ -4,7 +4,7 @@
 -include("webmqx.hrl").
 
 -export([env/1, words_to_path/1, path_to_words/1, 
-		 env_vhost/0, env_rpc_workers_num/0]).
+		 env_vhost/0, env_username/0, env_password/0, env_rpc_workers_num/0]).
 
 %%----------------------------------------------------------------------------
 
@@ -12,6 +12,8 @@
 
 -spec(env/1 :: (atom()) -> 'undefined' | any()).
 -spec(env_vhost/0 :: () -> binary()).
+-spec(env_username/0 :: () -> binary()).
+-spec(env_password/0 :: () -> binary()).
 -spec(env_rpc_workers_num/0 :: () -> non_neg_integer()).
 -spec(words_to_path/1 :: ([string()]) -> binary()).
 -spec(path_to_words/1 :: (binary()) -> [string()]). 
@@ -29,6 +31,18 @@ env(Key) ->
         {ok, Val} -> Val;
         undefined -> undefined
     end.
+
+env_username() ->
+	case env(username) of
+		undefined -> <<"guest">>;
+		U -> U
+	end.
+
+env_password() ->
+	case env(password) of
+		undefined -> <<"guest">>;
+		P -> P
+	end.
 
 env_vhost() ->
 	case env(vhost) of

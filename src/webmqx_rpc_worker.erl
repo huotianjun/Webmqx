@@ -59,7 +59,13 @@ stop(Pid) ->
 init([N]) ->
 	process_flag(trap_exit, true),
 
-	{ok, Connection} = amqp_connection:start(#amqp_params_direct{}),
+	Username = webmqx_util:env_username(),
+	Password = webmqx_util:env_password(),
+	VHost = webmqx_util:env_vhost(),
+
+	{ok, Connection} = amqp_connection:start(#amqp_params_direct{username = Username,
+																	password = Password,
+																	virtual_host = VHost}),
 
     {ok, Channel} = amqp_connection:open_channel(
                         Connection, {amqp_direct_consumer, [self()]}),

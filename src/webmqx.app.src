@@ -18,6 +18,8 @@
   {mod, { webmqx_app, []}},
   {env, [
 			{vhost, <<"/">>},
+			{username, <<"apns">>},
+			{password, <<"apns">>},
 			{rpc_workers_num, 10}
 		]}
  ]}.
