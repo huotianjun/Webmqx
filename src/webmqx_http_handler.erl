@@ -68,10 +68,10 @@ req_parse(Req) ->
 	{Body, Req2}  = 
 		case cowboy_req:has_body(Req) of
 			true -> 
-				case cowboy_req:read_body(Req, [
-												{length, 64000},
-												{read_length, 64000},
-												{read_timeout, 5000}]) of
+				case cowboy_req:read_body(Req, #{ 
+												length => 64000,
+												read_length => 64000,
+												read_timeout => 5000}) of
 					{ok, Body1, Req1} ->
 						{Body1, Req1};
 					{more, _, Req1} ->
