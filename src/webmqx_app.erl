@@ -20,7 +20,7 @@ start(_Type, _Args) ->
 	webmqx_sup:start_supervisor_child(webmqx_rpc_worker_sup),
 	webmqx_sup:start_supervisor_child(webmqx_consistent_req_sup),
 
-	RpcWorkersNum = webmqx_util:get_rpc_workers_num(),
+	RpcWorkersNum = webmqx_util:env_rpc_workers_num(),
 
 	Dispatch = cowboy_router:compile([
 		{'_', [

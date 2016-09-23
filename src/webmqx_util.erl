@@ -3,14 +3,16 @@
 -include_lib("amqp_client/include/amqp_client.hrl").
 -include("webmqx.hrl").
 
--export([env/1, words_to_path/1, path_to_words/1, get_rpc_workers_num/0]).
+-export([env/1, words_to_path/1, path_to_words/1, 
+		 env_vhost/0, env_rpc_workers_num/0]).
 
 %%----------------------------------------------------------------------------
 
 -ifdef(use_specs).
 
 -spec(env/1 :: (atom()) -> 'undefined' | any()).
--spec(get_rpc_workers_num/0 :: () -> non_neg_integer()).
+-spec(env_vhost/0 :: () -> binary()).
+-spec(env_rpc_workers_num/0 :: () -> non_neg_integer()).
 -spec(words_to_path/1 :: ([string()]) -> binary()).
 -spec(path_to_words/1 :: (binary()) -> [string()]). 
 
@@ -28,7 +30,13 @@ env(Key) ->
         undefined -> undefined
     end.
 
-get_rpc_workers_num() ->
+env_vhost() ->
+	case env(vhost) of
+		undefined -> <<"/">>;
+		V -> V 
+	end.
+
+env_rpc_workers_num() ->
 	case env(rpc_workers_num) of
 		undefined -> ?DEFAULT_RPC_WORKERS_NUM;
 		Num -> Num

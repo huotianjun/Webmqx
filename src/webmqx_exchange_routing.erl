@@ -22,6 +22,7 @@
 -define(TAB, ?MODULE).
 
 -record(state, {
+				vhost = webmqx_util:env_vhost(),
 				gm = undefined,
 				routing_queues= dict:new() %% key is words of path, value is a gb_trees.
 				}). 
@@ -117,7 +118,7 @@ init([]) ->
 
 	{ok, #state{gm = GM}}.
 
-handle_call({get_routing_queues, WordsOfPath}, _, State = #state{routing_queues = RoutingQueues}) ->
+handle_call({get_routing_queues, WordsOfPath}, _, State = #state{vhost = VHost, routing_queues = RoutingQueues}) ->
 	QueueTrees1=
 	case dict:find({path, WordsOfPath}, RoutingQueues) of
 		{ok, QueueTrees0} -> 
@@ -145,7 +146,7 @@ handle_call({get_routing_queues, WordsOfPath}, _, State = #state{routing_queues 
 			
 			case GoFetch of		
 				true ->
-					case rabbit_exchange_type_webmqx:fetch_routing_queues(<<"/">>, ?EXCHANGE_WEBMQX, WordsOfPath) of
+					case rabbit_exchange_type_webmqx:fetch_routing_queues(VHost, ?EXCHANGE_WEBMQX, WordsOfPath) of
 						[] ->
 							routing_table_update(WordsOfPath, {none, NowTimeStamp}),
 							{reply, undefined, 
@@ -171,9 +172,9 @@ handle_cast({flush_routing_queues, WordsOfPath}, State = #state{gm = GM}) ->
 	gm:broadcast(GM, {flush_routing_queues, WordsOfPath}),
 	{noreply, State};
 
-handle_cast({gm, {flush_routing_queues, WordsOfPath}}, State = #state{routing_queues = RoutingQueues}) ->
+handle_cast({gm, {flush_routing_queues, WordsOfPath}}, State = #state{vhost = VHost, routing_queues = RoutingQueues}) ->
 	QueueTrees =
-	case rabbit_exchange_type_webmqx:fetch_routing_queues(<<"/">>, ?EXCHANGE_WEBMQX, WordsOfPath) of
+	case rabbit_exchange_type_webmqx:fetch_routing_queues(VHost, ?EXCHANGE_WEBMQX, WordsOfPath) of
 		[] ->
 			routing_table_update(WordsOfPath, {none, now_timestamp_counter()}),
 			gb_trees:empty();
