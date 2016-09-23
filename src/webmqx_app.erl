@@ -13,12 +13,13 @@
 start(_Type, _Args) ->
 	Result = webmqx_sup:start_link(),
 
-	webmqx_rpc_worker_manager:start(),
 	webmqx_exchange_routing:start(),
-	webmqx_service_internal:start(),
 
+	webmqx_rpc_worker_manager:start(),
 	webmqx_sup:start_supervisor_child(webmqx_rpc_worker_sup),
 	webmqx_sup:start_supervisor_child(webmqx_consistent_req_sup),
+
+	webmqx_service_internal:start(),
 
 	RpcWorkersNum = webmqx_util:env_rpc_workers_num(),
 
