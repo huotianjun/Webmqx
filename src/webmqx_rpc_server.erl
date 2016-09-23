@@ -52,9 +52,9 @@ init([ServerName, RoutingKey, Fun]) ->
     {ok, Channel} = amqp_connection:open_channel(
                         Connection, {amqp_direct_consumer, [self()]}),
 
-	%% ExchangeDeclare = #'exchange.declare'{exchange = ?EXCHANGE_WEBMQX, type = ?EXCHANGE_WEBMQX_TYPE},
-	%% #'exchange.declare_ok'{} = 
-	%% amqp_channel:call(Channel, ExchangeDeclare),
+	ExchangeDeclare = #'exchange.declare'{exchange = ?EXCHANGE_WEBMQX, type = ?EXCHANGE_WEBMQX_TYPE},
+	#'exchange.declare_ok'{} = 
+	amqp_channel:call(Channel, ExchangeDeclare),
 
 	#'queue.declare_ok'{queue = Q} =
 		amqp_channel:call(Channel, #'queue.declare'{exclusive   = true,
