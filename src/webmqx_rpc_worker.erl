@@ -67,6 +67,9 @@ init([N]) ->
 	ConnectionRef = erlang:monitor(process, Connection),
 	ChannelRef = erlang:monitor(process, Channel),
 
+	ExchangeDeclare = #'exchange.declare'{exchange = ?EXCHANGE_WEBMQX, type = ?EXCHANGE_WEBMQX_TYPE},
+	#'exchange.declare_ok'{} = amqp_channel:call(Channel, ExchangeDeclare),
+
     InitialState = #state{
 							connection  = {ConnectionRef, Connection},
 							rabbit_channel     = {ChannelRef, Channel},
