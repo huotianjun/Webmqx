@@ -66,14 +66,11 @@ description() ->
 
 serialise_events() -> false.
 
-route(_X, _D) -> [].
-%%route(#exchange{name = _X},
-%%		#delivery{message = #basic_message{routing_keys = Routes}}) ->
-%%	R = lists:append([begin
-%%						%% for faster
-%%						webmqx_exchange_routing:route(RKey)			
-%%				end || RKey <- Routes]),
-%%	R.
+route(_X, #delivery{message = #basic_message{routing_keys = Routes}}) ->
+	R = lists:append([begin
+						webmqx_exchange_routing:route(RKey)			
+				end || RKey <- Routes]),
+	R.
 
 validate(_X) -> ok.
 validate_binding(_X, _B) -> ok.
