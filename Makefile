@@ -5,7 +5,7 @@ DEPS = amqp_client cowboy jiffy rabbit
 LOCAL_DEPS = ssl observer runtime_tools
 
 ## 用master可能会有问题
-dep_cowboy_commit = master 
+dep_cowboy_commit = 1.0.2 
 
 ##huotianjun 增加了rabbitmq plugins用到的makefile内容
 DEP_PLUGINS = rabbit_common/mk/rabbitmq-plugin.mk
