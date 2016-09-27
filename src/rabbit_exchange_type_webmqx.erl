@@ -66,7 +66,7 @@ description() ->
 
 serialise_events() -> false.
 
-route(_X, _D) -> ok.
+route(_X, _D) -> [].
 %%route(#exchange{name = _X},
 %%		#delivery{message = #basic_message{routing_keys = Routes}}) ->
 %%	R = lists:append([begin
