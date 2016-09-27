@@ -66,7 +66,8 @@ description() ->
 
 serialise_events() -> false.
 
-route(#exchange{name = _X},
+route(_X, _D) -> ok;
+route1(#exchange{name = _X},
 		#delivery{message = #basic_message{routing_keys = Routes}}) ->
 	R = lists:append([begin
 						%% for faster
