@@ -8,12 +8,12 @@
 					kernel,
 					stdlib,
 					rabbit,
-					cowboy,
+					%%amqp_client,
+					%%cowboy,
 					mnesia,
 					jiffy,
 					observer,
-					runtime_tools,
-					amqp_client
+					runtime_tools
                  ]},
   {mod, { webmqx_app, []}},
   {env, [
