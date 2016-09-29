@@ -27,13 +27,14 @@ reponse_to_json(Headers, Body) ->
 %%% Callbacks of test. 
 %%%
 
-micro_service_test(Body) -> 
-	reponse_to_json([{<<"content-type">>, <<"text/html">>}], Body).
+micro_service_test(_Body) -> 
+	reponse_to_json([{<<"content-type">>, <<"text/html">>}], <<"Hello World">>).
 
 core_service(PayloadEncode) when is_binary(PayloadEncode) ->
 	Payload = jiffy:decode(PayloadEncode, [return_maps]),
 	core_service1(Payload).
 
+%% TODO
 core_service1(#{<<"req">> := #{<<"host">> := Host, <<"method">> := Method, <<"path">> := Path, <<"qs">> := Qs}, <<"body">> := Body}) ->
 	%% huotianjun payload的map(先写出这个map，在jiffy里面试着encode，再decode）
 	%% #{method => <<"route_add">>, content => [<<"101.200.162.101">>, <<"/test1/test2">>, <<"test2">>]}
