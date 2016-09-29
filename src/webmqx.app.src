@@ -4,17 +4,18 @@
   {vsn, "1"},
   {registered, []},
   {modules, []},
-  {applications, [
-					kernel,
-					stdlib,
-					rabbit,
-					amqp_client,
-					cowboy,
-					mnesia,
-					jiffy,
-					observer,
-					runtime_tools
-                 ]},
+  {applications, 
+		[
+			kernel,
+			stdlib,
+			rabbit,
+			amqp_client,
+			cowboy,
+			mnesia,
+			jiffy,
+			observer,
+			runtime_tools
+        ]},
   {mod, { webmqx_app, []}},
   {env, [
 			{vhost, <<"/">>},
