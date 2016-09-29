@@ -125,7 +125,7 @@ assert_args_equivalence(X, Args) ->
 
 internal_add_binding(#binding{source = X, key = K, destination = D,
                               args = Args}) ->
-    FinalNode = follow_down_create(X, SplitedPath = webmqx_util:path_to_words(K)),
+    FinalNode = follow_down_create(X, webmqx_util:path_to_words(K)),
     trie_add_binding(X, FinalNode, D, Args),
     ok.
 
