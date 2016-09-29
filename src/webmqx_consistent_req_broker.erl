@@ -26,7 +26,6 @@
 
 %%----------------------------------------------------------------------------
 
-
 %%%
 %%% Exported functions
 %%%
@@ -47,17 +46,16 @@ init([Path]) ->
 	process_flag(trap_exit, true),
 	
 	{ok, Connection} = amqp_connection:start(#amqp_params_direct{}),
-
     {ok, Channel} = amqp_connection:open_channel(Connection, {amqp_direct_consumer, [self()]}),
 
-	#'basic.qos_ok'{} = amqp_channel:call(Channel, #'basic.qos'{prefetch_count = 10}),
-
+	#'basic.qos_ok'{} = 
+		amqp_channel:call(Channel, #'basic.qos'{prefetch_count = 10}),
 	#'queue.declare_ok'{queue = Q} =
 		amqp_channel:call(Channel, #'queue.declare'{queue		= Path,
 													durable		= true,
 													auto_delete = false}),
-
-    amqp_channel:call(Channel, #'basic.consume'{queue = Q, no_ack = false}),
+	#'basic.consume_ok'{} =
+		amqp_channel:call(Channel, #'basic.consume'{queue = Q, no_ack = false}),
 
 	ConnectionRef = erlang:monitor(process, Connection),
 	ChannelRef = erlang:monitor(process, Channel),
@@ -81,7 +79,7 @@ handle_info(#'basic.cancel'{}, State) ->
 handle_info(#'basic.cancel_ok'{}, State) ->
     {stop, normal, State};
 
-%% message from MQ's queue(named as Path), and rpc to an application server.
+%% Message from the queue of consistent requests named as 'Path', and rpc it to an application server.
 handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
 				#amqp_msg{payload = PayloadJson}},
 				State = #state{path = Path, channel = {_Ref, Channel},
@@ -116,7 +114,7 @@ handle_info({'DOWN', _MRef, process, _Pid, Reason}, State) ->
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State}.
 
-%% message from rpc worker, so this rpc is ok.
+%% Message from rpc worker, the rpc cast is ok.
 handle_cast({rpc_ok, ReqId, {ok, _Response}}, 
 				State = #state{channel = {_Ref, Channel},
 								unacked_rpc_reqs = UnackedReqs}) ->

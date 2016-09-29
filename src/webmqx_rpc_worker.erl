@@ -40,12 +40,15 @@ start_link(N) ->
     {ok, Pid} = gen_server2:start_link(?MODULE, [N], []),
 	{ok, Pid}.
 
+%% Called by webmqx_http_handler.
 rpc(sync, WorkerPid, Path, Payload) ->
     gen_server2:call(WorkerPid, {rpc_sync, Path, Payload}, infinity).
 
+%% Called by webmqx_consistent_req_broker.
 rpc(async, WorkerPid, SeqId, Path, Payload) ->
     gen_server2:cast(WorkerPid, {rpc_async, self(), SeqId, Path, Payload}).
 
+%% Called by webmqx_http_handler.
 normal_publish(WorkerPid, Path, Payload) ->
 	gen_server2:call(WorkerPid, {normal_publish, Path, Payload}, infinity).
 
@@ -127,6 +130,7 @@ handle_info(#'basic.cancel'{}, State) ->
 handle_info(#'basic.cancel_ok'{}, State) ->
     {stop, normal, State};
 
+%% Message from queue of application server.
 handle_info({#'basic.deliver'{},
              _Msg = #amqp_msg{props = #'P_basic'{correlation_id = Id},
                        payload = Payload}},

@@ -5,10 +5,10 @@
 
 -behaviour(gen_server2).
 
-%% for update exchange bindings of all nodes.
+%% For update exchange bindings of all nodes.
 -behaviour(gm).
 
-%% API.
+%% APIs.
 -export([start/0]).
 -export([start_link/0]).
 -export([route/1, flush_routing_queues/1, queues_count/1]).
@@ -16,7 +16,7 @@
 %% gen_server.
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
-%%huotianjun gm callback 
+%% GM callbacks 
 -export([joined/2, members_changed/3, handle_msg/3, handle_terminate/2]).
 
 -define(TAB, ?MODULE).
@@ -54,12 +54,12 @@ start() ->
 		ordered_set, public, named_table]),
     ensure_started().
 
-%% callback from rabbit_exchange_type_webmqx:route
+%% Callback from rabbit_exchange_type_webmqx:route
 route(Path) ->
 	case get_queue_trees(Path) of
 		undefined -> [];
 		{ok, QueueTrees} ->
-			%%houtianjun random a queue. 
+			%% Select a random queue. 
 			Size = queue_trees_size(QueueTrees),
 			N = erlang:phash2(self(), Size) + 1,
 			{ok, Queue} = queue_trees_lookup(N, QueueTrees),
@@ -94,7 +94,7 @@ queues_count(Path) ->
 			_Size = queue_trees_size(QueueTrees)
 	end.
 
-%% from webmqx_binding_event_handler
+%% Called from webmqx_binding_event_handler.
 flush_routing_queues(WordsOfPath) ->
 	gen_server2:cast(?MODULE, {flush_routing_queues, WordsOfPath}).
 
@@ -118,7 +118,10 @@ init([]) ->
 
 	{ok, #state{gm = GM}}.
 
-handle_call({get_routing_queues, WordsOfPath}, _, State = #state{vhost = VHost, routing_queues = RoutingQueues}) ->
+handle_call({get_routing_queues, WordsOfPath}, _, 
+				State = #state{vhost = VHost, routing_queues = RoutingQueues}) ->
+
+	%% First, search in process state.
 	QueueTrees1=
 	case dict:find({path, WordsOfPath}, RoutingQueues) of
 		{ok, QueueTrees0} -> 
@@ -132,12 +135,13 @@ handle_call({get_routing_queues, WordsOfPath}, _, State = #state{vhost = VHost, 
 
 	case QueueTrees1 of 
 		undefined ->
+			%% Then, search in rabbit table.
 			NowTimeStamp = now_timestamp_counter(),
 			GoFetch = 
 			case ets:lookup(?TAB, {path, WordsOfPath}) of
 				[{{path, WordsOfPath}, {none, LastTryStamp}}] -> 
 					if
-						%% interval : 10 seconds
+						%% Interval : 10 seconds
 						(NowTimeStamp - LastTryStamp) > 10 -> true;
 						true -> false
 					end;
@@ -172,6 +176,7 @@ handle_cast({flush_routing_queues, WordsOfPath}, State = #state{gm = GM}) ->
 	gm:broadcast(GM, {flush_routing_queues, WordsOfPath}),
 	{noreply, State};
 
+%% All nodes update their ets tables.
 handle_cast({gm, {flush_routing_queues, WordsOfPath}}, State = #state{vhost = VHost, routing_queues = RoutingQueues}) ->
 	QueueTrees =
 	case rabbit_exchange_type_webmqx:fetch_routing_queues(VHost, ?EXCHANGE_WEBMQX, WordsOfPath) of
@@ -213,6 +218,7 @@ now_timestamp_counter() ->
 	{{_, _, _},{NowHour, NowMinute, NowSecond}} = calendar:now_to_local_time(os:timestamp()),
 	(NowHour*3600 + NowMinute*60 + NowSecond).
 
+%% Queues of a routing key managed as gb_trees in process. 
 queue_trees_size(QueueTrees) ->
 	gb_trees:size(QueueTrees).
 

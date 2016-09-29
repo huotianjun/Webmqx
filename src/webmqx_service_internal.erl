@@ -8,8 +8,8 @@
 
 start() ->
 	webmqx_sup:start_restartable_child(core_service, webmqx_rpc_server, [<<"core-service">>, <<"core-service">>, fun core_service/1], false),
-	webmqx_sup:start_restartable_child(test, webmqx_rpc_server, [<<"test">>, <<"/1/2/3">>, fun micro_service_test/1], false),
-	webmqx_sup:start_restartable_child(report, webmqx_rpc_server, [<<"report">>, <<"report">>, fun tsung_report/1], false),
+	webmqx_sup:start_restartable_child(test, webmqx_rpc_server, [<<"test">>, <<"/test/HelloWorld">>, fun micro_service_test/1], false),
+	webmqx_sup:start_restartable_child(report, webmqx_rpc_server, [<<"report">>, <<"/test/report">>, fun tsung_report/1], false),
 	ok.
 
 %%%
@@ -22,6 +22,10 @@ reponse_to_json(Headers, Body) ->
 				{body, Body}
 			]},
 	jiffy:encode(Response).
+
+%%%
+%%% Callbacks of test. 
+%%%
 
 micro_service_test(Body) -> 
 	reponse_to_json([{<<"content-type">>, <<"text/html">>}], Body).

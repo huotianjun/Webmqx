@@ -58,22 +58,17 @@ init([ServerName, RoutingKey, Fun]) ->
     {ok, Channel} = amqp_connection:open_channel(
                         Connection, {amqp_direct_consumer, [self()]}),
 
-	%%ExchangeDeclare = #'exchange.declare'{exchange = ?EXCHANGE_WEBMQX, type = ?EXCHANGE_WEBMQX_TYPE},
-	%%#'exchange.declare_ok'{} = 
-	%%amqp_channel:call(Channel, ExchangeDeclare),
-
 	#'queue.declare_ok'{queue = Q} =
 		amqp_channel:call(Channel, #'queue.declare'{exclusive   = true,
 													durable		= false,
 													auto_delete = true}),
-
 	Bind = #'queue.bind'{queue = Q, 
 						 exchange = ?EXCHANGE_WEBMQX, 
 						 routing_key = RoutingKey, 
 						 arguments = [{server_name, ServerName}]},
 	#'queue.bind_ok'{} = amqp_channel:call(Channel, Bind),
 
-    amqp_channel:call(Channel, #'basic.consume'{queue = Q, no_ack = true}),
+	#'basic.consume_ok'{} = amqp_channel:call(Channel, #'basic.consume'{queue = Q, no_ack = true}),
 
 	ConnectionRef = erlang:monitor(process, Connection),
 	ChannelRef = erlang:monitor(process, Channel),
@@ -97,7 +92,7 @@ handle_info(#'basic.cancel'{}, State) ->
 handle_info(#'basic.cancel_ok'{}, State) ->
     {stop, normal, State};
 
-%% message from queues created by rpc server.
+%% Message from queues created by application server.
 handle_info({#'basic.deliver'{delivery_tag = _DeliveryTag},
              #amqp_msg{props = Props, payload = Payload}},
             State = #state{handler = Fun, channel = {_Ref, Channel}}) ->

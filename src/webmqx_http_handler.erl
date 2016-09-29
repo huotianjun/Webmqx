@@ -13,13 +13,7 @@ init(Req , Opts) ->
 
 	{ok, {_Host, Path, Method, PayloadJson, Req2}} = req_parse(Req),
 
-	IsConsistentReq = case Method of
-						<<"GET">>		-> false;
-						<<"POST">>		-> false;
-						<<"PUT">>		-> true;
-						<<"DELETE">>	-> true;
-						_				-> false
-					end,
+	IsConsistentReq = is_consistent_req(Method),
 
 	Response =
 	try 
@@ -91,6 +85,12 @@ req_parse(Req) ->
 			   ]}, 
 
 	{ok, {Host, Path, Method, jiffy:encode(Payload), Req2}}.
+
+is_consistent_req(<<"GET">>) -> false;
+is_consistent_req(<<"POST">>) -> false;
+is_consistent_req(<<"PUT">>) -> true;
+is_consistent_req(<<"DELETE">>) -> true;
+is_consistent_req(_) -> false.
 
 http_reply({error, Headers, Body}, Req) ->
 	Headers2 = Headers#{<<"content-length">> => integer_to_list(iolist_size(Body))}, 
