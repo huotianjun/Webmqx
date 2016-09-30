@@ -13,7 +13,7 @@ init([]) ->
 
 handle_event({event, binding_add, {WordsOfPath, _X, _D, _Args}, _, _}, State) ->
 	%% Flush the ets of routing table.
-	webmqx_exchange_routing:flush_routing_queues(WordsOfPath),
+	webmqx_exchange_routing:flush_queues(WordsOfPath),
 
 	%% Try start a broker of consistent requests of this http path.
 	Path = webmqx_util:words_to_path(WordsOfPath),
@@ -22,7 +22,7 @@ handle_event({event, binding_add, {WordsOfPath, _X, _D, _Args}, _, _}, State) ->
 
 handle_event({event, binding_remove, {WordsOfPath, _X, _D, _Args}, _, _}, State) ->
 	%% Flush the ets of routing table.
-	webmqx_exchange_routing:flush_routing_queues(WordsOfPath),
+	webmqx_exchange_routing:flush_queues(WordsOfPath),
 
 	%% Try stop a broker of consistent requests of this http path.
 	Path = webmqx_util:words_to_path(WordsOfPath),

@@ -11,7 +11,7 @@
 %% APIs.
 -export([start/0]).
 -export([start_link/0]).
--export([route/1, flush_routing_queues/1, queues_count/1]).
+-export([route/1, flush_queues/1, queues_count/1]).
 
 %% gen_server.
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -35,7 +35,7 @@
 -spec(start/0 :: () -> rabbit_types:ok_or_error(any())).
 
 -spec(route/1 :: (binary()) -> [rabbit_types:binding_destination()]).
--spec(flush_routing_queues/1 :: (binary()) -> 'ok').
+-spec(flush_queues/1 :: (binary()) -> 'ok').
 -spec(queues_count/1 :: (binary()) -> non_neg_integer()).
 
 -endif.
@@ -95,8 +95,8 @@ queues_count(Path) ->
 	end.
 
 %% Called from webmqx_binding_event_handler.
-flush_routing_queues(WordsOfPath) ->
-	gen_server2:cast(?MODULE, {flush_routing_queues, WordsOfPath}).
+flush_queues(WordsOfPath) ->
+	gen_server2:cast(?MODULE, {flush_queues, WordsOfPath}).
 
 %%%
 %%% Callbacks of gen_server
@@ -120,7 +120,6 @@ init([]) ->
 
 handle_call({get_routing_queues, WordsOfPath}, _, 
 				State = #state{vhost = VHost, routing_queues = RoutingQueues}) ->
-
 	%% First, search in process state.
 	QueueTrees1=
 	case dict:find({path, WordsOfPath}, RoutingQueues) of
@@ -172,12 +171,12 @@ handle_call({get_routing_queues, WordsOfPath}, _,
 handle_call(_Request, _From, State) ->
 	{reply, ignore, State}.
 
-handle_cast({flush_routing_queues, WordsOfPath}, State = #state{gm = GM}) ->
-	gm:broadcast(GM, {flush_routing_queues, WordsOfPath}),
+handle_cast({flush_queues, WordsOfPath}, State = #state{gm = GM}) ->
+	gm:broadcast(GM, {flush_queues, WordsOfPath}),
 	{noreply, State};
 
 %% All nodes update their ets tables.
-handle_cast({gm, {flush_routing_queues, WordsOfPath}}, State = #state{vhost = VHost, routing_queues = RoutingQueues}) ->
+handle_cast({gm, {flush_queues, WordsOfPath}}, State = #state{vhost = VHost, routing_queues = RoutingQueues}) ->
 	QueueTrees =
 	case rabbit_exchange_type_webmqx:fetch_routing_queues(VHost, ?EXCHANGE_WEBMQX, WordsOfPath) of
 		[] ->

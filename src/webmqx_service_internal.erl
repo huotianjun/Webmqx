@@ -1,5 +1,7 @@
 -module(webmqx_service_internal).
 
+-include("webmqx.hrl").
+
 -export([start/0]).
 
 %%%
@@ -7,9 +9,15 @@
 %%%
 
 start() ->
-	webmqx_sup:start_restartable_child(core_service, webmqx_rpc_server, [<<"core-service">>, <<"core-service">>, fun core_service/1], false),
-	webmqx_sup:start_restartable_child(test, webmqx_rpc_server, [<<"test">>, <<"/test/HelloWorld">>, fun micro_service_test/1], false),
+	%% TODO : for internal http request.
+	webmqx_sup:start_restartable_child(core_service, webmqx_rpc_server, [<<"internal-service">>, <<"/internal">>, fun internal_service/1], false),
+
+	%% Test : HelloWorld
+	webmqx_sup:start_restartable_child(test, webmqx_rpc_server, [<<"test">>, <<"/test/HelloWorld">>, fun service_test/1], false),
+
+	%% Tsung test report.
 	webmqx_sup:start_restartable_child(report, webmqx_rpc_server, [<<"report">>, <<"/test/report">>, fun tsung_report/1], false),
+
 	ok.
 
 %%%
@@ -27,37 +35,37 @@ reponse_to_json(Headers, Body) ->
 %%% Callbacks of test. 
 %%%
 
-micro_service_test(_Body) -> 
+service_test(_Body) -> 
 	reponse_to_json([{<<"content-type">>, <<"text/html">>}], <<"Hello World">>).
 
-core_service(PayloadEncode) when is_binary(PayloadEncode) ->
+internal_service(PayloadEncode) when is_binary(PayloadEncode) ->
 	Payload = jiffy:decode(PayloadEncode, [return_maps]),
-	core_service1(Payload).
+	internal_service1(Payload).
 
-%% TODO
-core_service1(#{<<"req">> := #{<<"host">> := Host, <<"method">> := Method, <<"path">> := Path, <<"qs">> := Qs}, <<"body">> := Body}) ->
-	%% huotianjun payload的map(先写出这个map，在jiffy里面试着encode，再decode）
-	%% #{method => <<"route_add">>, content => [<<"101.200.162.101">>, <<"/test1/test2">>, <<"test2">>]}
-	%% huotianjun payload的json
-	%% <<"{\"method\":\"route_add\",\"content\":[\"101.200.162.101\",\"/test1/test2\",,\"test2\"]}">>
-	%%
-	%% curl -i -d '{"method":"route_add","content":["101.200.162.101","/test1/test2","test2"]}' 101.200.162.101:8080/core
-	%% curl -i -v -L "101.200.162.101/test1/test2?q1=1&q2=2"
-	%%
-	error_logger:info_msg("Host : ~p Method : ~p Path : ~p Qs : ~p~nBody : ~p~n", [Host, Method, Path, Qs, Body]),
-	core_service2(jiffy:decode(Body, [return_maps])).
+%% TODO: http api of webmqx management command
+%%
+%% try like here:
+%% curl -i -d '{"method":"list","content":"/test"}' http://localhost/internal
+%%
+internal_service1(#{<<"req">> := #{<<"host">> := _Host, <<"method">> := _HttpMethod, <<"path">> := _Path, <<"qs">> := _Qs}, <<"body">> := Body}) ->
+	internal_service2(jiffy:decode(Body, [return_maps])).
 
-core_service2(#{<<"method">> := <<"route_add">>, <<"content">> := [Host, Path, Port]}) ->
-	error_logger:info_msg("method : route_add, content : ~p ~p ~p ~n", [Host, Path, Port]),
-		
-	reponse_to_json([{<<"content-type">>, <<"text/html">>}], <<"ok">>).
+internal_service2(#{<<"method">> := <<"list">>, <<"content">> := Path}) when is_binary(Path)->
+	Queues = rabbit_exchange_type_webmqx:fetch_routing_queues(webmqx_util:env_vhost(), ?WEBMQX_EXCHANGE, webmqx_util:path_to_words(Path)), 
+	ResultString = io_lib:format("~p", Queues),
+	reponse_to_json([{<<"content-type">>, <<"text/html">>}], list_to_binary(ResultString));
+internal_service2(#{<<"method">> := Method, <<"content">> := _}) ->
+	reponse_to_json([{<<"content-type">>, <<"text/html">>}], <<"Unknown command : ",  Method/binary>>);
+
+internal_service2(_) ->
+	reponse_to_json([{<<"content-type">>, <<"text/html">>}], <<"Bad command format">>).
 
 tsung_report(PayloadJSON) when is_binary(PayloadJSON) ->
 	Payload = jiffy:decode(PayloadJSON, [return_maps]),
 	tsung_report1(Payload).
 
-tsung_report1(_Payload = #{<<"req">> := #{<<"host">> := _Host, <<"method">> := _Method, <<"path">> := Path, <<"qs">> := _Qs}, <<"body">> := _Body}) ->
-	%%error_logger:info_msg("Payload map : ~p ~n", [Payload]),
+tsung_report1(_Payload = #{<<"req">> := #{<<"host">> := _Host, <<"method">> := _Method, <<"path">> := Path, <<"qs">> := Qs}, <<"body">> := _Body}) ->
+	error_logger:info_msg("http qs : ~p ~n", [Qs]),
 	reponse_to_json([{<<"content-type">>, <<"text/html">>}], read_file(Path)).
 
 read_file(<<"/", Name/binary>>) ->
