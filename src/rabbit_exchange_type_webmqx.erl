@@ -141,7 +141,7 @@ trie_match_info(X, Words) ->
 	Node = trie_match(X, root, Words),
 	trie_bindings_info(X, Node).
 
-trie_match(X, Node, []) -> Node;
+trie_match(_X, Node, []) -> Node;
 trie_match(X, Node, [W | RestW]) ->
 	trie_match_part(X, Node, W, fun trie_match/3, RestW).
 
