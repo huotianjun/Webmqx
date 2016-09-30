@@ -25,7 +25,7 @@
 -export([validate/1, validate_binding/2,
          create/2, delete/3, policy_changed/2, add_binding/3,
          remove_bindings/3, assert_args_equivalence/2]).
--export([fetch_routing_queues/3]).
+-export([fetch_routing_queues/3, fetch_bindings_info/3]).
 -export([info/1, info/2]).
 
 -rabbit_boot_step({?MODULE,
@@ -41,6 +41,7 @@
 
 -type(match_result() :: [rabbit_types:binding_destination()]).
 -spec(fetch_routing_queues/3 :: (binary()), binary(), [string()]) -> match_result()).
+-spec(fetch_bindings_info/3 :: (binary()), binary(), [string()]) -> [any()].
 
 -endif.
 
@@ -53,6 +54,9 @@
 %% Called by webmqx_exchange_routing 
 fetch_routing_queues(VHost, Exchange, WordsOfPath) when is_list(WordsOfPath) ->
     mnesia:async_dirty(fun trie_match/2, [#resource{virtual_host = VHost, kind = exchange, name = Exchange}, WordsOfPath]).
+
+fetch_bindings_info(VHost, Exchange, WordsOfPath) when is_list(WordsOfPath) ->
+    mnesia:async_dirty(fun trie_match_info/2, [#resource{virtual_host = VHost, kind = exchange, name = Exchange}, WordsOfPath]).
 
 %%%
 %%% Callbacks of rabbit_exchange
@@ -130,10 +134,14 @@ internal_add_binding(#binding{source = X, key = K, destination = D,
     ok.
 
 trie_match(X, Words) ->
-    trie_match(X, root, Words).
+    Node = trie_match(X, root, Words),
+	trie_bindings(X, Node).
 
-trie_match(X, Node, []) ->
-	trie_bindings(X, Node);
+trie_match_info(X, Words) ->
+	Node = trie_match(X, root, Words),
+	trie_bindings_info(X, Node).
+
+trie_match(X, Node, []) -> Node;
 trie_match(X, Node, [W | RestW]) ->
 	trie_match_part(X, Node, W, fun trie_match/3, RestW).
 
@@ -199,6 +207,14 @@ trie_bindings(X, Node) ->
                                    node_id       = Node,
                                    destination   = '$1',
                                    arguments     = '_'}},
+    mnesia:select(rabbit_topic_trie_binding, [{MatchHead, [], ['$1']}]).
+
+trie_bindings_info(X, Node) ->
+    MatchHead = #topic_trie_binding{
+      trie_binding = #trie_binding{exchange_name = X,
+                                   node_id       = Node,
+                                   destination   = '_',
+                                   arguments     = '$1'}},
     mnesia:select(rabbit_topic_trie_binding, [{MatchHead, [], ['$1']}]).
 
 trie_update_node_counts(X, Node, Field, Delta) ->
