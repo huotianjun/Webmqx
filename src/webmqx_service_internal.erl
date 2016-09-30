@@ -51,7 +51,7 @@ internal_service1(#{<<"req">> := #{<<"host">> := _Host, <<"method">> := _HttpMet
 	internal_service2(jiffy:decode(Body, [return_maps])).
 
 internal_service2(#{<<"method">> := <<"list">>, <<"content">> := Path}) when is_binary(Path)->
-	Queues = rabbit_exchange_type_webmqx:fetch_routing_queues(webmqx_util:env_vhost(), ?WEBMQX_EXCHANGE, webmqx_util:path_to_words(Path)), 
+	Queues = rabbit_exchange_type_webmqx:fetch_routing_queues(webmqx_util:env_vhost(), ?EXCHANGE_WEBMQX, webmqx_util:path_to_words(Path)), 
 	ResultString = io_lib:format("~p", Queues),
 	reponse_to_json([{<<"content-type">>, <<"text/html">>}], list_to_binary(ResultString));
 internal_service2(#{<<"method">> := Method, <<"content">> := _}) ->
