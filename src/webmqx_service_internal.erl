@@ -68,10 +68,10 @@ tsung_report(PayloadJSON) when is_binary(PayloadJSON) ->
 	Payload = jiffy:decode(PayloadJSON, [return_maps]),
 	tsung_report1(Payload).
 
-tsung_report1(_Payload = #{<<"req">> := #{<<"host">> := _Host, <<"method">> := _Method, <<"path">> := Path, <<"qs">> := Qs}, <<"body">> := Body}) ->
+tsung_report1(_Payload = #{<<"req">> := #{<<"host">> := _Host, <<"method">> := _Method, <<"path">> := _Path, <<"qs">> := _Qs}, <<"body">> := Body}) ->
 	tsung_report2(jiffy:decode(Body, [return_maps])).
 
-tsung_report2(#{<<"method">> := <<"tsung">>, <<"content">> := ReportFile}) when is_binary(Path)->
+tsung_report2(#{<<"method">> := <<"tsung">>, <<"content">> := ReportFile}) when is_binary(ReportFile)->
 	reponse_to_json([{<<"content-type">>, <<"text/html">>}], read_file(ReportFile)).
 
 read_file(<<"/", Name/binary>>) ->
