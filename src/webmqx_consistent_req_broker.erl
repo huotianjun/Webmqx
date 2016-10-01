@@ -60,7 +60,7 @@ init([Path]) ->
 	ConnectionRef = erlang:monitor(process, Connection),
 	ChannelRef = erlang:monitor(process, Channel),
 
-	error_logger:info_msg("consistent_req_broker started~n"]),
+	error_logger:info_msg("consistent_req_broker started~n"),
 
     {ok, #state{connection = {ConnectionRef, Connection}, 
 				channel = {ChannelRef, Channel}, 
