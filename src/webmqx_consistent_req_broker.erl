@@ -60,8 +60,6 @@ init([Path]) ->
 	ConnectionRef = erlang:monitor(process, Connection),
 	ChannelRef = erlang:monitor(process, Channel),
 
-	error_logger:info_msg("consistent_req_broker started~n"),
-
     {ok, #state{connection = {ConnectionRef, Connection}, 
 				channel = {ChannelRef, Channel}, 
 				path = Path}}.
@@ -82,11 +80,12 @@ handle_info(#'basic.cancel_ok'{}, State) ->
     {stop, normal, State};
 
 %% Message from the queue of consistent requests named as 'Path', and rpc it to an application server.
-handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
+handle_info({Delivery = #'basic.deliver'{delivery_tag = DeliveryTag},
 				#amqp_msg{payload = PayloadJson}},
 				State = #state{path = Path, channel = {_Ref, Channel},
 								req_id = ReqId,
 								unacked_rpc_reqs = UnackedReqs}) ->
+	error_logger:info_msg("~p~n", [Delivery]),
 	NewState = 
 	try 
 		case webmqx_rpc_worker_manager:get_a_worker() of
