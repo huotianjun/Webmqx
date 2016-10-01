@@ -3,7 +3,7 @@
 -include_lib("amqp_client/include/amqp_client.hrl").
 -include("webmqx.hrl").
 
--export([env/1, env_vhost/0, env_username/0, env_password/0, env_rpc_workers_num/0.
+-export([env/1, env_vhost/0, env_username/0, env_password/0, env_rpc_workers_num/0,
 		 words_to_path/1, path_to_words/1]). 
 		 
 
