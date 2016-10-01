@@ -219,7 +219,7 @@ internal_normal_publish(Path, Payload,
 					{ok, NewState};
 				Error ->
 					{Error, NewState}	
-			end
+			end;
 		false ->
 			{not_found, State} 
 	end.
