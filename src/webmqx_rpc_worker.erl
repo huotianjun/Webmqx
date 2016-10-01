@@ -196,24 +196,30 @@ internal_rpc_publish(Path, Payload, From,
 
 internal_normal_publish(Path, Payload,
         State = #state{rabbit_channel = {_ChannelRef, Channel}, consistent_req_queues = ConsReqQueues}) ->
-	NewState = 
+	{IsAbsent, NewState} = 
 	case gb_sets:is_element(Path, ConsReqQueues) of
-		true -> State;
+		true -> {true, State};
 		false ->
-			#'queue.declare_ok'{queue = _Q} =
-				amqp_channel:call(Channel, #'queue.declare'{queue       = Path,
-															durable     = true,
-															auto_delete = false}),	 
-			State#state{consistent_req_queues = gb_sets:add(Path, ConsReqQueues)}
+			case rabbit_amqqueue:with(Path, fun(_Q) -> ok end) of
+				ok -> 
+					{true, State#state{consistent_req_queues = gb_sets:add(Path, ConsReqQueues)}};
+				_ ->
+					{false, State}	
+			end
 	end,
 
-    Publish = #'basic.publish'{exchange = <<"">>,
-                               routing_key = Path,
-                               mandatory = true},
+	case IsAbsent of
+		true ->
+			Publish = #'basic.publish'{exchange = <<"">>,
+										routing_key = Path,
+										mandatory = true},
 
-    case amqp_channel:call(Channel, Publish, #amqp_msg{payload = Payload}) of
-		ok ->
-			{ok, NewState};
-		Error ->
-			{Error, NewState}	
+			case amqp_channel:call(Channel, Publish, #amqp_msg{payload = Payload}) of
+				ok ->
+					{ok, NewState};
+				Error ->
+					{Error, NewState}	
+			end
+		false ->
+			{not_found, State} 
 	end.
