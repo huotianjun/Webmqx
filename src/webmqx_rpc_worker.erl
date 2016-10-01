@@ -203,7 +203,8 @@ internal_normal_publish(Path, Payload,
 			case rabbit_amqqueue:with(Path, fun(_Q) -> ok end) of
 				ok -> 
 					{true, State#state{consistent_req_queues = gb_sets:add(Path, ConsReqQueues)}};
-				_ ->
+				R ->
+					error_logger:info_msg("with ~p~n", [R]),
 					{false, State}	
 			end
 	end,
