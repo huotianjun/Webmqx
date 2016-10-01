@@ -200,11 +200,11 @@ internal_normal_publish(Path, Payload,
 	case gb_sets:is_element(Path, ConsReqQueues) of
 		true -> {true, State};
 		false ->
-			case rabbit_amqqueue:with(Path, fun(_Q) -> ok end) of
+			case rabbit_amqqueue:with(Path, fun(_) -> ok end) of
 				ok -> 
 					{true, State#state{consistent_req_queues = gb_sets:add(Path, ConsReqQueues)}};
 				R ->
-					error_logger:info_msg("with ~p~n", [R]),
+					error_logger:info_msg("with ~p ~p~n", [Path, R]),
 					{false, State}	
 			end
 	end,
