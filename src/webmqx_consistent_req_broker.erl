@@ -48,8 +48,8 @@ init([Path]) ->
 	{ok, Connection} = amqp_connection:start(#amqp_params_direct{}),
     {ok, Channel} = amqp_connection:open_channel(Connection, {amqp_direct_consumer, [self()]}),
 
-	#'basic.qos_ok'{} = 
-		amqp_channel:call(Channel, #'basic.qos'{prefetch_count = 10}),
+%%	#'basic.qos_ok'{} = 
+%%		amqp_channel:call(Channel, #'basic.qos'{prefetch_count = 10}),
 	#'queue.declare_ok'{queue = Q} =
 		amqp_channel:call(Channel, #'queue.declare'{queue		= Path,
 													durable		= true,
