@@ -8,11 +8,8 @@
 %%%
 
 init(Req , Opts) ->
-
 	#{rpc_workers_num := WorkersNum} = Opts,
-
 	{ok, {_Host, Path, Method, PayloadJson, Req2}} = req_parse(Req),
-
 	IsConsistentReq = is_consistent_req(Method),
 
 	Response =
@@ -29,7 +26,7 @@ init(Req , Opts) ->
 								{error, #{},  <<"normal_publish error">>}
 						end;
 					false ->	
-						case webmqx_exchange_routing:queues_count(Path) of
+						case webmqx_exchange_routes:queues_count(Path) of
 							0 ->
 								{error, #{}, <<"no server">>};
 							_ ->

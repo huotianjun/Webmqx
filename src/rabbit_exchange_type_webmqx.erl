@@ -51,7 +51,7 @@
 %%% Exported functions
 %%%
 
-%% Called by webmqx_exchange_routing 
+%% Called by webmqx_exchange_routes 
 fetch_routing_queues(VHost, Exchange, WordsOfPath) when is_list(WordsOfPath) ->
     mnesia:async_dirty(fun trie_match/2, [#resource{virtual_host = VHost, kind = exchange, name = Exchange}, WordsOfPath]).
 
@@ -72,7 +72,7 @@ serialise_events() -> false.
 
 route(_X, #delivery{message = #basic_message{routing_keys = Routes}}) ->
 	lists:append([begin
-						webmqx_exchange_routing:route(RKey)			
+						webmqx_exchange_routes:route(RKey)			
 				end || RKey <- Routes]).
 
 validate(_X) -> ok.
@@ -92,7 +92,7 @@ policy_changed(_X1, _X2) -> ok.
 add_binding(transaction, _Exchange, Binding) ->
     internal_add_binding(Binding);
 add_binding(none, _Exchange, Binding) ->
-	%% Called after add_binding transaction complete. For update webmqx_exchange_routing of nodes. 
+	%% Called after add_binding transaction complete. For update webmqx_exchange_routes of nodes. 
 	#binding{source = X, key = K, destination = D, args = Args} = Binding,
     rabbit_event:notify(binding_add, {webmqx_util:path_to_words(K), X, D, Args}),  
     ok.
@@ -119,7 +119,7 @@ remove_bindings(transaction, _X, Bs) ->
      end ||  #binding{source = X, key = K, destination = D, args = Args} <- Bs],
     ok;
 remove_bindings(none, _X, Bs) ->
-	%% Called after remove_binding transaction complete. For update webmqx_exchange_routing of nodes. 
+	%% Called after remove_binding transaction complete. For update webmqx_exchange_routes of nodes. 
     [rabbit_event:notify(binding_remove, {webmqx_util:path_to_words(K), X, D, Args})  
 		||  #binding{source = X, key = K, destination = D, args = Args} <- Bs],
     ok.

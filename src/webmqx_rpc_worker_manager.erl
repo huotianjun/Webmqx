@@ -38,6 +38,7 @@ join(N, Pid) when is_pid(Pid) ->
     gen_server2:cast(?MODULE, {join, N, Pid}).
 
 get_a_worker(WorkersNum) ->
+	%% Random.
 	N = erlang:phash2(self(), WorkersNum) + 1,
 	get_a_worker1(N, {undefined, undefined}, WorkersNum).
 
@@ -48,6 +49,7 @@ get_a_worker1(N, {L, Count}, WorkersNum) ->
 		[{{n, N}, {Pid, _Ref}}] ->
 			{ok, Pid};
 		_ ->
+			%% A bad one, so the other.
 			case L of
 				undefined ->
 					Count0 = WorkersNum,
@@ -107,7 +109,6 @@ join_rpc(N, Pid) ->
 		[{{n, N}, {Pid, MonitorRef}}] ->
 			ok;
 		[{{n, N}, {Pid, OldRef0}}] ->
-			%%huotianjun 本进程重启，会出现这个情况
 			ets:update_element(?TAB, {n, N}, {2, {Pid, MonitorRef}}), 
 			erlang:demonitor(OldRef0, [flush]);
 		[{{n, N}, {OldPid, OldRef1}}] ->

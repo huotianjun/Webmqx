@@ -1,3 +1,4 @@
+%%
 %% This is the version of rabbit_rpc_server from RabbitMQ.
 %%
 

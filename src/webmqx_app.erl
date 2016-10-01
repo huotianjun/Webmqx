@@ -14,7 +14,7 @@ start(_Type, _Args) ->
 	Result = webmqx_sup:start_link(),
 
 	%% Manage an ets of searching table for webmqx routing.
-	webmqx_exchange_routing:start(),
+	webmqx_exchange_routes:start(),
 
 	%% RPC workers start.
 	webmqx_rpc_worker_manager:start(),

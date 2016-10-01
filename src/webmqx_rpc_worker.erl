@@ -1,3 +1,7 @@
+%%
+%% This is the version of rabbit_rpc_client from RabbitMQ erlang client.
+%%
+%%
 -module(webmqx_rpc_worker).
 
 -include_lib("amqp_client/include/amqp_client.hrl").
@@ -76,7 +80,8 @@ init([N]) ->
 	ConnectionRef = erlang:monitor(process, Connection),
 	ChannelRef = erlang:monitor(process, Channel),
 
-	ExchangeDeclare = #'exchange.declare'{exchange = ?EXCHANGE_WEBMQX, type = ?EXCHANGE_WEBMQX_TYPE},
+	ExchangeDeclare = #'exchange.declare'{exchange = ?EXCHANGE_WEBMQX, 
+											type = ?EXCHANGE_WEBMQX_TYPE},
 	#'exchange.declare_ok'{} = amqp_channel:call(Channel, ExchangeDeclare),
 
     InitialState = #state{
@@ -91,7 +96,8 @@ init([N]) ->
 	webmqx_rpc_worker_manager:join(N, self()),
     {ok, State#state{n = N}}.
 
-terminate(_Reason, #state{connection = {ConnectionRef, Connection}, rabbit_channel = {ChannelRef, Channel}}) ->
+terminate(_Reason, #state{connection = {ConnectionRef, Connection}, 
+							rabbit_channel = {ChannelRef, Channel}}) ->
 	erlang:demonitor(ConnectionRef),
 	erlang:demonitor(ChannelRef),
 
@@ -154,7 +160,6 @@ handle_info({'DOWN', _MRef, process, _Pid, Reason}, State) ->
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
-
 
 %%%
 %%% Local functions
