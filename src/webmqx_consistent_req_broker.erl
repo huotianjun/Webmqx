@@ -60,6 +60,8 @@ init([Path]) ->
 	ConnectionRef = erlang:monitor(process, Connection),
 	ChannelRef = erlang:monitor(process, Channel),
 
+	error_logger:info_msg("consistent_req_broker started~n"],
+
     {ok, #state{connection = {ConnectionRef, Connection}, 
 				channel = {ChannelRef, Channel}, 
 				path = Path}}.
@@ -92,6 +94,7 @@ handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
 				amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag}),
 				State;
 			{ok, RpcWorkerPid} ->
+				error_logger:info_msg("broker send rpc~n"),
 				webmqx_rpc_worker:rpc(async, RpcWorkerPid, ReqId, Path, PayloadJson),
 				State#state{req_id = ReqId + 1,
 							unacked_rpc_reqs = dict:store(ReqId, DeliveryTag, UnackedReqs)}
