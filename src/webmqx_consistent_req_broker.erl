@@ -50,12 +50,12 @@ init([Path]) ->
 
 	#'basic.qos_ok'{} = 
 		amqp_channel:call(Channel, #'basic.qos'{prefetch_count = 10}),
-	#'queue.declare_ok'{queue = Q} =
+	#'queue.declare_ok'{queue = _Q} =
 		amqp_channel:call(Channel, #'queue.declare'{queue		= Path,
 													durable		= true,
 													auto_delete = false}),
 	Consume = #'basic.consume_ok'{} =
-		amqp_channel:call(Channel, #'basic.consume'{queue = Q, no_ack = false}),
+		amqp_channel:call(Channel, #'basic.consume'{queue = Path, no_ack = false}),
 
 	error_logger:info_msg("Consumer ~p ~n", [Consume]),
 
