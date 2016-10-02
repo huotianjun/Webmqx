@@ -203,13 +203,13 @@ internal_normal_publish(Path, Payload,
 	case gb_sets:is_element(Path, ConsReqQueues) of
 		true -> {true, State};
 		false ->
-			Queue =  #resource{virtual_host = VHost, kind = queue, name = Path};
+			Queue =  #resource{virtual_host = VHost, kind = queue, name = Path},
 			case rabbit_amqqueue:with(Queue, fun(_) -> ok end) of
 				ok -> 
 					{true, State#state{consistent_req_queues = gb_sets:add(Path, ConsReqQueues)}};
 				R ->
 					error_logger:info_msg("no this queue named the path ~p ~p~n", [Path, R]),
-					{false, State}	
+					{false, State}
 			end
 	end,
 
