@@ -15,6 +15,7 @@
          handle_cast/2, handle_info/2]).
 
 -record(state, {
+				vhost = webmqx_util:env_vhost(), 
 				connection,	
 				rabbit_channel,
                 reply_queue,
@@ -195,16 +196,19 @@ internal_rpc_publish(Path, Payload, From,
                 continuations = dict:store(EncodedCorrelationId, From, Continuations)}.
 
 internal_normal_publish(Path, Payload,
-        State = #state{rabbit_channel = {_ChannelRef, Channel}, consistent_req_queues = ConsReqQueues}) ->
+        State = #state{vhost = Vhost,
+						rabbit_channel = {_ChannelRef, Channel}, 
+						consistent_req_queues = ConsReqQueues}) ->
 	{IsAbsent, NewState} = 
 	case gb_sets:is_element(Path, ConsReqQueues) of
 		true -> {true, State};
 		false ->
-			case rabbit_amqqueue:with(Path, fun(_) -> ok end) of
+			Queue =  #resource{virtual_host = VHost, kind = queue, name = Path};
+			case rabbit_amqqueue:with(Queue, fun(_) -> ok end) of
 				ok -> 
 					{true, State#state{consistent_req_queues = gb_sets:add(Path, ConsReqQueues)}};
 				R ->
-					error_logger:info_msg("with ~p ~p~n", [Path, R]),
+					error_logger:info_msg("no this queue named the path ~p ~p~n", [Path, R]),
 					{false, State}	
 			end
 	end,
