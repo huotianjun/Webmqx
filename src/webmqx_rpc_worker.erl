@@ -196,7 +196,7 @@ internal_rpc_publish(Path, Payload, From,
                 continuations = dict:store(EncodedCorrelationId, From, Continuations)}.
 
 internal_normal_publish(Path, Payload,
-        State = #state{vhost = Vhost,
+        State = #state{vhost = VHost,
 						rabbit_channel = {_ChannelRef, Channel}, 
 						consistent_req_queues = ConsReqQueues}) ->
 	{IsAbsent, NewState} = 
