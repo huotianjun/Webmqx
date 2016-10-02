@@ -57,7 +57,7 @@ init([Path]) ->
 	Consume = #'basic.consume_ok'{} =
 		amqp_channel:call(Channel, #'basic.consume'{queue = Path, no_ack = false}),
 
-	error_logger:info_msg("Consumer ~p ~n", [Consume]),
+	error_logger:info_msg("Consumer ~p ~p ~n", [Path, Consume]),
 
 	ConnectionRef = erlang:monitor(process, Connection),
 	ChannelRef = erlang:monitor(process, Channel),
