@@ -48,14 +48,15 @@ init([Path]) ->
 	{ok, Connection} = amqp_connection:start(#amqp_params_direct{}),
     {ok, Channel} = amqp_connection:open_channel(Connection, {amqp_direct_consumer, [self()]}),
 
+	Queue =  #resource{virtual_host = <<"/">>, kind = queue, name = Path},
 	#'basic.qos_ok'{} = 
 		amqp_channel:call(Channel, #'basic.qos'{prefetch_count = 10}),
-	#'queue.declare_ok'{queue = _Q} =
-		amqp_channel:call(Channel, #'queue.declare'{queue		= Path,
+	#'queue.declare_ok'{queue = Q} =
+		amqp_channel:call(Channel, #'queue.declare'{queue		= Queue,
 													durable		= true,
 													auto_delete = false}),
 	Consume = #'basic.consume_ok'{} =
-		amqp_channel:call(Channel, #'basic.consume'{queue = Path, no_ack = false}),
+		amqp_channel:call(Channel, #'basic.consume'{queue = Q, no_ack = false}),
 
 	error_logger:info_msg("Consumer ~p ~p ~n", [Path, Consume]),
 
