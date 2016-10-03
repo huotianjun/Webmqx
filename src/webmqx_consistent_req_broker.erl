@@ -32,6 +32,7 @@
 
 start_link(Path) ->
     {ok, Pid} = gen_server2:start_link(?MODULE, [Path], []),
+	error_logger:info_msg("broker started ~p~n", [Path]),
 	{ok, Pid}.
 
 stop(Pid) ->
