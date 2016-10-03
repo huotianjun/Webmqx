@@ -54,7 +54,7 @@ init([Path]) ->
 		amqp_channel:call(Channel, #'queue.declare'{queue		= Path,
 													durable		= true,
 													auto_delete = false}),
-	Consume = #'basic.consume_ok'{} =
+	#'basic.consume_ok'{} =
 		amqp_channel:call(Channel, #'basic.consume'{queue = Q, no_ack = false}),
 
 	ConnectionRef = erlang:monitor(process, Connection),
@@ -80,7 +80,7 @@ handle_info(#'basic.cancel_ok'{}, State) ->
     {stop, normal, State};
 
 %% Message from the queue of consistent requests named as 'Path', and rpc it to an application server.
-handle_info({Delivery = #'basic.deliver'{delivery_tag = DeliveryTag},
+handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
 				#amqp_msg{payload = PayloadJson}},
 				State = #state{path = Path, channel = {_Ref, Channel},
 								req_id = ReqId,
