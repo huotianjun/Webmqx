@@ -27,6 +27,7 @@ handle_event({event, binding_remove, {WordsOfPath, _X, _D, _Args}, _, _}, State)
 	%% Try stop a broker of consistent requests of this http path.
 	Path = webmqx_util:words_to_path(WordsOfPath),
 	webmqx_consistent_req_sup:delete_child(Path),
+	error_logger:info_msg("delete child : ~p~n", [Path]),
 	{ok, State};
 
 handle_event(_Event, State) ->
