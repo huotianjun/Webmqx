@@ -79,6 +79,7 @@ handle_info(#'basic.cancel'{}, State) ->
     {noreply, State};
 
 handle_info(#'basic.cancel_ok'{}, State) ->
+	error_logger:info_msg("basic.cancel_ok~n"),
     {stop, normal, State};
 
 %% Message from the queue of consistent requests named as 'Path', and rpc it to an application server.
