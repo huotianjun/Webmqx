@@ -32,7 +32,6 @@
 
 start_link(Path) ->
     {ok, Pid} = gen_server2:start_link(?MODULE, [Path], []),
-	error_logger:info_msg("broker started ~p~n", [Path]),
 	{ok, Pid}.
 
 stop(Pid) ->
@@ -58,8 +57,6 @@ init([Path]) ->
 	Consume = #'basic.consume_ok'{} =
 		amqp_channel:call(Channel, #'basic.consume'{queue = Q, no_ack = false}),
 
-	error_logger:info_msg("Consumer ~p ~p ~p ~n", [Path, Q, Consume]),
-
 	ConnectionRef = erlang:monitor(process, Connection),
 	ChannelRef = erlang:monitor(process, Channel),
 
@@ -68,22 +65,18 @@ init([Path]) ->
 				path = Path}}.
 
 handle_info(shutdown, State) ->
-	error_logger:info_msg("basic.cancel_ok~n"),
     {stop, normal, State};
 
 handle_info({#'basic.consume'{}, _}, State) ->
     {noreply, State};
 
 handle_info(#'basic.consume_ok'{}, State) ->
-	error_logger:info_msg("basic.consume_ok~n"),
     {noreply, State};
 
 handle_info(#'basic.cancel'{}, State) ->
-	error_logger:info_msg("basic.concel~n"),
     {noreply, State};
 
 handle_info(#'basic.cancel_ok'{}, State) ->
-	error_logger:info_msg("basic.cancel_ok~n"),
     {stop, normal, State};
 
 %% Message from the queue of consistent requests named as 'Path', and rpc it to an application server.
@@ -92,11 +85,11 @@ handle_info({Delivery = #'basic.deliver'{delivery_tag = DeliveryTag},
 				State = #state{path = Path, channel = {_Ref, Channel},
 								req_id = ReqId,
 								unacked_rpc_reqs = UnackedReqs}) ->
-	error_logger:info_msg("~p~n", [Delivery]),
 	NewState = 
 	try 
 		case webmqx_rpc_worker_manager:get_a_worker() of
 			undefined -> 
+				error_logger:info_msg("get a worker undefined"),
 				amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag}),
 				State;
 			{ok, RpcWorkerPid} ->
@@ -106,7 +99,8 @@ handle_info({Delivery = #'basic.deliver'{delivery_tag = DeliveryTag},
 							unacked_rpc_reqs = dict:store(ReqId, DeliveryTag, UnackedReqs)}
 		end
 	catch 
-		_Error:_Reason -> 
+		Error:Reason -> 
+			error_logger:info_msg("rpc crash ~p ~p ~n", [Error, Reason]),
 			amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag}),
 			State 
 	end,
