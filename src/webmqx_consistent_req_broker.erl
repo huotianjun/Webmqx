@@ -12,6 +12,7 @@
 -export([stop/1]).
 
 -record(state, {connection, channel, path,
+				rpc_workers_num = webmqx_util:env_rpc_workers_num(),
 				unacked_rpc_reqs = dict:new(),
 				req_id = 0}).
 
@@ -84,10 +85,11 @@ handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
 				#amqp_msg{payload = PayloadJson}},
 				State = #state{path = Path, channel = {_Ref, Channel},
 								req_id = ReqId,
+								rpc_workers_num = RpcWorkersNum,
 								unacked_rpc_reqs = UnackedReqs}) ->
 	NewState = 
 	try 
-		case webmqx_rpc_worker_manager:get_a_worker() of
+		case webmqx_rpc_worker_manager:get_a_worker(RpcWorkersNum) of
 			undefined -> 
 				error_logger:info_msg("get a worker undefined"),
 				amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag}),
