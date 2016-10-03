@@ -21,9 +21,6 @@ start(_Type, _Args) ->
 	webmqx_sup:start_supervisor_child(webmqx_rpc_worker_sup),
 	webmqx_sup:start_supervisor_child(webmqx_consistent_req_sup),
 
-	%% For test currently.
-	webmqx_service_internal:start(),
-
 	%% Cowboy start
 	RpcWorkersNum = webmqx_util:env_rpc_workers_num(),
 	Dispatch = cowboy_router:compile([
@@ -42,6 +39,9 @@ start(_Type, _Args) ->
 		{error, {already_started, Pid}} -> Pid
 	end,
 	gen_event:add_handler(EventPid, webmqx_binding_event_handler, []),
+
+	%% For test currently.
+	webmqx_service_internal:start(),
 
 	Result.
 
