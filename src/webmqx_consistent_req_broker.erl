@@ -91,11 +91,9 @@ handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
 	try 
 		case webmqx_rpc_worker_manager:get_a_worker(RpcWorkersNum) of
 			undefined -> 
-				error_logger:info_msg("get a worker undefined"),
 				amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag}),
 				State;
 			{ok, RpcWorkerPid} ->
-				error_logger:info_msg("broker send rpc~n"),
 				webmqx_rpc_worker:rpc(async, RpcWorkerPid, ReqId, Path, PayloadJson),
 				State#state{req_id = ReqId + 1,
 							unacked_rpc_reqs = dict:store(ReqId, DeliveryTag, UnackedReqs)}
@@ -109,17 +107,14 @@ handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
 	{noreply, NewState};
 
 handle_info({'EXIT', _Pid, Reason}, State) ->
-	error_logger:info_msg("EXIT ~n"),
 	{stop, Reason, State};
 
 %% @private
 handle_info({'DOWN', _MRef, process, _Pid, Reason}, State) ->
-	error_logger:info_msg("DOWN~n"),
 	{stop, {error, Reason}, State}.
 
 %% @private
 handle_call(stop, _From, State) ->
-	error_logger:info_msg("stop ~n"),
     {stop, normal, ok, State}.
 
 %% Message from rpc worker, the rpc cast is ok.
@@ -131,7 +126,6 @@ handle_cast({rpc_ok, ReqId, {ok, _Response}},
 	{noreply, State#state{unacked_rpc_reqs = dict:erase(ReqId, UnackedReqs)}};
 
 handle_cast(_Message, State) ->
-	error_logger:info_msg("_Message ~n"),
     {noreply, State}.
 
 terminate(_Reason, #state{connection = {_ConnectionRef, Connection}, 

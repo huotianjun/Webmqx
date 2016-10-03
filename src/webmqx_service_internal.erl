@@ -36,7 +36,6 @@ reponse_to_json(Headers, Body) ->
 %%%
 
 service_test(_Body) -> 
-	error_logger:info_msg("Hello World!"),
 	reponse_to_json([{<<"content-type">>, <<"text/html">>}], <<"Hello World">>).
 
 internal_service(PayloadEncode) when is_binary(PayloadEncode) ->
