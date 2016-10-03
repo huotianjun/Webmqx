@@ -68,15 +68,18 @@ init([Path]) ->
 				path = Path}}.
 
 handle_info(shutdown, State) ->
+	error_logger:info_msg("basic.cancel_ok~n"),
     {stop, normal, State};
 
 handle_info({#'basic.consume'{}, _}, State) ->
     {noreply, State};
 
 handle_info(#'basic.consume_ok'{}, State) ->
+	error_logger:info_msg("basic.consume_ok~n"),
     {noreply, State};
 
 handle_info(#'basic.cancel'{}, State) ->
+	error_logger:info_msg("basic.concel~n"),
     {noreply, State};
 
 handle_info(#'basic.cancel_ok'{}, State) ->
@@ -110,14 +113,17 @@ handle_info({Delivery = #'basic.deliver'{delivery_tag = DeliveryTag},
 	{noreply, NewState};
 
 handle_info({'EXIT', _Pid, Reason}, State) ->
+	error_logger:info_msg("EXIT ~n"),
 	{stop, Reason, State};
 
 %% @private
 handle_info({'DOWN', _MRef, process, _Pid, Reason}, State) ->
+	error_logger:info_msg("DOWN~n"),
 	{stop, {error, Reason}, State}.
 
 %% @private
 handle_call(stop, _From, State) ->
+	error_logger:info_msg("stop ~n"),
     {stop, normal, ok, State}.
 
 %% Message from rpc worker, the rpc cast is ok.
@@ -129,6 +135,7 @@ handle_cast({rpc_ok, ReqId, {ok, _Response}},
 	{noreply, State#state{unacked_rpc_reqs = dict:erase(ReqId, UnackedReqs)}};
 
 handle_cast(_Message, State) ->
+	error_logger:info_msg("_Message ~n"),
     {noreply, State}.
 
 terminate(_Reason, #state{connection = {_ConnectionRef, Connection}, 
