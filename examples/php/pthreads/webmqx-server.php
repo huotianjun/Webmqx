@@ -40,6 +40,10 @@ class Handler extends Thread {
 	}
 
 	public function handle($http_path, $http_query, $http_body) {
+		//
+		// Your codes written in here.
+		//
+
 		$response_body = 'Hello World';	
 
 		$response = array (
@@ -78,7 +82,7 @@ class WebmqxServer {
 		$this->queue->setFlags(AMQP_EXCLUSIVE | AMQP_AUTODELETE);
 		$this->queue->declareQueue();
 
-		// Must set webmqx.
+		// Exchange must set to  'webmqx'.
 		$exchange_name = 'webmqx';
 
 		// There can set many paths what you want to handle.
