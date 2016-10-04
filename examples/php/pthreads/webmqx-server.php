@@ -71,7 +71,7 @@ class WebmqxServer {
 
 		//Declare Channel
 		$this->channel = new AMQPChannel($this->connection);
-		$channel->setPrefetchCount(1);
+		$this->channel->setPrefetchCount(1);
 
 		// This is a non-consistent queue, just for this process.
 		$this->queue = new AMQPQueue($this->channel);
