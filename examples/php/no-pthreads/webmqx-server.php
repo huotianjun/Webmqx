@@ -43,9 +43,10 @@ class WebmqxServer {
 
 		$this->connect();	
 
+		$server = $this;
 		$ex = $this->exchange;
 
-		$callback_func = function(AMQPEnvelope $message, AMQPQueue $q) use ($ex) {
+		$callback_func = function(AMQPEnvelope $message, AMQPQueue $q) use ($ex, $server) {
 			$rpc_request = json_decode($message->getBody(), true);
 			$http_request = $rpc_request['req'];
 			$http_body = $rpc_request['body'];
@@ -56,7 +57,7 @@ class WebmqxServer {
 								'correlation_id' => $message->getCorrelationId()
 								);
 
-			$result = $this->handle($http_path, $http_query, $http_body);
+			$result = $server->handle($http_path, $http_query, $http_body);
 
 			$ex->publish(	(string)($result),
 									$message->getReplyTo(), 
