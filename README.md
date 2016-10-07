@@ -220,16 +220,16 @@ curl -i http://XXX.XXX.XX.XX/3/2/1
 If echo 'HelloWorld', it works.
 
 
-With other languages, please reference to:
-```
-Python: http://www.rabbitmq.com/tutorials/tutorial-six-python.html
-Java: http://www.rabbitmq.com/tutorials/tutorial-six-java.html
-Ruby: http://www.rabbitmq.com/tutorials/tutorial-six-ruby.html
-C#: http://www.rabbitmq.com/tutorials/tutorial-six-dotnet.html
-Javascript: http://www.rabbitmq.com/tutorials/tutorial-six-javascript.html
-Go: http://www.rabbitmq.com/tutorials/tutorial-six-go.html
-Elixir: http://www.rabbitmq.com/tutorials/tutorial-six-elixir.html
-```
+Other languages, please reference to:
+
+- Python: http://www.rabbitmq.com/tutorials/tutorial-six-python.html
+- Java: http://www.rabbitmq.com/tutorials/tutorial-six-java.html
+- Ruby: http://www.rabbitmq.com/tutorials/tutorial-six-ruby.html
+- C#: http://www.rabbitmq.com/tutorials/tutorial-six-dotnet.html
+- Javascript: http://www.rabbitmq.com/tutorials/tutorial-six-javascript.html
+- Go: http://www.rabbitmq.com/tutorials/tutorial-six-go.html
+- Elixir: http://www.rabbitmq.com/tutorials/tutorial-six-elixir.html
+
 
 ## Copyright and License
 
