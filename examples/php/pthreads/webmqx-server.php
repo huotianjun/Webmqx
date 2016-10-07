@@ -6,7 +6,7 @@ class Handler extends Thread {
 	}
 
 	public function run(){
-		//Establish connection to AMQP for rpc response.
+		// Establish connection to AMQP for rpc response.
 		// attension: don't use $this->amqp_connection.
 		$amqp_connection = new AMQPConnection();
 		$amqp_connection->setHost('127.0.0.1'); // Webmqx Server IP.
@@ -41,7 +41,7 @@ class Handler extends Thread {
 
 	public function handle($http_path, $http_query, $http_body) {
 		//
-		// Your codes written in here.
+		// Your codes would be written in here.
 		//
 
 		$response_body = 'Hello World';	

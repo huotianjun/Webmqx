@@ -24,7 +24,7 @@
 -record(state, {
 				vhost = webmqx_util:env_vhost(),
 				gm = undefined,
-				routing_queues= dict:new() %% key is words of path, value is a gb_trees.
+				routing_queues= dict:new() %% The key is words of path, and value is a gb_trees.
 				}). 
 
 %%----------------------------------------------------------------------------
@@ -120,7 +120,7 @@ init([]) ->
 
 handle_call({get_routing_queues, WordsOfPath}, _, 
 				State = #state{vhost = VHost, routing_queues = RoutingQueues}) ->
-	%% First, search in process state.
+	%% First, searching in process state.
 	QueueTrees1=
 	case dict:find({path, WordsOfPath}, RoutingQueues) of
 		{ok, QueueTrees0} -> 
@@ -134,7 +134,7 @@ handle_call({get_routing_queues, WordsOfPath}, _,
 
 	case QueueTrees1 of 
 		undefined ->
-			%% Then, search in rabbit table.
+			%% Then, searching in rabbit table.
 			NowTimeStamp = now_timestamp_counter(),
 			GoFetch = 
 			case ets:lookup(?TAB, {path, WordsOfPath}) of

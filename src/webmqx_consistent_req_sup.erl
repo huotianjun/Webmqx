@@ -25,7 +25,7 @@
 start_link() ->
 	supervisor2:start_link({local, ?MODULE}, ?MODULE, []).
 
-%% Try start a consistent requests broker.
+%% Try starting a consistent requests broker.
 start_child(Path) when is_binary(Path) ->
 	case start_child1(Path) of
 		{ok, Pid}                       -> Pid;
