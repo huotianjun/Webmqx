@@ -21,7 +21,7 @@ TO-DOs
 
 - Other webmqx examples of web service framework with mainstream languages, Java/Python/Ruby/C#/Javascript/Go/Elixer/...
 
-- Docker images for webmqx client framework.
+- Docker images for webmqx client frameworks.
 
 - End-to-end monitor/trace/debug/test of web services.
 
@@ -220,7 +220,7 @@ curl -i http://XXX.XXX.XX.XX/3/2/1
 If echo 'HelloWorld', it works.
 
 
-Other languages, please reference to:
+Other languages, reference to:
 
 - Python: http://www.rabbitmq.com/tutorials/tutorial-six-python.html
 - Java: http://www.rabbitmq.com/tutorials/tutorial-six-java.html
@@ -230,6 +230,7 @@ Other languages, please reference to:
 - Go: http://www.rabbitmq.com/tutorials/tutorial-six-go.html
 - Elixir: http://www.rabbitmq.com/tutorials/tutorial-six-elixir.html
 
+**Please focus on the part of rpc-server.**
 
 ## Copyright and License
 
