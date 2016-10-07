@@ -8,7 +8,6 @@ dep_cowboy_commit = master
 
 DEP_PLUGINS = rabbit_common/mk/rabbitmq-plugin.mk
 
-## Use RabbitMQ patched erlang.mk
 ERLANG_MK_REPO = https://github.com/rabbitmq/erlang.mk.git
 ERLANG_MK_COMMIT = rabbitmq-tmp
 

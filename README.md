@@ -69,6 +69,7 @@ For example of PHP (with pthreads enabled), the web service framework is like th
 
 (PHP amqp client library supported by https://github.com/pdezwart/php-amqp here.)
 
+
 ```PHP
 
 <?php
@@ -205,6 +206,20 @@ $WebmqxServer->init() or print 'no request data';
 ?>
 
 ```
+
+Start the web service:
+```
+php webmqx-server&
+```
+You can start it many times, and also start in several hosts. 
+
+Test:
+```
+curl -i http://XXX.XXX.XX.XX/1/2/3
+curl -i http://XXX.XXX.XX.XX/3/2/1
+```
+If echo 'HelloWorld', it works.
+
 
 With other languages, please reference to:
 Python: http://www.rabbitmq.com/tutorials/tutorial-six-python.html
