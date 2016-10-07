@@ -5,7 +5,7 @@ Webmqx is a HTTP server plugin for RabbitMQ server, and was built in a HTTP serv
 
 Because it uses RabbitMQ client framework in your web services, so Webmqx client can easily be **embedded** in any other application server, which running anywhere, written in any language. 
 
-It is easy to use. No parameterize with web server module of Webmqx,  but all http requests routing to web service by the settings in your application.
+It is easy to use: no parameterize with web server module of Webmqx,  and all HTTP requests routing to web service by the settings in your application.
 
 It can also be used as HTTP load-balancing proxy server.
 
@@ -50,6 +50,7 @@ rabbitmq-plugins enable webmqx
 
 Then, restart rabbitmq-server
 ```
+./rabbitmqctl stop
 ./rabbitmq-server&
 ```
 If there are some errors for duplicate plugin files, remove the duplicated ones.
@@ -65,9 +66,7 @@ If echo 'HelloWorld', it works.
 How to use in web service
 -------------------------
 
-For example of PHP (with pthreads enabled), the web service framework is like this (reference in <href="http://www.rabbitmq.com/tutorials/tutorial-six-php.html">): 
-
-(PHP amqp client library supported by https://github.com/pdezwart/php-amqp here.)
+For example of PHP (with pthreads enabled), the web service framework is like this (reference in <href="http://www.rabbitmq.com/tutorials/tutorial-six-php.html">, and PHP amqp client library supported by https://github.com/pdezwart/php-amqp ): 
 
 
 ```PHP
@@ -209,9 +208,9 @@ $WebmqxServer->init() or print 'no request data';
 
 Start the web service:
 ```
-php webmqx-server&
+php webmqx-server.php&
 ```
-You can start it many times, and also start in several hosts. 
+Attention: you can start it many times, and also start on several hosts. 
 
 Test:
 ```
