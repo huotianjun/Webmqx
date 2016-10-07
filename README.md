@@ -1,15 +1,15 @@
 Webmqx
 ======
 
-Webmqx is a HTTP server plugin for RabbitMQ server, and was built in a HTTP server of Cowboy. 
+- Webmqx is a HTTP server plugin for RabbitMQ server, and was built in a HTTP server of Cowboy. 
 
-Because it uses RabbitMQ client framework in your web services, so Webmqx client can easily be **embedded** in any other application server, which running anywhere, written in any language. 
+- Because it uses RabbitMQ client framework in your web services, so Webmqx client can easily be **embedded** in any other application server which running anywhere, written in any language. 
 
-It is easy to use: no parameterize with web server module of Webmqx,  and all HTTP requests routing to web service by the settings in your application.
+- It is easy to use: no parameterize with web server module of Webmqx,  and all HTTP requests routing to web service by the settings in your application.
 
-It can also be used as HTTP load-balancing proxy server.
+- It can also be used as HTTP load-balancing proxy server.
 
-Webmqx is written in Erlang.
+- Webmqx is written in Erlang.
 
 Goals
 -----
@@ -19,11 +19,11 @@ Webmqx aims to docker/microsevices.
 TO-DOs
 ------
 
-Other webmqx examples of web service framework with mainstream languages, Java/Python/Ruby/C#/Javascript/Go/Elixer/...
+- Other webmqx examples of web service framework with mainstream languages, Java/Python/Ruby/C#/Javascript/Go/Elixer/...
 
-Docker images for webmqx client framework.
+- Docker images for webmqx client framework.
 
-End-to-end monitor/trace/debug/test of web services.
+- End-to-end monitor/trace/debug/test of web services.
 
 
 Install Webmqx plugin
@@ -37,15 +37,15 @@ Install Webmqx plugin
 
 The easiest	way	to utilize the webmqx plugin is by installing the full codes available on Github.
 ```
-git clone https://github.com/huotianjun/webmqx.git
+git clone https://github.com/huotianjun/Webmqx.git
 cd webmqx
 make dist
 ```
 The plugin's files(*.ez) must be copy to plugins directory of the RabbitMQ distribution . 
-To enable it, use <href="http://www.rabbitmq.com/man/rabbitmq-plugins.1.man.html">rabbitmq-plugins</a>:
+To enable it:
 
 ```
-rabbitmq-plugins enable webmqx
+./rabbitmq-plugins enable webmqx
 ```
 
 Then, restart rabbitmq-server
@@ -53,7 +53,7 @@ Then, restart rabbitmq-server
 ./rabbitmqctl stop
 ./rabbitmq-server&
 ```
-If there are some errors for duplicate plugin files, remove the duplicated ones.
+**If there are some errors for duplicate plugin files, remove the duplicated ones.**
 
 Default HTTP port used by the plugin is `80`.
 
@@ -66,7 +66,7 @@ If echo 'HelloWorld', it works.
 How to use in web service
 -------------------------
 
-For example of PHP (with pthreads enabled), the web service framework is like this (reference in <href="http://www.rabbitmq.com/tutorials/tutorial-six-php.html">, and PHP amqp client library supported by https://github.com/pdezwart/php-amqp ): 
+For example of PHP (with pthreads enabled), the web service framework is like this (reference in http://www.rabbitmq.com/tutorials/tutorial-six-php.html , and its PHP amqp client library supported by https://github.com/pdezwart/php-amqp ): 
 
 
 ```PHP
@@ -210,7 +210,7 @@ Start the web service:
 ```
 php webmqx-server.php&
 ```
-Attention: you can start it many times, and also start on several hosts. 
+**Atention: you can start it many times, and it also can be started on several hosts.** 
 
 Test:
 ```
@@ -221,6 +221,7 @@ If echo 'HelloWorld', it works.
 
 
 With other languages, please reference to:
+```
 Python: http://www.rabbitmq.com/tutorials/tutorial-six-python.html
 Java: http://www.rabbitmq.com/tutorials/tutorial-six-java.html
 Ruby: http://www.rabbitmq.com/tutorials/tutorial-six-ruby.html
@@ -228,7 +229,7 @@ C#: http://www.rabbitmq.com/tutorials/tutorial-six-dotnet.html
 Javascript: http://www.rabbitmq.com/tutorials/tutorial-six-javascript.html
 Go: http://www.rabbitmq.com/tutorials/tutorial-six-go.html
 Elixir: http://www.rabbitmq.com/tutorials/tutorial-six-elixir.html
-
+```
 
 ## Copyright and License
 
