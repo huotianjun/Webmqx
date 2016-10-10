@@ -2,7 +2,7 @@
 import pika
 import json
 
-# If not running on localhost of Rabbitmq server, don't use the user of 'guest', but try other. 
+# If not running on localhost of RabbitMQ server, don't use the user of 'guest', but try other. 
 credentials = pika.PlainCredentials('guest', 'guest')
 parameters =  pika.ConnectionParameters('localhost', credentials=credentials)
 connection = pika.BlockingConnection(parameters)
@@ -10,7 +10,7 @@ connection = pika.BlockingConnection(parameters)
 channel = connection.channel()
 queue = channel.queue_declare(exclusive=True, auto_delete=True).method.queue
 
-# Exchange must be set to  'webmqx'.
+# Exchange must be set to 'webmqx'.
 # Your can bind many routing_key as http path.
 channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1')
 channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1/2')
