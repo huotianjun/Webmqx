@@ -3,7 +3,7 @@ Webmqx
 
 - Webmqx is a HTTP server plugin for RabbitMQ server, and was built in a HTTP server of Cowboy. 
 
-- Because it uses RabbitMQ client's framework in your web services, so Webmqx client can easily be **embedded** in any other application server which running anywhere, written in any language. 
+- Because it uses RabbitMQ client's framework in your web services, so Webmqx client can easily be **embedded** in any other application server which can running anywhere, especially in your home, and written in many language, such as Java/Python/Ruby/C#/Javascript/Go/etc. 
 
 - It is easy to use: no parameterize with web server module of Webmqx,  and all HTTP requests routing to web service by the settings in your application.
 
@@ -19,7 +19,7 @@ Webmqx aims to docker/microsevices.
 TO-DOs
 ------
 
-- Other webmqx examples of framework in web service by mainstream languages, Java/Python/Ruby/C#/Javascript/Go/Elixer/etc.
+- Other webmqx examples of framework in web service by mainstream languages, Java/Ruby/C#/Javascript/Go/Elixer/etc.
 
 - Docker images for webmqx client's frameworks.
 
