@@ -22,7 +22,7 @@ class WebmqxServer {
 		$this->queue->setFlags(AMQP_EXCLUSIVE | AMQP_AUTODELETE);
 		$this->queue->declareQueue();
 
-		// Exchange must set to  'webmqx'. 
+		// Exchange must be set to  'webmqx'. 
 		$exchange_name = 'webmqx';
 
 		// There can set many paths which you want to handle.

@@ -3,13 +3,10 @@ import pika
 import json
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='106.187.44.101'))
-
 channel = connection.channel()
-
 queue = channel.queue_declare(exclusive=True, auto_delete=True).method.queue
 
-
-# Exchange must set to  'webmqx'.
+# Exchange must be set to  'webmqx'.
 channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/1')
 channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/1/2')
 channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/1/2/3')
@@ -27,7 +24,7 @@ def on_request(ch, method, props, body):
 
     response = fib(http_path, http_qs, http_body)
 
-    response_body = json.dumps({"headers": {"content-type": "text/html"}, "body": response}, sort_keys=True)
+    response_body = json.dumps({'headers': {'content-type': 'text/html'}, 'body': response}, sort_keys=True)
 
     ch.basic_publish(exchange='',
                         routing_key=props.reply_to,
