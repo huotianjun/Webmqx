@@ -15,7 +15,7 @@ handle_event({event, binding_add, {WordsOfPath, _X, _D, _Args}, _, _}, State) ->
 	%% Flush the ets of routing table.
 	webmqx_exchange_routes:flush_queues(WordsOfPath),
 
-	%% Try start a broker of consistent requests of this http path.
+	%% Try starting a broker to handle consistent requests of the http path.
 	Path = webmqx_util:words_to_path(WordsOfPath),
 	webmqx_consistent_req_sup:start_child(Path),
 	{ok, State};
@@ -24,7 +24,7 @@ handle_event({event, binding_remove, {WordsOfPath, _X, _D, _Args}, _, _}, State)
 	%% Flush the ets of routing table.
 	webmqx_exchange_routes:flush_queues(WordsOfPath),
 
-	%% Try stop a broker of consistent requests of this http path.
+	%% Try to stop the broker.
 	Path = webmqx_util:words_to_path(WordsOfPath),
 	webmqx_consistent_req_sup:delete_child(Path),
 	error_logger:info_msg("delete child : ~p~n", [Path]),

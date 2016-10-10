@@ -22,10 +22,10 @@ class WebmqxServer {
 		$this->queue->setFlags(AMQP_EXCLUSIVE | AMQP_AUTODELETE);
 		$this->queue->declareQueue();
 
-		// Exchange must set to  'webmqx'. 
+		// Exchange must be set to  'webmqx'. 
 		$exchange_name = 'webmqx';
 
-		// There can set many paths what you want to handle.
+		// There can set many paths which you want to handle.
 		$binding_key1 = '/1';
 		$binding_key2 = '/1/2';
 		$binding_key3 = '/1/2/3';
@@ -86,7 +86,7 @@ class WebmqxServer {
 	public function handle($http_path, $http_query, $http_body) {
 
 		//
-		// Your codes written in here.
+		// Your codes would be written in here.
 		//
 		$response_body = 'Hello World';
 

@@ -13,7 +13,7 @@
 start(_Type, _Args) ->
 	Result = webmqx_sup:start_link(),
 
-	%% Manage an ets of searching table for webmqx routing.
+	%% Manage ets table of searching table for webmqx routing.
 	webmqx_exchange_routes:start(),
 
 	%% RPC workers start.
@@ -32,7 +32,7 @@ start(_Type, _Args) ->
 		#{env => #{dispatch => Dispatch}} 
 	),
 
-	%% Add event handler for binding_add and binding_remove events.
+	%% Add event handler for binding_add or binding_remove events.
 	EventPid =
 	case rabbit_event:start_link() of
 		{ok, Pid}                       -> Pid;
@@ -40,7 +40,7 @@ start(_Type, _Args) ->
 	end,
 	gen_event:add_handler(EventPid, webmqx_binding_event_handler, []),
 
-	%% For test currently.
+	%% For test.
 	webmqx_service_internal:start(),
 
 	Result.
