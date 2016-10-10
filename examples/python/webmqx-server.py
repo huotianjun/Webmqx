@@ -2,7 +2,10 @@
 import pika
 import json
 
-connection = pika.BlockingConnection(pika.ConnectionParameters(host='106.187.44.101'))
+credentials = pika.PlainCredentials('guest', 'guest')
+parameters =  pika.ConnectionParameters('106.187.44.101', credentials=credentials)
+connection = pika.BlockingConnection(parameters)
+
 channel = connection.channel()
 queue = channel.queue_declare(exclusive=True, auto_delete=True).method.queue
 
