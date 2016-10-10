@@ -2,21 +2,27 @@
 import pika
 import json
 
+# If not running on localhost of Rabbitmq server, don't use the user of 'guest', but try other. 
 credentials = pika.PlainCredentials('guest', 'guest')
-parameters =  pika.ConnectionParameters('106.187.44.101', credentials=credentials)
+parameters =  pika.ConnectionParameters('localhost', credentials=credentials)
 connection = pika.BlockingConnection(parameters)
 
 channel = connection.channel()
 queue = channel.queue_declare(exclusive=True, auto_delete=True).method.queue
 
 # Exchange must be set to  'webmqx'.
+# Your can bind many routing_key as http path.
 channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1')
 channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1/2')
 channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1/2/3')
 channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/3/2/1')
 
 def fib(http_path, http_qs, http_body):
-   return 'HelloWorld' 
+    #
+    # Write your codes, here.
+    #
+
+    return 'HelloWorld' 
 
 def on_request(ch, method, props, body):
     rpc_request = json.loads(body)
@@ -39,7 +45,7 @@ def on_request(ch, method, props, body):
 channel.basic_qos(prefetch_count=1)
 channel.basic_consume(on_request, queue=queue)
 
-print(" [x] Awaiting RPC requests")
+print(" [x] Awaiting HTTP requests")
 try:
     channel.start_consuming()
 finally:
