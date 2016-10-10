@@ -17,7 +17,7 @@ channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1/2')
 channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1/2/3')
 channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/3/2/1')
 
-def fib(http_path, http_qs, http_body):
+def handle(http_path, http_qs, http_body):
     #
     # Write your codes, here.
     #
@@ -31,7 +31,7 @@ def on_request(ch, method, props, body):
     http_path = http_request['path']
     http_qs = http_request['qs']
 
-    response = fib(http_path, http_qs, http_body)
+    response = handle(http_path, http_qs, http_body)
 
     response_body = json.dumps({'headers': {'content-type': 'text/html'}, 'body': response}, sort_keys=True)
 
