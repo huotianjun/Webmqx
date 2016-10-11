@@ -64,8 +64,5 @@ public class WebmqxServer {
 		while (true) {
 			channel.basicConsume(queueName, true, consumer);
 		}
-		catch  (Exception e) {
-			e.printStackTrace();
-		}
 	}
 }
