@@ -13,6 +13,8 @@ public class webmqx_server {
 	}
 
 	public static void main(String []args) {
+		webmqx_server server = new webmqx_server();
+
 		ConnectionFactory factory = new ConnectionFactory();
 		factory.setUsername("guest");
 		factory.setPassword("guest");
@@ -46,7 +48,7 @@ public class webmqx_server {
 
 
 			System.out.println(" [.] handle(" + message + ")");
-			String response = "" + handle(message);
+			String response = "" + server.handle(message);
 	
 			channel.basicPublish( "", props.getReplyTo(), replyProps, response.getBytes());
 			channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
