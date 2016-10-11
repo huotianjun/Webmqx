@@ -4,7 +4,7 @@ import java.io.IOException;
 
 public class WebmqxServer {
 
-	// TODO: run it at thread.
+	// TODO: run it at a thread.
 	private static String handle(String message) {
 		JSONObject rpc_request = new JSONObject(message);
 		JSONObject http_req = rpc_request.getJSONObject("req");

@@ -5,13 +5,15 @@ Webmqx
 
 - Because it uses RabbitMQ client's framework in your web services, so Webmqx client can easily be **embedded** in any other application server which can running anywhere, even in your home, and written in many language, such as Java/Python/Ruby/C#/Javascript/Go/etc. 
 
-- Different from normal web server, with Webmqx, your application server 'pull' HTTP requests , to handle and response.
+- Different from normal web server: with Webmqx, your application server 'pull' HTTP requests , to handle and response.
 
 - It is easy to use: no parameterize with web server module of Webmqx,  and all HTTP requests routing to web service by the settings in your application.
 
 - It can also be used as HTTP load-balancing proxy server.
 
-- Webmqx is written in Erlang.
+- Webmqx is written in Erlang
+
+Enjoy it!
 
 Goals
 -----
