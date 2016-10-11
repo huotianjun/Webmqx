@@ -31,10 +31,10 @@ public class WebmqxServer {
 
 				JSONObject rpc_request = new JSONObject(message);
 				JSONObject http_req = rpc_request.getJSONObject("req");
-				JSONObject http_host = http_req.getString("host");
-				JSONObject http_method = http_req.getString("method");
-				JSONObject http_path = http_req.getString("path");
-				JSONObject http_qs = http_req.getString("qs");
+				String http_host = http_req.getString("host");
+				String http_method = http_req.getString("method");
+				String http_path = http_req.getString("path");
+				String http_qs = http_req.getString("qs");
 
 				System.out.println(" req " +  http_req.toString());
 
