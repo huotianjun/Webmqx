@@ -5,7 +5,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Consumer;
 import com.rabbitmq.client.DefaultConsumer;
 
-public class HelloWorld {
+public class webmqx-server {
 	public String handle(String message) throws Exception {
 
 	}
