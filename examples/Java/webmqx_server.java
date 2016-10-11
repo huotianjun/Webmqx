@@ -45,7 +45,7 @@ public class webmqx_server {
 
 
 			System.out.println(" [.] handle(" + message + ")");
-			String response = "" + handle();
+			String response = "" + this.handle(message);
 	
 			channel.basicPublish( "", props.getReplyTo(), replyProps, response.getBytes());
 			channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
