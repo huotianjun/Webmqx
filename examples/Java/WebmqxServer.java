@@ -40,15 +40,20 @@ public class WebmqxServer {
 
 				String http_body = rpc_request.getString("body");
 				System.out.println(" body " + http_body );
-
-				AMQP.BasicProperties replyProps = new AMQP.BasicProperties.Builder().correlationId(properties.getCorrelationId()).build();
 				
 				//
 				// Write your codes here
 				//
 				String response = "HelloWorld" ;
-		
-				channel.basicPublish( "", properties.getReplyTo(), replyProps, response.getBytes());
+
+				JSONObject response_body = new JSONObject();
+				JSONObject headers_body = new JSONObject();
+				headers_body.put("content-type", "text/html");
+				response_body.put("headers", headers_body);
+				response_body.put("body", response);
+				
+				AMQP.BasicProperties replyProps = new AMQP.BasicProperties.Builder().correlationId(properties.getCorrelationId()).build();
+				channel.basicPublish( "", properties.getReplyTo(), replyProps, response_body.valueToString().getBytes());
 				channel.basicAck(envelope.getDeliveryTag(), false);
 			};
 		};
