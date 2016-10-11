@@ -32,7 +32,7 @@ public class WebmqxServer {
 			factory.setHost("localhost");
 
 			connection = factory.newConnection();
-			Channel channel = connection.createChannel();
+			channel = connection.createChannel();
 
 			String queueName = channel.queueDeclare().getQueue();
 			channel.queueBind(queueName, "webmqx", "/Java/1");
@@ -53,11 +53,7 @@ public class WebmqxServer {
 				QueueingConsumer.Delivery delivery = consumer.nextDelivery();
 				        
 				BasicProperties props = delivery.getProperties();
-				BasicProperties replyProps = new BasicProperties
-																.Builder()
-																.correlationId(props.getCorrelationId())
-																.build();
-
+				BasicProperties replyProps = new BasicProperties.Builder().correlationId(props.getCorrelationId()).build();
 				try {
 					String message = new String(delivery.getBody(),"UTF-8");
 					System.out.println(" [x] Received '" + message + "'");
