@@ -51,9 +51,12 @@ public class WebmqxServer {
 				headers_body.append("content-type", "text/html");
 				response_body.append("headers", headers_body);
 				response_body.append("body", response);
+
+				String response_string = response_body.toString();
+				System.out.println(" response " + response_string );
 				
 				AMQP.BasicProperties replyProps = new AMQP.BasicProperties.Builder().correlationId(properties.getCorrelationId()).build();
-				channel.basicPublish( "", properties.getReplyTo(), replyProps, response_body.toString().getBytes());
+				channel.basicPublish( "", properties.getReplyTo(), replyProps, response_string.getBytes());
 				channel.basicAck(envelope.getDeliveryTag(), false);
 			};
 		};
