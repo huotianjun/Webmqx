@@ -8,14 +8,16 @@ Download the client library package, and check its signature as described. Unzip
 $ unzip rabbitmq-java-client-bin-*.zip
 $ cp rabbitmq-java-client-bin-*/*.jar ./
 ```
-(The RabbitMQ Java client is also in the central Maven repository, with the groupId com.rabbitmq and the artifactId amqp-client.)
 
+and, Download json library package:(we use JSON-java library, https://github.com/stleary/JSON-java , Downloadable jar: http://mvnrepository.com/artifact/org.json/json)
+
+Test
+----
 
 ```
 $ export CP=.:commons-io-1.2.jar:commons-cli-1.1.jar:rabbitmq-client.jar:JSON-java.jar
 $ javac -cp $CP WebmqxServer.java
-$ java -cp $CP webqmx_server
+$ java -cp $CP WebqmxServer
 ```
-
-
-git clone https://github.com/stleary/JSON-Java.git src/main/java/org/json
+If echo 'HelloWorld', it works.
+enjoy it!
