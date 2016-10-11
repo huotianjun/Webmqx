@@ -48,9 +48,9 @@ public class WebmqxServer {
 
 				JSONObject response_body = new JSONObject();
 				JSONObject headers_body = new JSONObject();
-				headers_body.append("content-type", "text/html");
-				response_body.append("headers", headers_body);
-				response_body.append("body", response);
+				headers_body.put("content-type", "text/html");
+				response_body.put("headers", headers_body);
+				response_body.put("body", response);
 
 				String response_string = response_body.toString();
 				System.out.println(" response " + response_string );
