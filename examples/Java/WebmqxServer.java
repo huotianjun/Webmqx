@@ -1,4 +1,5 @@
 import com.rabbitmq.client.*;
+import org.json.*;
 import java.io.IOException;
 
 public class WebmqxServer {
@@ -27,6 +28,13 @@ public class WebmqxServer {
 			throws IOException {
 				String message = new String(body, "UTF-8");
 				System.out.println(" [x] Received '" + message + "'");
+
+				JSONObject rpc_request = new JSONObject(message);
+				JSONArray req = rpc_request.getJSONArray("req");
+				System.out.println(" req " +  req.toString());
+				String body = obj.getJSONObject("body");
+				System.out.println(" body " + body );
+
 				AMQP.BasicProperties replyProps = new AMQP.BasicProperties.Builder().correlationId(properties.getCorrelationId()).build();
 				
 				//
