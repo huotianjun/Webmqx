@@ -7,8 +7,9 @@ import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.DefaultConsumer;
 
 public class webmqx_server {
-	public String handle(String message) throws Exception {
+	private String handle(String message) throws Exception {
 
+		return "HelloWorld";
 	}
 
 	public static void main(String []args) {
@@ -45,7 +46,7 @@ public class webmqx_server {
 
 
 			System.out.println(" [.] handle(" + message + ")");
-			String response = "" + this.handle(message);
+			String response = "" + handle(message);
 	
 			channel.basicPublish( "", props.getReplyTo(), replyProps, response.getBytes());
 			channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
