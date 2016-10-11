@@ -41,6 +41,6 @@ public class WebmqxServer {
 				channel.basicAck(enverlope.getDeliveryTag(), false);
 			};
 
-		channel.basicConsume(QUEUE_NAME, true, consumer);
+		channel.basicConsume(queueName, true, consumer);
 	}
 }
