@@ -48,12 +48,12 @@ public class WebmqxServer {
 
 				JSONObject response_body = new JSONObject();
 				JSONObject headers_body = new JSONObject();
-				headers_body.put("content-type", "text/html");
-				response_body.put("headers", headers_body);
-				response_body.put("body", response);
+				headers_body.append("content-type", "text/html");
+				response_body.append("headers", headers_body);
+				response_body.append("body", response);
 				
 				AMQP.BasicProperties replyProps = new AMQP.BasicProperties.Builder().correlationId(properties.getCorrelationId()).build();
-				channel.basicPublish( "", properties.getReplyTo(), replyProps, response_body.valueToString().getBytes());
+				channel.basicPublish( "", properties.getReplyTo(), replyProps, response_body.toString().getBytes());
 				channel.basicAck(envelope.getDeliveryTag(), false);
 			};
 		};
