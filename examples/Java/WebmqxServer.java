@@ -27,10 +27,7 @@ public class WebmqxServer {
 			throws IOException {
 				String message = new String(body, "UTF-8");
 				System.out.println(" [x] Received '" + message + "'");
-				BasicProperties replyProps = new BasicProperties
-												.Builder()
-												.correlationId(properties.getCorrelationId())
-												.build();
+				BasicProperties replyProps = new BasicProperties.Builder().correlationId(properties.getCorrelationId()).build();
 				
 				//
 				// Write your codes here
