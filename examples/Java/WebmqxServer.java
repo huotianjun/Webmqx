@@ -9,7 +9,7 @@ public class WebmqxServer {
 		factory.setHost("localhost");
 
 		Connection connection = factory.newConnection();
-		Channel channel = connection.createChannel();
+		final Channel channel = connection.createChannel();
 
 		String queueName = channel.queueDeclare().getQueue();
 		channel.queueBind(queueName, "webmqx", "/Java/1");
@@ -21,7 +21,7 @@ public class WebmqxServer {
 
 		System.out.println(" [x] Awaiting HTTP requests");
 
-		Consumer consumer = new DefaultConsumer(final channel) {
+		Consumer consumer = new DefaultConsumer(channel) {
 			@Override
 			public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body)
 			throws IOException {
