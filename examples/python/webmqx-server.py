@@ -24,7 +24,7 @@ def handle(http_path, http_qs, http_body):
 
     return 'HelloWorld' 
 
-# Recommanded that you would do it with thread, the best. with that, you must create a new channel to do it.
+# TODO: do it at a thread.
 def on_request(ch, method, props, body):
     rpc_request = json.loads(body)
     http_request = rpc_request['req']
