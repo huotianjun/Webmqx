@@ -21,7 +21,7 @@ public class WebmqxServer {
 
 		System.out.println(" [x] Awaiting HTTP requests");
 
-		Consumer consumer = new DefaultConsumer(channel) {
+		Consumer consumer = new DefaultConsumer(final channel) {
 			@Override
 			public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body)
 			throws IOException {
@@ -36,9 +36,9 @@ public class WebmqxServer {
 				// Write your codes here
 				//
 				String response = "HelloWorld" ;
-	
+		
 				channel.basicPublish( "", properties.getReplyTo(), replyProps, response.getBytes());
-				channel.basicAck(enverlope.getDeliveryTag(), false);
+				channel.basicAck(envelope.getDeliveryTag(), false);
 			};
 		};
 
