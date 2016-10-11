@@ -62,7 +62,7 @@ public class WebmqxServer {
 					String message = new String(delivery.getBody(),"UTF-8");
 					System.out.println(" [x] Received '" + message + "'");
 
-					String response = handle(message); 
+					response = handle(message); 
 
 					JSONObject response_body = new JSONObject();
 					JSONObject headers_body = new JSONObject();
@@ -78,7 +78,7 @@ public class WebmqxServer {
 					response = "";
 				}
 				finally {  
-					channel.basicPublish( "", props.getReplyTo(), replyProps, response_string.getBytes("UTF-8"));
+					channel.basicPublish("", props.getReplyTo(), replyProps, response_string.getBytes("UTF-8"));
 					channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
 				}
 			}
