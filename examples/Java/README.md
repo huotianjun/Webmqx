@@ -12,8 +12,8 @@ $ cp rabbitmq-java-client-bin-*/*.jar ./
 
 
 ```
-$ javac -cp rabbitmq-client.jar webmqx_server.java
-$ export CP=.:commons-io-1.2.jar:commons-cli-1.1.jar:rabbitmq-client.jar
+$ export CP=.:commons-io-1.2.jar:commons-cli-1.1.jar:rabbitmq-client.jar:JSON-java.jar
+$ javac -cp $CP WebmqxServer.java
 $ java -cp $CP webqmx_server
 ```
 
