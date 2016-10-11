@@ -40,6 +40,7 @@ public class WebmqxServer {
 				channel.basicPublish( "", properties.getReplyTo(), replyProps, response.getBytes());
 				channel.basicAck(enverlope.getDeliveryTag(), false);
 			};
+		};
 
 		channel.basicConsume(queueName, true, consumer);
 	}
