@@ -30,8 +30,14 @@ public class WebmqxServer {
 				System.out.println(" [x] Received '" + message + "'");
 
 				JSONObject rpc_request = new JSONObject(message);
-				JSONArray http_req = rpc_request.getJSONArray("req");
+				JSONObject http_req = rpc_request.getJSONObject("req");
+				JSONObject http_host = http_req.getString("host");
+				JSONObject http_method = http_req.getString("method");
+				JSONObject http_path = http_req.getString("path");
+				JSONObject http_qs = http_req.getString("qs");
+
 				System.out.println(" req " +  http_req.toString());
+
 				String http_body = rpc_request.getString("body");
 				System.out.println(" body " + http_body );
 
