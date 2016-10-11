@@ -3,6 +3,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Consumer;
+import com.rabbitmq.client.QueueingConsumer;
 import com.rabbitmq.client.DefaultConsumer;
 
 public class webmqx_server {
