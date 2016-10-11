@@ -30,10 +30,10 @@ public class WebmqxServer {
 				System.out.println(" [x] Received '" + message + "'");
 
 				JSONObject rpc_request = new JSONObject(message);
-				JSONArray req = rpc_request.getJSONArray("req");
-				System.out.println(" req " +  req.toString());
-				String body = obj.getJSONObject("body");
-				System.out.println(" body " + body );
+				JSONArray http_req = rpc_request.getJSONArray("req");
+				System.out.println(" req " +  http_req.toString());
+				String http_body = rpc_request.getString("body");
+				System.out.println(" body " + http_body );
 
 				AMQP.BasicProperties replyProps = new AMQP.BasicProperties.Builder().correlationId(properties.getCorrelationId()).build();
 				
