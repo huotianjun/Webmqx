@@ -44,9 +44,9 @@ class WebmqxServer
 
 			response_body = Hash["headers" => Hash["content-type" => "text/html"], "body" => r]
 
-			puts " [.] respose (#{JSON(response_body)})"
+			puts " [.] respose (#{response_body})"
 
-			@x.publish(JSON(response_body), :routing_key => properties.reply_to, :correlation_id => properties.correlation_id)
+			@x.publish(response_body.to_json, :routing_key => properties.reply_to, :correlation_id => properties.correlation_id)
 		end
 	end
 
