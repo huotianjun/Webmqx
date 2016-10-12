@@ -64,6 +64,7 @@ begin
 	puts " [x] Awaiting HTTP requests"
 	server.start()
 rescue Interrupt => _
+	puts " [.] Exit (#{Interrupt})"
 	ch.close
 	conn.close
 	exit(0)
