@@ -217,8 +217,8 @@ $ php webmqx-server.php&
 
 Test(On another terminal):
 ```
-curl -i http://XXX.XXX.XX.XX/1/2/3
-curl -i http://XXX.XXX.XX.XX/3/2/1
+curl -i http://XXX.XXX.XX.XX/php-test/1/2/3
+curl -i http://XXX.XXX.XX.XX/php-test/3/2/1
 ```
 If echo 'HelloWorld', it works.
 
