@@ -27,8 +27,18 @@ class WebmqxServer
 
 		@q.subscribe(:block => true) do |delivery_info, properties, payload|
 			rpc_body = JSON.parse(payload) 	
+			http_req = rpc_body['req']
+			http_body = rpc_body['body']
+			http_host = http_req['host']
+			http_method = http_req['method']
+			http_path = http_req['path']
+			http_qs = http_req['qs']
 
-			pp rpc_body
+			puts " [.] http_body (#{http_body})"
+			puts " [.] http_host (#{http_host})"
+			puts " [.] http_method (#{http_method})"
+			puts " [.] http_path (#{http_path})"
+			puts " [.] http_qs (#{http_qs})"
 
 			r = self.class.handle()
 
