@@ -3,6 +3,8 @@ import org.json.*;
 import java.io.IOException;
 
 public class WebmqxServer {
+
+	// TODO: run it at a thread.
 	private static String handle(String message) {
 		JSONObject rpc_request = new JSONObject(message);
 		JSONObject http_req = rpc_request.getJSONObject("req");
@@ -17,9 +19,10 @@ public class WebmqxServer {
 		System.out.println(" body " + http_body );
 				
 		//
-		// Write your codes here
+		// Write your codes at here. 
 		//
-		return "HelloWorld";
+		String res = "HelloWorld";
+		return res;
 	}
 
 	public static void main(String[] argv) throws Exception {
@@ -27,13 +30,16 @@ public class WebmqxServer {
 		Channel channel = null;
 		try {
 			ConnectionFactory factory = new ConnectionFactory();
+
+			// If not localhost, don't use 'guest' as the user.
 			factory.setUsername("guest");
 			factory.setPassword("guest");
-			factory.setHost("localhost");
+			factory.setHost("localhost"); // It is the IP of RabbitMQ server.
 
 			connection = factory.newConnection();
 			channel = connection.createChannel();
 
+			// Which HTTP paths you want to pull, binding at here.
 			String queueName = channel.queueDeclare().getQueue();
 			channel.queueBind(queueName, "webmqx", "/Java/1");
 			channel.queueBind(queueName, "webmqx", "/Java/1/2");

@@ -3,15 +3,17 @@ Webmqx
 
 - Webmqx is a HTTP server plugin for RabbitMQ server, and was built in a HTTP server of Cowboy. 
 
-- Because it uses RabbitMQ client's framework in your web services, so Webmqx client can easily be **embedded** in any other application server which can running anywhere, even in your home, and written in many language, such as Java/Python/Ruby/C#/Javascript/Go/etc. 
+- Because it uses RabbitMQ client's pattern in your web services, so Webmqx client can easily be **embedded** in any other application server which can running anywhere, even in your home, and written in many language, such as Java/Python/Ruby/C#/Javascript/Go/etc. 
 
-- Different from normal web server, with Webmqx, your application server 'pull' HTTP requests , to handle and response.
+- Different from normal web server: with Webmqx, your application server 'pull' HTTP requests , to handle and response.
 
 - It is easy to use: no parameterize with web server module of Webmqx,  and all HTTP requests routing to web service by the settings in your application.
 
 - It can also be used as HTTP load-balancing proxy server.
 
 - Webmqx is written in Erlang.
+
+Enjoy it!
 
 Goals
 -----
@@ -21,7 +23,7 @@ Webmqx aims to docker/microsevices.
 TO-DOs
 ------
 
-- Other webmqx examples of framework in web service by mainstream languages, Java/Ruby/C#/Javascript/Go/Elixer/etc.
+- Other webmqx examples of framework in web service by mainstream languages, /Ruby/C#/Javascript/Go/Elixer/etc.
 
 - Docker images for webmqx client's frameworks.
 
@@ -39,29 +41,29 @@ Install Webmqx plugin
 
 The easiest	way	to utilize the webmqx plugin is by installing the full codes available on Github.
 ```
-git clone https://github.com/huotianjun/Webmqx.git
-cd webmqx
-make dist
+$ git clone https://github.com/huotianjun/Webmqx.git
+$ cd webmqx
+$ make dist
 ```
 The plugin's files(*.ez) must be copy to plugins directory of the RabbitMQ distribution . 
 To enable it:
 
 ```
-./rabbitmq-plugins enable webmqx
+$ ./rabbitmq-plugins enable webmqx
 ```
 
 Then, restart rabbitmq-server
 ```
-./rabbitmqctl stop
-./rabbitmq-server&
+$ ./rabbitmqctl stop
+$ ./rabbitmq-server&
 ```
 **If there are some errors for duplicate plugin files, remove the duplicated ones.**
 
 Default HTTP port used by the plugin is `80`.
 
-After all, test in shell: (XXX.XXX.XX.XX is Webmqx server's IP)
+After all, test in shell: (XXX.XXX.XX.XX is RabbitMQ server's IP)
 ```
-curl -i http://XXX.XXX.XX.XX/test/HelloWorld
+$ curl -i http://XXX.XXX.XX.XX/test/HelloWorld
 ```
 If echo 'HelloWorld', it works.
 
@@ -208,13 +210,13 @@ $WebmqxServer->init() or print 'no request data';
 
 ```
 
-Start the web service:
+Startup the web service:
 ```
-php webmqx-server.php&
+$ php webmqx-server.php&
 ```
 **Atention: you can start it many times, and it also can be started on several hosts.** 
 
-Test:
+Test(On another terminal):
 ```
 curl -i http://XXX.XXX.XX.XX/1/2/3
 curl -i http://XXX.XXX.XX.XX/3/2/1
@@ -232,7 +234,7 @@ Other languages, reference to:
 - Go: http://www.rabbitmq.com/tutorials/tutorial-six-go.html
 - Elixir: http://www.rabbitmq.com/tutorials/tutorial-six-elixir.html
 
-**Please focus on the part of rpc-server.**
+**Please focus on the pattern of rpc-server.**
 
 ## Copyright and License
 
