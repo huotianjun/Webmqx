@@ -159,7 +159,7 @@ class WebmqxServer {
 		$this->queue->setFlags(AMQP_EXCLUSIVE | AMQP_AUTODELETE);
 		$this->queue->declareQueue();
 
-		// Exchange must set to 'webmqx'.
+		// Exchange must be set to 'webmqx'.
 		$exchange_name = 'webmqx';
 
 		// You can set many binding_keys(http request paths) which you want to 'pull',  to handle and response, for example:
