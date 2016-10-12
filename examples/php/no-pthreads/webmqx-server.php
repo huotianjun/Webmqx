@@ -26,10 +26,10 @@ class WebmqxServer {
 		$exchange_name = 'webmqx';
 
 		// There can set many paths which you want to handle.
-		$binding_key1 = '/1';
-		$binding_key2 = '/1/2';
-		$binding_key3 = '/1/2/3';
-		$binding_key4 = '/3/2/1';
+		$binding_key1 = '/php-test/1';
+		$binding_key2 = '/php-test/1/2';
+		$binding_key3 = '/php-test/1/2/3';
+		$binding_key4 = '/php-test/3/2/1';
 
 		$this->queue->bind($exchange_name, $binding_key1);
 		$this->queue->bind($exchange_name, $binding_key2);

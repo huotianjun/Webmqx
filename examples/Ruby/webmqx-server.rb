@@ -20,6 +20,8 @@ class WebmqxServer
 	def start()
 		@x = @ch.exchange("webmqx", :type => "webmqx")
 		@q = @ch.temporary_queue()
+
+		# Here, you can bind many routing_key(path of http), which you want 'pull' to handle.
 		@q.bind(@x, :routing_key => "/ruby-test/1")
 		@q.bind(@x, :routing_key => "/ruby-test/1/2")
 		@q.bind(@x, :routing_key => "/ruby-test/1/2/3")
@@ -40,7 +42,8 @@ class WebmqxServer
 			puts " [.] http_path (#{http_path})"
 			puts " [.] http_qs (#{http_qs})"
 
-			r = self.class.handle()
+			# Write your codes in function of handle()
+			r = self.class.handle(http_host, http_method, http_path, http_qs, http_body)
 
 			response_body = Hash["headers" => Hash["content-type" => "text/html"], "body" => r]
 
@@ -48,14 +51,15 @@ class WebmqxServer
 
 			response_ex = @ch.default_exchange
 			response_ex.publish(response_body.to_json, :routing_key => properties.reply_to, :correlation_id => properties.correlation_id)
-			
 			#@ch.ack(delivery_info.delivery_tag)
 		end
 	end
+	
+	def self.handle(http_host, http_method, http_path, http_qs, http_body)
 
-
-	##def self.handle(http_host, http_path, http_qs, http_body)
-	def self.handle()
+		#
+		# Write your codes at here.
+		#
 		"HelloWorld"
 	end
 end

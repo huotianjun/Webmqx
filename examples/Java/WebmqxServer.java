@@ -41,10 +41,10 @@ public class WebmqxServer {
 
 			// Which HTTP paths you want to pull, binding at here.
 			String queueName = channel.queueDeclare().getQueue();
-			channel.queueBind(queueName, "webmqx", "/Java/1");
-			channel.queueBind(queueName, "webmqx", "/Java/1/2");
-			channel.queueBind(queueName, "webmqx", "/Java/1/2/3");
-			channel.queueBind(queueName, "webmqx", "/Java/3/2/1");
+			channel.queueBind(queueName, "webmqx", "/java-test/1");
+			channel.queueBind(queueName, "webmqx", "/java-test/1/2");
+			channel.queueBind(queueName, "webmqx", "/java-test/1/2/3");
+			channel.queueBind(queueName, "webmqx", "/java-test/3/2/1");
 
 			channel.basicQos(1);
 

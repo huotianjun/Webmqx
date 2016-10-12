@@ -3,7 +3,7 @@ Install Java AMQP Client Library
 
 RabbitMQ speaks multiple protocols. This tutorial uses AMQP 0-9-1, which is an open, general-purpose protocol for messaging. There are a number of clients for RabbitMQ in many different languages. We'll use the Java client provided by RabbitMQ.
 
-On your application server's host, download the client library package, and check its signature as described. Unzip it into your working directory and grab the JAR files from the unzipped directory:
+First, onn your application server's host, download the client library package, and check its signature as described. Unzip it into your working directory and grab the JAR files from the unzipped directory:
 ```
 $ unzip rabbitmq-java-client-bin-*.zip
 $ cp rabbitmq-java-client-bin-*/*.jar ./
@@ -22,10 +22,10 @@ $ java -cp $CP WebqmxServer
 
 And, on another terminal, type this:
 ```
-$ curl -i XXX.XXX.XX.XX/Java/1
-$ curl -i XXX.XXX.XX.XX/Java/1/2
-$ curl -i XXX.XXX.XX.XX/Java/1/2/3
-$ curl -i XXX.XXX.XX.XX/Java/3/2/1
+$ curl -i XXX.XXX.XX.XX/java-test/1
+$ curl -i XXX.XXX.XX.XX/java-test/1/2
+$ curl -i XXX.XXX.XX.XX/java-test/1/2/3
+$ curl -i XXX.XXX.XX.XX/java-test/3/2/1
 ```
 (XXX.XXX.XX.XX is the RabbitMQ server's IP)
 
