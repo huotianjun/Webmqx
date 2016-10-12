@@ -18,12 +18,12 @@ Enjoy it!
 Goals
 -----
 
-Webmqx aims to docker/microsevices. 
+Webmqx aims to Docker/microsevices. 
 
 TO-DOs
 ------
 
-- Other webmqx examples of framework in web service by mainstream languages, /Ruby/C#/Javascript/Go/Elixer/etc.
+- Other webmqx examples of framework in web service by mainstream languages, /C#/Javascript/Go/Elixer/etc.
 
 - Docker images for webmqx client's frameworks.
 
@@ -70,8 +70,7 @@ If echo 'HelloWorld', it works.
 How to use in web service
 -------------------------
 
-For example of PHP (with pthreads enabled), the web service's framework is like this (reference in http://www.rabbitmq.com/tutorials/tutorial-six-php.html , and its PHP amqp-client's library supported by https://github.com/pdezwart/php-amqp ): 
-
+For example of PHP (with pthreads enabled), the web service's pattern is like this (reference in http://www.rabbitmq.com/tutorials/tutorial-six-php.html , and its PHP amqp-client's library supported by https://github.com/pdezwart/php-amqp ): 
 
 ```PHP
 
@@ -86,7 +85,7 @@ class Handler extends Thread {
 		// Establish connection to AMQP for rpc response.
 		// Attention: don't use $this->amqp_connection here.
 		$amqp_connection = new AMQPConnection();
-		$amqp_connection->setHost('127.0.0.1'); // Webmqx Server IP.
+		$amqp_connection->setHost('127.0.0.1'); // RabbitMQ server's IP.
 		$amqp_connection->setLogin('guest'); 
 		$amqp_connection->setPassword('guest');
 		$amqp_connection->connect();
@@ -146,8 +145,8 @@ class WebmqxServer {
 	private function amqp_connect() {
 		//Establish connection to AMQP to consume rpc request.
 		$this->connection = new AMQPConnection();
-		$this->connection->setHost('127.0.0.1'); // Webmqx server IP.
-		$this->connection->setLogin('guest');
+		$this->connection->setHost('127.0.0.1'); // RabbitMQ server's IP.
+		$this->connection->setLogin('guest'); //If not localhost, you can't use 'guest' of user.
 		$this->connection->setPassword('guest');
 		$this->connection->connect();
 
@@ -163,11 +162,11 @@ class WebmqxServer {
 		// Exchange must set to 'webmqx'.
 		$exchange_name = 'webmqx';
 
-		// There can set many http request paths which you want to handle, for example:
-		$binding_key1 = '/1';
-		$binding_key2 = '/1/2';
-		$binding_key3 = '/1/2/3';
-		$binding_key4 = '/3/2/1';
+		// You can set many binding_keys(http request paths) which you want to 'pull',  to handle and response, for example:
+		$binding_key1 = '/php-test/1';
+		$binding_key2 = '/php-test/1/2';
+		$binding_key3 = '/php-test/1/2/3';
+		$binding_key4 = '/php-test/3/2/1';
 
 		$this->queue->bind($exchange_name, $binding_key1);
 		$this->queue->bind($exchange_name, $binding_key2);
