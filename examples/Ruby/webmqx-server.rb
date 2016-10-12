@@ -2,6 +2,8 @@
 # encoding: utf-8
 
 require "bunny"
+require "json"
+require "pp"
 
 # Connect to RabbitMQ server.
 conn = Bunny.new("amqp://guest:guest@127.0.0.1", :automatically_recover => false)
@@ -11,39 +13,45 @@ ch   = conn.create_channel
 
 class WebmqxServer
 
-  def initialize(ch)
-    @ch = ch
-  end
+	def initialize(ch)
+		@ch = ch
+	end
 
-  def start()
-    @x = @ch.exchange("webmqx", :type => "webmqx")
-    @q = @ch.temporary_queue()
-	@q.bind(@x, :routing_key => "/ruby-test/1")
-	@q.bind(@x, :routing_key => "/ruby-test/1/2")
-	@q.bind(@x, :routing_key => "/ruby-test/1/2/3")
-	@q.bind(@x, :routing_key => "/ruby-test/3/2/1")
+	def start()
+		@x = @ch.exchange("webmqx", :type => "webmqx")
+		@q = @ch.temporary_queue()
+		@q.bind(@x, :routing_key => "/ruby-test/1")
+		@q.bind(@x, :routing_key => "/ruby-test/1/2")
+		@q.bind(@x, :routing_key => "/ruby-test/1/2/3")
+		@q.bind(@x, :routing_key => "/ruby-test/3/2/1")
 
-    @q.subscribe(:block => true) do |delivery_info, properties, payload|
-      r = self.class.handle(payload)
+		@q.subscribe(:block => true) do |delivery_info, properties, payload|
+			rpc_body = JSON.parse(payload) 	
 
-      puts " [.] respose (#{r})"
+			pp rpc_body
 
-      @x.publish(r, :routing_key => properties.reply_to, :correlation_id => properties.correlation_id)
-    end
-  end
+			r = self.class.handle()
+
+			puts " [.] respose (#{r})"
+	  
+
+			@x.publish(r, :routing_key => properties.reply_to, :correlation_id => properties.correlation_id)
+		end
+	end
 
 
-  def self.handle(n)
-	  "HelloWorld"
-  end
+	##def self.handle(http_host, http_path, http_qs, http_body)
+	def self.handle()
+		"HelloWorld"
+	end
 end
 
 begin
-  server = WebmqxServer.new(ch)
-  puts " [x] Awaiting HTTP requests"
-  server.start()
+	server = WebmqxServer.new(ch)
+	puts " [x] Awaiting HTTP requests"
+	server.start()
 rescue Interrupt => _
-  ch.close
-  conn.close
-  exit(0)
+	ch.close
+	conn.close
+	exit(0)
 end
