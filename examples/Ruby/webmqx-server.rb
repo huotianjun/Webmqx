@@ -46,7 +46,7 @@ class WebmqxServer
 
 			puts " [.] respose (#{response_body.to_json})"
 
-			@ch.publish(response_body.to_json, :routing_key => properties.reply_to, :correlation_id => properties.correlation_id)
+			@x.publish(r, :routing_key => properties.reply_to, :correlation_id => properties.correlation_id)
 			
 			#@ch.ack(delivery_info.delivery_tag)
 		end
