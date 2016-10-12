@@ -16,7 +16,7 @@ class WebmqxServer
   end
 
   def start()
-    @x = @ch.exchange("webmqx")
+    @x = @ch.exchange("webmqx", :type => "webmqx")
     @q = @ch.temporary_queue()
 	@q.bind(@x, :routing_key => "/ruby-test/1")
 	@q.bind(@x, :routing_key => "/ruby-test/1/2")
