@@ -1,7 +1,8 @@
 #!/usr/bin/env python
+from multiprocessing import Pool
+import os, time, random
 import pika
 import json
-
 
 def handle(http_path, http_qs, http_body):
     #
@@ -10,7 +11,6 @@ def handle(http_path, http_qs, http_body):
 
     return 'HelloWorld' 
 
-# TODO: run it at a thread.
 def on_request(ch, method, props, body):
     rpc_request = json.loads(body)
     http_request = rpc_request['req']
@@ -54,5 +54,11 @@ def webmqx_server():
         connection.close()
     return
 
-webmqx_server()
+# Startup 5 threads in pool. 
+if __name__=='__main__':
+    p = Pool()
+    for i in range(5):
+        p.apply_async(webmqx_server, args=())
+    p.close()
+    p.join()
 
