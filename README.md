@@ -18,14 +18,14 @@ Enjoy it!
 Goals
 -----
 
-Webmqx aims to docker/microsevices. 
+Webmqx aims to Docker/microsevices. 
 
 TO-DOs
 ------
 
-- Other webmqx examples of framework in web service by mainstream languages, /Ruby/C#/Javascript/Go/Elixer/etc.
+- Other Webmqx examples of framework in web service by mainstream languages, /C#/Javascript/Go/Elixer/etc.
 
-- Docker images for webmqx client's frameworks.
+- Docker images for Webmqx client's frameworks.
 
 - End-to-end monitor/trace/debug/test of web services.
 
@@ -39,17 +39,17 @@ Install Webmqx plugin
 
  *  Install Webmqx plugins:
 
-The easiest	way	to utilize the webmqx plugin is by installing the full codes available on Github.
+The easiest	way	to utilize the Webmqx plugin is by installing the full codes available on Github.
 ```
 $ git clone https://github.com/huotianjun/Webmqx.git
-$ cd webmqx
+$ cd Webmqx
 $ make dist
 ```
 The plugin's files(*.ez) must be copy to plugins directory of the RabbitMQ distribution . 
 To enable it:
 
 ```
-$ ./rabbitmq-plugins enable webmqx
+$ ./rabbitmq-plugins enable Webmqx
 ```
 
 Then, restart rabbitmq-server
@@ -70,165 +70,82 @@ If echo 'HelloWorld', it works.
 How to use in web service
 -------------------------
 
-For example of PHP (with pthreads enabled), the web service's framework is like this (reference in http://www.rabbitmq.com/tutorials/tutorial-six-php.html , and its PHP amqp-client's library supported by https://github.com/pdezwart/php-amqp ): 
+For example of Python 
 
+```Python
+#!/usr/bin/env python
+import pika
+import json
 
-```PHP
+# If RabbitMQ server not running on localhost, you would use another user, but not 'guest'.
+credentials = pika.PlainCredentials('guest', 'guest')
+# Set RabbitMQ server's IP or host.
+parameters =  pika.ConnectionParameters('localhost', credentials=credentials)
+connection = pika.BlockingConnection(parameters)
 
-<?php
-class Handler extends Thread {
-	public function __construct(AMQPEnvelope $message)
-	{
-		$this->message = $message;
-	}
+channel = connection.channel()
+queue = channel.queue_declare(exclusive=True, auto_delete=True).method.queue
 
-	public function run(){
-		// Establish connection to AMQP for rpc response.
-		// Attention: don't use $this->amqp_connection here.
-		$amqp_connection = new AMQPConnection();
-		$amqp_connection->setHost('127.0.0.1'); // Webmqx Server IP.
-		$amqp_connection->setLogin('guest'); 
-		$amqp_connection->setPassword('guest');
-		$amqp_connection->connect();
-		$amqp_channel = new AMQPChannel($amqp_connection);
-		$amqp_exchange = new AMQPExchange($amqp_channel);
-		
-		// Parse webmqx rpc request message.
-		$rpc_request = json_decode($this->message->getBody(), true);
-		$http_body = $rpc_request['body'];
-		$http_request = $rpc_request['req'];
-		$http_path = $http_request['path'];
-		$http_query = $http_request['qs'];
+# Exchange must be set to 'webmqx'.
+# Your can bind many routing_keys(http paths), to 'pull' HTTP requests.
+channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1')
+channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1/2')
+channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1/2/3')
+channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/3/2/1')
 
-		$attributes = array(
-							'correlation_id' => $this->message->getCorrelationId()
-						);
+def handle(http_path, http_qs, http_body):
+    #
+    # Write your codes, here, the entrance to your big application modules.
+    #
 
-		$result = $this->handle($http_path, $http_query, $http_body);
+    return 'HelloWorld' 
 
-		// Return for http response.
-		$amqp_exchange->publish((string)($result),
-									$this->message->getReplyTo(), 
-									AMQP_NOPARAM,
-									$attributes
-								);
+# TODO: run it at a thread.
+def on_request(ch, method, props, body):
+    rpc_request = json.loads(body)
+    http_request = rpc_request['req']
+    http_body = rpc_request['body']
+    http_path = http_request['path']
+    http_qs = http_request['qs']
 
-		$amqp_connection->disconnect();
-	}
+    response = handle(http_path, http_qs, http_body)
 
-	public function handle($http_path, $http_query, $http_body) {
-		//
-		// Your application codes would be written in here.
-		//
+    response_body = json.dumps({'headers': {'content-type': 'text/html'}, 'body': response}, sort_keys=True)
 
-		// Just for example:
-		$response_body = 'Hello World';	
+    ch.basic_publish(exchange='',
+                        routing_key=props.reply_to,
+                        properties=pika.BasicProperties(correlation_id = \
+                            props.correlation_id),
+                        body=str(response_body))
+    ch.basic_ack(delivery_tag = method.delivery_tag)
 
-		$response = array (
-							'headers' => array ( 'content-type' => 'text/html') ,
-							'body' => $response_body 
-						);
-		
-		return json_encode($response);
-	}
-}
+channel.basic_qos(prefetch_count=1)
+channel.basic_consume(on_request, queue=queue)
 
-class WebmqxServer {
-	private $connection;
-	private $channel;
-	private $queue;
-	private $exchange;
-
-	public function __construct()
-	{
-	}
-	
-	private function amqp_connect() {
-		//Establish connection to AMQP to consume rpc request.
-		$this->connection = new AMQPConnection();
-		$this->connection->setHost('127.0.0.1'); // Webmqx server IP.
-		$this->connection->setLogin('guest');
-		$this->connection->setPassword('guest');
-		$this->connection->connect();
-
-		//Declare Channel
-		$this->channel = new AMQPChannel($this->connection);
-		$this->channel->setPrefetchCount(1);
-
-		// This is a non-consistent queue, just for this process.
-		$this->queue = new AMQPQueue($this->channel);
-		$this->queue->setFlags(AMQP_EXCLUSIVE | AMQP_AUTODELETE);
-		$this->queue->declareQueue();
-
-		// Exchange must set to 'webmqx'.
-		$exchange_name = 'webmqx';
-
-		// There can set many http request paths which you want to handle, for example:
-		$binding_key1 = '/1';
-		$binding_key2 = '/1/2';
-		$binding_key3 = '/1/2/3';
-		$binding_key4 = '/3/2/1';
-
-		$this->queue->bind($exchange_name, $binding_key1);
-		$this->queue->bind($exchange_name, $binding_key2);
-		$this->queue->bind($exchange_name, $binding_key3);
-		$this->queue->bind($exchange_name, $binding_key4);
-	}
-
-	public function init() {
-
-		$this->amqp_connect();	
-
-		// This callback to handle a http_rpc_request from Webmqx server.
-		$callback_func = function(AMQPEnvelope $message, AMQPQueue $q) {
-			// A rpc request, a thread.
-			$handler = new Handler($message);
-			$handler->start() && $handler->join();
-			$q->ack($message->getDeliveryTag());
-		};
-		
-		$continue = True;
-		while($continue){
-			try {
-				$this->queue->consume($callback_func);
-			} catch(AMQPQueueException $ex) {
-				print_r($ex);
-				$continue = False;
-			} catch(Exception $ex) {
-				print_r($ex);
-				$continue = False;
-			}
-		}
-		$this->connection->disconnect();
-	}		
-}
-
-$WebmqxServer = new WebmqxServer;
-$WebmqxServer->init() or print 'no request data';
-
-?>
+print(" [x] Awaiting HTTP requests")
+try:
+    channel.start_consuming()
+finally:
+    connection.close()
 
 ```
 
 Startup the web service:
 ```
-$ php webmqx-server.php&
+$ python webmqx-server.pyi&
 ```
 **Atention: you can start it many times, and it also can be started on several hosts.** 
 
 Test(On another terminal):
 ```
-curl -i http://XXX.XXX.XX.XX/1/2/3
-curl -i http://XXX.XXX.XX.XX/3/2/1
+curl -i http://XXX.XXX.XX.XX/py-test/1/2/3
+curl -i http://XXX.XXX.XX.XX/py-test/3/2/1
 ```
 If echo 'HelloWorld', it works.
 
 
 Other languages, reference to:
 
-- Python: http://www.rabbitmq.com/tutorials/tutorial-six-python.html
-- Java: http://www.rabbitmq.com/tutorials/tutorial-six-java.html
-- Ruby: http://www.rabbitmq.com/tutorials/tutorial-six-ruby.html
 - C#: http://www.rabbitmq.com/tutorials/tutorial-six-dotnet.html
 - Javascript: http://www.rabbitmq.com/tutorials/tutorial-six-javascript.html
 - Go: http://www.rabbitmq.com/tutorials/tutorial-six-go.html

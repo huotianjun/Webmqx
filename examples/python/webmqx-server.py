@@ -2,20 +2,6 @@
 import pika
 import json
 
-# If not running on localhost of RabbitMQ server, don't use the user of 'guest', but try other. 
-credentials = pika.PlainCredentials('guest', 'guest')
-parameters =  pika.ConnectionParameters('localhost', credentials=credentials)
-connection = pika.BlockingConnection(parameters)
-
-channel = connection.channel()
-queue = channel.queue_declare(exclusive=True, auto_delete=True).method.queue
-
-# Exchange must be set to 'webmqx'.
-# Your can bind many routing_key as http path.
-channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1')
-channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1/2')
-channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1/2/3')
-channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/3/2/1')
 
 def handle(http_path, http_qs, http_body):
     #
@@ -42,12 +28,33 @@ def on_request(ch, method, props, body):
                             props.correlation_id),
                         body=str(response_body))
     ch.basic_ack(delivery_tag = method.delivery_tag)
+    return
 
-channel.basic_qos(prefetch_count=1)
-channel.basic_consume(on_request, queue=queue)
+def webmqx_server():
+    # If not running on localhost of RabbitMQ server, don't use the user of 'guest', but try other. 
+    credentials = pika.PlainCredentials('guest', 'guest')
+    parameters =  pika.ConnectionParameters('localhost', credentials=credentials)
+    connection = pika.BlockingConnection(parameters)
 
-print(" [x] Awaiting HTTP requests")
-try:
-    channel.start_consuming()
-finally:
-    connection.close()
+    channel = connection.channel()
+    queue = channel.queue_declare(exclusive=True, auto_delete=True).method.queue
+
+    # Exchange must be set to 'webmqx'.
+    # Your can bind many routing_key as http path.
+    channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1')
+    channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1/2')
+    channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1/2/3')
+    channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/3/2/1')
+    channel.basic_qos(prefetch_count=1)
+    channel.basic_consume(on_request, queue=queue)
+
+    print(" [x] Awaiting HTTP requests")
+    try:
+        channel.start_consuming()
+    finally:
+        connection.close()
+    return
+
+webmqx_server()
+
+
