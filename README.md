@@ -88,10 +88,10 @@ queue = channel.queue_declare(exclusive=True, auto_delete=True).method.queue
 
 # Exchange must be set to 'webmqx'.
 # Your can bind many routing_keys(http paths), to 'pull' HTTP requests.
-channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1')
-channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1/2')
-channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1/2/3')
-channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/3/2/1')
+channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py-test/1')
+channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py-test/1/2')
+channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py-test/1/2/3')
+channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py-test/3/2/1')
 
 def handle(http_path, http_qs, http_body):
     #

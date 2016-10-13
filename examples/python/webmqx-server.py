@@ -28,12 +28,11 @@ def on_request(ch, method, props, body):
                             props.correlation_id),
                         body=str(response_body))
     ch.basic_ack(delivery_tag = method.delivery_tag)
-    return
 
 def webmqx_server():
     # If not running on localhost of RabbitMQ server, don't use the user of 'guest', but try other. 
-    credentials = pika.PlainCredentials('guest', 'guest')
-    parameters =  pika.ConnectionParameters('localhost', credentials=credentials)
+    credentials = pika.PlainCredentials('apns', 'apns')
+    parameters =  pika.ConnectionParameters('106.187.44.101', credentials=credentials)
     connection = pika.BlockingConnection(parameters)
 
     channel = connection.channel()
@@ -41,10 +40,10 @@ def webmqx_server():
 
     # Exchange must be set to 'webmqx'.
     # Your can bind many routing_key as http path.
-    channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1')
-    channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1/2')
-    channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1/2/3')
-    channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/3/2/1')
+    channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py-test/1')
+    channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py-test/1/2')
+    channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py-test/1/2/3')
+    channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py-test/3/2/1')
     channel.basic_qos(prefetch_count=1)
     channel.basic_consume(on_request, queue=queue)
 
@@ -56,5 +55,4 @@ def webmqx_server():
     return
 
 webmqx_server()
-
 
