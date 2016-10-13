@@ -77,7 +77,7 @@ For example of Python
 import pika
 import json
 
-# If not running on localhost of RabbitMQ server, don't use the user of 'guest', but try other. 
+# If RabbitMQ server not running on localhost, you would use another user, but not 'guest'.
 credentials = pika.PlainCredentials('guest', 'guest')
 # Set RabbitMQ server's IP or host.
 parameters =  pika.ConnectionParameters('localhost', credentials=credentials)
