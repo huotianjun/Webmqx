@@ -1,30 +1,25 @@
 <?php
 class WebmqxServer extends Thread{
 
-	private $connection;
-	private $channel;
-	private $queue;
-	private $exchange;
-
 	public function __construct()
 	{
 	}
 
-	private function connect() {
+	public function run(){
 		//Establish connection to AMQP
-		$this->connection = new AMQPConnection();
-		$this->connection->setHost('127.0.0.1');
-		$this->connection->setLogin('guest');
-		$this->connection->setPassword('guest');
-		$this->connection->connect();
+		$connection = new AMQPConnection();
+		$connection->setHost('127.0.0.1');
+		$connection->setLogin('guest');
+		$connection->setPassword('guest');
+		$connection->connect();
 
 		//Declare Channel
-		$this->channel = new AMQPChannel($this->connection);
-		$this->channel->setPrefetchCount(1);
+		$channel = new AMQPChannel($connection);
+		$channel->setPrefetchCount(1);
 
-		$this->queue = new AMQPQueue($this->channel);
-		$this->queue->setFlags(AMQP_EXCLUSIVE | AMQP_AUTODELETE);
-		$this->queue->declareQueue();
+		$queue = new AMQPQueue($channel);
+		$queue->setFlags(AMQP_EXCLUSIVE | AMQP_AUTODELETE);
+		$queue->declareQueue();
 
 		// Exchange must be set to  'webmqx'. 
 		$exchange_name = 'webmqx';
@@ -35,22 +30,16 @@ class WebmqxServer extends Thread{
 		$binding_key3 = '/php-test/1/2/3';
 		$binding_key4 = '/php-test/3/2/1';
 
-		$this->queue->bind($exchange_name, $binding_key1);
-		$this->queue->bind($exchange_name, $binding_key2);
-		$this->queue->bind($exchange_name, $binding_key3);
-		$this->queue->bind($exchange_name, $binding_key4);
+		$queue->bind($exchange_name, $binding_key1);
+		$queue->bind($exchange_name, $binding_key2);
+		$queue->bind($exchange_name, $binding_key3);
+		$queue->bind($exchange_name, $binding_key4);
 
-		$this->exchange = new AMQPExchange($this->channel);
-	}
-
-	public function run(){
-
-		$this->connect();	
+		$exchange = new AMQPExchange($channel);
 
 		$server = $this;
-		$ex = $this->exchange;
 
-		$callback_func = function(AMQPEnvelope $message, AMQPQueue $q) use ($ex, $server) {
+		$callback_func = function(AMQPEnvelope $message, AMQPQueue $q) use ($exchange, $server) {
 			$rpc_request = json_decode($message->getBody(), true);
 			$http_request = $rpc_request['req'];
 			$http_body = $rpc_request['body'];
@@ -63,7 +52,7 @@ class WebmqxServer extends Thread{
 
 			$result = $server->handle($http_path, $http_query, $http_body);
 
-			$ex->publish(	(string)($result),
+			$exchange->publish(	(string)($result),
 									$message->getReplyTo(), 
 									AMQP_NOPARAM,
 									$attributes
@@ -75,7 +64,7 @@ class WebmqxServer extends Thread{
 		$continue = True;
 		while($continue){
 			try {
-				$this->queue->consume($callback_func);
+				$queue->consume($callback_func);
 			} catch(AMQPQueueException $ex) {
 				print_r($ex);
 				$continue = False;
@@ -84,7 +73,7 @@ class WebmqxServer extends Thread{
 				$continue = False;
 			}
 		}
-		$this->connection->disconnect();
+		$connection->disconnect();
 	}		
 
 	public function handle($http_path, $http_query, $http_body) {
