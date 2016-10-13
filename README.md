@@ -23,9 +23,9 @@ Webmqx aims to Docker/microsevices.
 TO-DOs
 ------
 
-- Other webmqx examples of framework in web service by mainstream languages, /C#/Javascript/Go/Elixer/etc.
+- Other Webmqx examples of framework in web service by mainstream languages, /C#/Javascript/Go/Elixer/etc.
 
-- Docker images for webmqx client's frameworks.
+- Docker images for Webmqx client's frameworks.
 
 - End-to-end monitor/trace/debug/test of web services.
 
@@ -39,17 +39,17 @@ Install Webmqx plugin
 
  *  Install Webmqx plugins:
 
-The easiest	way	to utilize the webmqx plugin is by installing the full codes available on Github.
+The easiest	way	to utilize the Webmqx plugin is by installing the full codes available on Github.
 ```
 $ git clone https://github.com/huotianjun/Webmqx.git
-$ cd webmqx
+$ cd Webmqx
 $ make dist
 ```
 The plugin's files(*.ez) must be copy to plugins directory of the RabbitMQ distribution . 
 To enable it:
 
 ```
-$ ./rabbitmq-plugins enable webmqx
+$ ./rabbitmq-plugins enable Webmqx
 ```
 
 Then, restart rabbitmq-server
