@@ -64,13 +64,17 @@ class WebmqxServer
 	end
 end
 
-begin
-	server = WebmqxServer.new(ch)
-	puts " [x] Awaiting HTTP requests"
-	server.start()
-rescue Interrupt => _
-	puts " [.] Exit (#{Interrupt})"
-	ch.close
-	conn.close
-	exit(0)
+Thread.new do 
+	3.times do
+		begin
+			server = WebmqxServer.new(ch)
+			puts " [x] Awaiting HTTP requests"
+			server.start()
+			rescue Interrupt => _
+			puts " [.] Exit (#{Interrupt})"
+			ch.close
+			conn.close
+			exit(0)
+		end
+	end
 end
