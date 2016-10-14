@@ -2,7 +2,7 @@ import com.rabbitmq.client.*;
 import org.json.*;
 import java.io.IOException;
 
-public class WebmqxServer implements  Runnable{
+public class Worker implements  Runnable{
 	private static String handle(String message) {
 		JSONObject rpc_request = new JSONObject(message);
 		JSONObject http_req = rpc_request.getJSONObject("req");
@@ -97,11 +97,11 @@ public class WebmqxServer implements  Runnable{
 	}
 }
 
-public class StartThreads {
+public class WebmqxServer {
 	public static void main(String[] args) {
-	WebmqxServer w1 = new WebmqxServer();
-	WebmqxServer w2 = new WebmqxServer();
-	WebmqxServer w3 = new WebmqxServer();
+	WebmqxServer w1 = new Worker();
+	WebmqxServer w2 = new Worker();
+	WebmqxServer w3 = new Worker();
 
 	Thread t1 = new Thread(w1);
 	Thread t2 = new Thread(w2);
