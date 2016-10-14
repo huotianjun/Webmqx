@@ -99,6 +99,8 @@ class Worker implements  Runnable{
 
 public class WebmqxServer {
 	public static void main(String[] args) {
+
+	// Here, you can start many threads according to loading traffic.
 	Worker w1 = new Worker();
 	Worker w2 = new Worker();
 	Worker w3 = new Worker();

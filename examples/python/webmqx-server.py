@@ -11,6 +11,7 @@ def handle(http_path, http_qs, http_body):
 
     return 'HelloWorld' 
 
+# Callback of basic_consume.
 def on_request(ch, method, props, body):
     rpc_request = json.loads(body)
     http_request = rpc_request['req']
