@@ -7,15 +7,15 @@ require "pp"
 
 
 class WebmqxServer
-	# Connect to RabbitMQ server.
-	conn = Bunny.new("amqp://guest:guest@127.0.0.1", :automatically_recover => false)
-	conn.start
-
-	ch   = conn.create_channel
 	def initialize()
 	end
 
 	def start()
+		# Connect to RabbitMQ server.
+		conn = Bunny.new("amqp://guest:guest@127.0.0.1", :automatically_recover => false)
+		conn.start
+
+		ch   = conn.create_channel
 		x = ch.exchange("webmqx", :type => "webmqx")
 		q = ch.temporary_queue()
 
