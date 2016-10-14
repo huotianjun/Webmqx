@@ -64,8 +64,9 @@ class WebmqxServer
 	end
 end
 
-Thread.new do 
-	3.times do
+threads = []
+16.times do
+	threads <<Thread.new { 
 		begin
 			server = WebmqxServer.new(ch)
 			puts " [x] Awaiting HTTP requests"
@@ -76,5 +77,7 @@ Thread.new do
 			conn.close
 			exit(0)
 		end
-	end
+	}
 end
+
+threads.each {|t| t.join}
