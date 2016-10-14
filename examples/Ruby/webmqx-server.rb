@@ -12,7 +12,7 @@ class WebmqxServer
 	conn.start
 
 	ch   = conn.create_channel
-	def initialize(ch)
+	def initialize()
 	end
 
 	def start()
@@ -66,7 +66,7 @@ threads = []
 16.times do
 	threads <<Thread.new { 
 		begin
-			server = WebmqxServer.new(ch)
+			server = WebmqxServer.new()
 			puts " [x] Awaiting HTTP requests"
 			server.start()
 			rescue Interrupt => _
