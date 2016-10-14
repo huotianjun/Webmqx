@@ -2,7 +2,7 @@ import com.rabbitmq.client.*;
 import org.json.*;
 import java.io.IOException;
 
-private class Worker implements  Runnable{
+class Worker implements  Runnable{
 	private static String handle(String message) {
 		JSONObject rpc_request = new JSONObject(message);
 		JSONObject http_req = rpc_request.getJSONObject("req");
