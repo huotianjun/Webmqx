@@ -1,7 +1,8 @@
 #!/usr/bin/env python
+from multiprocessing import Pool
+import os, time, random
 import pika
 import json
-
 
 def handle(http_path, http_qs, http_body):
     #
@@ -10,7 +11,6 @@ def handle(http_path, http_qs, http_body):
 
     return 'HelloWorld' 
 
-# TODO: run it at a thread.
 def on_request(ch, method, props, body):
     rpc_request = json.loads(body)
     http_request = rpc_request['req']
@@ -28,12 +28,11 @@ def on_request(ch, method, props, body):
                             props.correlation_id),
                         body=str(response_body))
     ch.basic_ack(delivery_tag = method.delivery_tag)
-    return
 
 def webmqx_server():
     # If not running on localhost of RabbitMQ server, don't use the user of 'guest', but try other. 
-    credentials = pika.PlainCredentials('guest', 'guest')
-    parameters =  pika.ConnectionParameters('localhost', credentials=credentials)
+    credentials = pika.PlainCredentials('apns', 'apns')
+    parameters =  pika.ConnectionParameters('106.187.44.101', credentials=credentials)
     connection = pika.BlockingConnection(parameters)
 
     channel = connection.channel()
@@ -41,10 +40,10 @@ def webmqx_server():
 
     # Exchange must be set to 'webmqx'.
     # Your can bind many routing_key as http path.
-    channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1')
-    channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1/2')
-    channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/1/2/3')
-    channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py/3/2/1')
+    channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py-test/1')
+    channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py-test/1/2')
+    channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py-test/1/2/3')
+    channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py-test/3/2/1')
     channel.basic_qos(prefetch_count=1)
     channel.basic_consume(on_request, queue=queue)
 
@@ -55,6 +54,11 @@ def webmqx_server():
         connection.close()
     return
 
-webmqx_server()
-
+# Startup 5 threads in pool. 
+if __name__=='__main__':
+    p = Pool()
+    for i in range(5):
+        p.apply_async(webmqx_server, args=())
+    p.close()
+    p.join()
 

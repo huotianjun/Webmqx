@@ -2,9 +2,7 @@ import com.rabbitmq.client.*;
 import org.json.*;
 import java.io.IOException;
 
-public class WebmqxServer {
-
-	// TODO: run it at a thread.
+public class WebmqxServer Runnable{
 	private static String handle(String message) {
 		JSONObject rpc_request = new JSONObject(message);
 		JSONObject http_req = rpc_request.getJSONObject("req");
@@ -25,7 +23,7 @@ public class WebmqxServer {
 		return res;
 	}
 
-	public static void main(String[] argv) throws Exception {
+	public void run() throws Exception {
 		Connection connection = null;
 		Channel channel = null;
 		try {
@@ -97,4 +95,19 @@ public class WebmqxServer {
 				}
 		}  
 	}
+}
+
+public class StartThreads {
+	public static void main(String[] args) {
+	WebmqxServer w1 = new WebmqxServer();
+	WebmqxServer w2 = new WebmqxServer();
+	WebmqxServer w3 = new WebmqxServer();
+
+	Thread t1 = new Thread(w1);
+	Thread t2 = new Thread(w2);
+	Thread t3 = new Thread(w3);
+
+	t1.start(); 
+	t2.start(); 
+	t3.start(); 
 }
