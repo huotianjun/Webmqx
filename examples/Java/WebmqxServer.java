@@ -23,7 +23,7 @@ private class Worker implements  Runnable{
 		return res;
 	}
 
-	public void run() throws Exception {
+	public void run() {
 		Connection connection = null;
 		Channel channel = null;
 		try {
