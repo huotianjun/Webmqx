@@ -100,7 +100,6 @@ def handle(http_path, http_qs, http_body):
 
     return 'HelloWorld' 
 
-# TODO: run it at a thread.
 def on_request(ch, method, props, body):
     rpc_request = json.loads(body)
     http_request = rpc_request['req']
@@ -132,7 +131,7 @@ finally:
 
 Startup the web service:
 ```
-$ python webmqx-server.pyi&
+$ python webmqx-server.py&
 ```
 **Atention: you can start it many times, and it also can be started on several hosts.** 
 
