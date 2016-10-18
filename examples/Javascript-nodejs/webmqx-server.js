@@ -15,7 +15,7 @@ amqp.connect('amqp://localhost', function(err, conn) {
 
 		ch.prefetch(1);
 		console.log(' [x] Awaiting RPC requests');
-		ch.consume(q, function reply(msg) {
+		ch.consume(q.queue, function reply(msg) {
 			//var n = parseInt(msg.content.toString());
 
 			console.log(" [.] %d", msg.content.toString());
