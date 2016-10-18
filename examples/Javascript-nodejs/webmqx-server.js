@@ -20,10 +20,17 @@ amqp.connect('amqp://localhost', function(err, conn) {
 
 			console.log(" [.] %s", msg.content.toString());
 
-			var r = handle();
+			var response = handle();
+
+			var response_body = {  
+				"headers": {"content-type":"text/html"}, 
+				"body": response   
+			}; 
+			 
+			var response_str = JSON.stringify(response_body); 
 
 			ch.sendToQueue(msg.properties.replyTo,
-							new Buffer(r),
+							new Buffer(response_str),
 							{correlationId: msg.properties.correlationId});
 
 			ch.ack(msg);
