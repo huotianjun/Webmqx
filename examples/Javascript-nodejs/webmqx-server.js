@@ -2,12 +2,15 @@
 
 var amqp = require('amqplib/callback_api');
 
-amqp.connect('amqp://localhost', function(err, conn) {
+// Here, set the RabbitMQ server's IP or host.
+amqp.connect('amqp://guest:guest@localhost:5672', function(err, conn) {
   conn.createChannel(function(err, ch) {
 	var ex = 'webmqx';
 
 	ch.assertQueue('', {exclusive: true, autoDelete: true}, function(err, q) {
 		console.log(" [*] Waiting for http requests in %s. To exit press CTRL+C", q.queue);
+
+		// Here, you can bind the path which you want to 'pull'.
 		ch.bindQueue(q.queue, ex, '/node-test/1');
 		ch.bindQueue(q.queue, ex, '/node-test/1/2');
 		ch.bindQueue(q.queue, ex, '/node-test/1/2/3');
@@ -17,9 +20,10 @@ amqp.connect('amqp://localhost', function(err, conn) {
 		console.log(' [x] Awaiting RPC requests');
 		ch.consume(q.queue, function (msg) {
 
-			console.log(" [.] %s", msg.content.toString());
+			var rpc_request = JSON.parse(msg.content.toString());
 
-			var response = handle();
+
+			var response = handle(rpc_request);
 
 			var response_body = {  
 				"headers": {"content-type":"text/html"}, 
@@ -38,6 +42,12 @@ amqp.connect('amqp://localhost', function(err, conn) {
   });
 });
 
-function handle() {
+function handle(rpc_request) {
+	var http_req = rpc_request['req'];
+	var http_body = rpc_request['body'];
+
+	console.log(" [http_req] ", http_req);
+	console.log(" [http_body] ", http_body);
+
 	return 'HelloWorld';
 }

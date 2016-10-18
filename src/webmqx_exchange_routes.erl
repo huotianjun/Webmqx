@@ -60,7 +60,6 @@ route(Path) ->
 		undefined -> [];
 		{ok, QueueTrees} ->
 			%% Select a random queue. 
-			error_logger:info_msg("Trees : ~p~n", [QueueTrees]),
 			Size = queue_trees_size(QueueTrees),
 			N = erlang:phash2(self(), Size) + 1,
 			{ok, Queue} = queue_trees_lookup(N, QueueTrees),
@@ -80,7 +79,7 @@ get_queue_trees1(WordsOfPath) ->
 		[{{path, WordsOfPath}, {none, LastTryStamp}}] -> 
 			NowTimeStamp = now_timestamp_counter(),
 			if
-				(NowTimeStamp - LastTryStamp) > 10 ->
+				(NowTimeStamp < LastTryStamp) orelse (NowTimeStamp - LastTryStamp) > 10 ->
 					gen_server2:call(?MODULE, {get_routing_queues, WordsOfPath}, infinity);
 				true -> undefined	
 			end;
@@ -142,7 +141,7 @@ handle_call({get_routing_queues, WordsOfPath}, _,
 				[{{path, WordsOfPath}, {none, LastTryStamp}}] -> 
 					if
 						%% Interval : 10 seconds
-						(NowTimeStamp - LastTryStamp) > 10 -> true;
+						(NowTimeStamp < LastTryStamp) orelse (NowTimeStamp - LastTryStamp) > 10 -> true;
 						true -> false
 					end;
 				_ -> true
@@ -188,7 +187,6 @@ handle_cast({gm, {flush_queues, WordsOfPath}}, State = #state{vhost = VHost, rou
 			routing_table_update(WordsOfPath, QueueTrees1),
 			QueueTrees1 
 	end,
-	error_logger:info_msg("flush queues : ~p~n", [QueueTrees]),
 	{noreply, State#state{routing_queues = dict:store({path, WordsOfPath}, QueueTrees, RoutingQueues)}};
 
 handle_cast(_Request, State) ->
@@ -216,7 +214,7 @@ ensure_started() ->
 %%%
 
 now_timestamp_counter() ->
-	{{_, _, _},{NowHour, NowMinute, NowSecond}} = calendar:now_to_local_time(os:timestamp()),
+	{{_NowYear, _NowMonth, _NowDay},{NowHour, NowMinute, NowSecond}} = calendar:now_to_local_time(os:timestamp()),
 	(NowHour*3600 + NowMinute*60 + NowSecond).
 
 %% Queues of a routing key managed as gb_trees in process. 
