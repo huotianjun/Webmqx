@@ -80,7 +80,7 @@ get_queue_trees1(WordsOfPath) ->
 		[{{path, WordsOfPath}, {none, LastTryStamp}}] -> 
 			NowTimeStamp = now_timestamp_counter(),
 			if
-				(NowTimeStamp - LastTryStamp) > 10 ->
+				(NowTimeStamp < LastTryStamp) orelse (NowTimeStamp - LastTryStamp) > 10 ->
 					gen_server2:call(?MODULE, {get_routing_queues, WordsOfPath}, infinity);
 				true -> undefined	
 			end;
@@ -142,7 +142,7 @@ handle_call({get_routing_queues, WordsOfPath}, _,
 				[{{path, WordsOfPath}, {none, LastTryStamp}}] -> 
 					if
 						%% Interval : 10 seconds
-						(NowTimeStamp - LastTryStamp) > 10 -> true;
+						(NowTimeStamp < LastTryStamp) orelse (NowTimeStamp - LastTryStamp) > 10 -> true;
 						true -> false
 					end;
 				_ -> true
@@ -216,7 +216,7 @@ ensure_started() ->
 %%%
 
 now_timestamp_counter() ->
-	{{_, _, _},{NowHour, NowMinute, NowSecond}} = calendar:now_to_local_time(os:timestamp()),
+	{{_NowYear, _NowMonth, _NowDay},{NowHour, NowMinute, NowSecond}} = calendar:now_to_local_time(os:timestamp()),
 	(NowHour*3600 + NowMinute*60 + NowSecond).
 
 %% Queues of a routing key managed as gb_trees in process. 
