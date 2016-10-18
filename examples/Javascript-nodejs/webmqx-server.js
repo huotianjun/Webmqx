@@ -8,17 +8,17 @@ amqp.connect('amqp://localhost', function(err, conn) {
 
 	ch.assertQueue('', {exclusive: true, autoDelete: true}, function(err, q) {
 		console.log(" [*] Waiting for http requests in %s. To exit press CTRL+C", q.queue);
-		ch.bindQueue(q.queue, ex, '/nodjs-test/1');
-		ch.bindQueue(q.queue, ex, '/nodjs-test/1/2');
-		ch.bindQueue(q.queue, ex, '/nodjs-test/1/2/3');
-		ch.bindQueue(q.queue, ex, '/nodjs-test/3/2/1');
+		ch.bindQueue(q.queue, ex, '/nodejs-test/1');
+		ch.bindQueue(q.queue, ex, '/nodejs-test/1/2');
+		ch.bindQueue(q.queue, ex, '/nodejs-test/1/2/3');
+		ch.bindQueue(q.queue, ex, '/nodejs-test/3/2/1');
 
 		ch.prefetch(1);
 		console.log(' [x] Awaiting RPC requests');
-		ch.consume(q.queue, function reply(msg) {
+		ch.consume(q.queue, function (msg) {
 			//var n = parseInt(msg.content.toString());
 
-			console.log(" [.] %d", msg.content.toString());
+			console.log(" [.] %s", msg.content.toString());
 
 			var r = handle();
 
