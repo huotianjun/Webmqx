@@ -27,10 +27,10 @@ amqp.connect('amqp://localhost', function(err, conn) {
 				"body": response   
 			}; 
 			 
-			var response_str = JSON.stringify(response_body); 
+			//var response_str = JSON.stringify(response_body); 
 
 			ch.sendToQueue(msg.properties.replyTo,
-							new Buffer(response_str),
+							new Buffer(response),
 							{correlationId: msg.properties.correlationId});
 
 			ch.ack(msg);
