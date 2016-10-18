@@ -6,6 +6,7 @@ RabbitMQ speaks multiple protocols. This tutorial uses AMQP 0-9-1, which is an o
 First, on your application server's host, download the client library package, and check its signature as described. Unzip it into your working directory and grab the JAR files from the unzipped directory:
 
 ```
+$ cd exaples/Java
 $ wget http://www.rabbitmq.com/releases/rabbitmq-java-client/v3.6.5/rabbitmq-java-client-bin-3.6.5.zip
 $ unzip rabbitmq-java-client-bin-*.zip
 $ cp rabbitmq-java-client-bin-*/*.jar ./
