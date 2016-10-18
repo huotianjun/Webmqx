@@ -4,30 +4,34 @@ var amqp = require('amqplib/callback_api');
 
 amqp.connect('amqp://localhost', function(err, conn) {
   conn.createChannel(function(err, ch) {
-    var q = 'rpc_queue';
+	var ex = 'webmqx';
 
-    ch.assertQueue(q, {durable: false});
-    ch.prefetch(1);
-    console.log(' [x] Awaiting RPC requests');
-    ch.consume(q, function reply(msg) {
-      var n = parseInt(msg.content.toString());
+	ch.assertQueue('', {exclusive: true}, function(err, q) {
+		console.log(" [*] Waiting for http requests in %s. To exit press CTRL+C", q.queue);
+		ch.bindQueue(q.queue, ex, '/nodjs-test/1');
+		ch.bindQueue(q.queue, ex, '/nodjs-test/1/2');
+		ch.bindQueue(q.queue, ex, '/nodjs-test/1/2/3');
+		ch.bindQueue(q.queue, ex, '/nodjs-test/3/2/1');
 
-      console.log(" [.] fib(%d)", n);
+		ch.prefetch(1);
+		console.log(' [x] Awaiting RPC requests');
+		ch.consume(q, function reply(msg) {
+			//var n = parseInt(msg.content.toString());
 
-      var r = fibonacci(n);
+			console.log(" [.] %d", msg.content.toString());
 
-      ch.sendToQueue(msg.properties.replyTo,
-        new Buffer(r.toString()),
-        {correlationId: msg.properties.correlationId});
+			var r = handle();
 
-      ch.ack(msg);
+			ch.sendToQueue(msg.properties.replyTo,
+							new Buffer(r.toString()),
+							{correlationId: msg.properties.correlationId});
+
+			ch.ack(msg);
+		});
     });
   });
 });
 
-function fibonacci(n) {
-  if (n == 0 || n == 1)
-    return n;
-  else
-    return fibonacci(n - 1) + fibonacci(n - 2);
+function handle() {
+	return 'HelloWorld';
 }

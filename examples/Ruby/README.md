@@ -5,6 +5,7 @@ RabbitMQ speaks multiple protocols. This tutorial uses AMQP 0-9-1, which is an o
 
 Install Bunny using Rubygems:
 ```
+$ cd examples/Ruby
 $ gem install bunny --version ">= 2.5.1"
 ```
 

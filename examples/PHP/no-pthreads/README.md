@@ -9,7 +9,9 @@ Then, git php-amqp from here: https://github.com/pdezwart/php-amqp
 Build it to amqp.so, which should be copied to php module's directory: 
 
 ```
-./configure --with-php-config='path to php-config's direcroty'  --with-amqp   --with-librabbitmq-dir='path to RabbitMQ C library's directory' 
+$ git clone https://github.com/pdezwart/php-amqp
+$ cd php-amqp
+$ ./configure --with-php-config='path to php-config's direcroty'  --with-amqp   --with-librabbitmq-dir='path to RabbitMQ C library's directory' 
 $ make
 $ make install
 ```

@@ -3,6 +3,7 @@ Install pika
 Your Python's version >= 2.5.1 .
 
 ```
+$ cd examples/Python
 $ git clone https://github.com/pika/pika.git
 $ cd pika
 $ python setup.py install

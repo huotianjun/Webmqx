@@ -5,6 +5,8 @@ RabbitMQ speaks multiple protocols. This tutorial uses AMQP 0-9-1, which is an o
 
 Install 
 ```
+$ cd examples/Javascript-nodejs
+$ npm install amqplib
 ```
 
 Test
