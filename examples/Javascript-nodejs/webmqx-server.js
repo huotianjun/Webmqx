@@ -6,7 +6,7 @@ amqp.connect('amqp://localhost', function(err, conn) {
   conn.createChannel(function(err, ch) {
 	var ex = 'webmqx';
 
-	ch.assertQueue('', {exclusive: true}, function(err, q) {
+	ch.assertQueue('', {exclusive: true, autoDelete: true}, function(err, q) {
 		console.log(" [*] Waiting for http requests in %s. To exit press CTRL+C", q.queue);
 		ch.bindQueue(q.queue, ex, '/nodjs-test/1');
 		ch.bindQueue(q.queue, ex, '/nodjs-test/1/2');
@@ -23,7 +23,7 @@ amqp.connect('amqp://localhost', function(err, conn) {
 			var r = handle();
 
 			ch.sendToQueue(msg.properties.replyTo,
-							new Buffer(r.toString()),
+							new Buffer(r),
 							{correlationId: msg.properties.correlationId});
 
 			ch.ack(msg);
