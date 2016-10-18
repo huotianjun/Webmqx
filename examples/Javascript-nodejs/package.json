@@ -1,0 +1,8 @@
+{
+  "name": "webmqx-node-tutorial",
+  "version": "1.0.0",
+  "description": "Webmqx amqp.node tutorial ",
+  "dependencies": {
+    "amqplib": "^0.3.2"
+  }
+}
