@@ -20,7 +20,7 @@ On your applicatoin server's host, startup the test server:
 ```
 $ export CP=.:commons-io-1.2.jar:commons-cli-1.1.jar:rabbitmq-client.jar:JSON-java.jar
 $ javac -cp $CP WebmqxServer.java
-$ java -cp $CP WebqmxServer
+$ java -cp $CP WebmqxServer
 ```
 
 And, on another terminal, type this:

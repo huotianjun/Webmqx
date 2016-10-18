@@ -60,6 +60,7 @@ route(Path) ->
 		undefined -> [];
 		{ok, QueueTrees} ->
 			%% Select a random queue. 
+			error_logger:info_msg("Trees : ~p~n", [QueueTrees]),
 			Size = queue_trees_size(QueueTrees),
 			N = erlang:phash2(self(), Size) + 1,
 			{ok, Queue} = queue_trees_lookup(N, QueueTrees),
@@ -187,6 +188,7 @@ handle_cast({gm, {flush_queues, WordsOfPath}}, State = #state{vhost = VHost, rou
 			routing_table_update(WordsOfPath, QueueTrees1),
 			QueueTrees1 
 	end,
+	error_logger:info_msg("flush queues : ~p~n", [QueueTrees]),
 	{noreply, State#state{routing_queues = dict:store({path, WordsOfPath}, QueueTrees, RoutingQueues)}};
 
 handle_cast(_Request, State) ->
