@@ -8,10 +8,10 @@ amqp.connect('amqp://localhost', function(err, conn) {
 
 	ch.assertQueue('', {exclusive: true, autoDelete: true}, function(err, q) {
 		console.log(" [*] Waiting for http requests in %s. To exit press CTRL+C", q.queue);
-		ch.bindQueue(q.queue, ex, '/nodejs-test/1');
-		ch.bindQueue(q.queue, ex, '/nodejs-test/1/2');
-		ch.bindQueue(q.queue, ex, '/nodejs-test/1/2/3');
-		ch.bindQueue(q.queue, ex, '/nodejs-test/3/2/1');
+		ch.bindQueue(q.queue, ex, '/node-test/1');
+		ch.bindQueue(q.queue, ex, '/node-test/1/2');
+		ch.bindQueue(q.queue, ex, '/node-test/1/2/3');
+		ch.bindQueue(q.queue, ex, '/node-test/3/2/1');
 
 		ch.prefetch(1);
 		console.log(' [x] Awaiting RPC requests');
@@ -26,10 +26,10 @@ amqp.connect('amqp://localhost', function(err, conn) {
 				"body": response   
 			}; 
 			 
-			//var response_str = JSON.stringify(response_body); 
+			var response_str = JSON.stringify(response_body); 
 
 			ch.sendToQueue(msg.properties.replyTo,
-							new Buffer(response),
+							new Buffer(response_str),
 							{correlationId: msg.properties.correlationId});
 
 			ch.ack(msg);
