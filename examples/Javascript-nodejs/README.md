@@ -7,6 +7,7 @@ Install
 ```
 $ cd examples/Javascript-nodejs
 $ npm install amqplib
+$ npm install threads_a_gogo
 ```
 
 Test
