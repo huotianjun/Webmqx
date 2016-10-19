@@ -12,7 +12,7 @@ $ unzip rabbitmq-java-client-bin-*.zip
 $ cp rabbitmq-java-client-bin-*/*.jar ./
 ```
 
-And, download the json library package:(we use JSON-java library: https://github.com/stleary/JSON-java , Downloadable jar: http://mvnrepository.com/artifact/org.json/json )
+And, download the json library package(we use JSON-java library: https://github.com/stleary/JSON-java , Downloadable jar: http://mvnrepository.com/artifact/org.json/json ).
 
 Test
 ----

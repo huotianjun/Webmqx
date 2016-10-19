@@ -55,10 +55,10 @@ def webmqx_server():
         connection.close()
     return
 
-# Startup 5 threads in pool. 
+# Startup 2 threads in pool. 
 if __name__=='__main__':
     p = Pool()
-    for i in range(5):
+    for i in range(2):
         p.apply_async(webmqx_server, args=())
     p.close()
     p.join()
