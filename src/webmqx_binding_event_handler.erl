@@ -11,7 +11,7 @@
 init([]) ->
   {ok, []}.
 
-handle_event({event, binding_add, {WordsOfPath, _X, _D, _Args}, _, _}, State) ->
+handle_event({event, webmqx_binding_add, {WordsOfPath, _X, _D, _Args}, _, _}, State) ->
 	%% Flush the ets of routing table.
 	webmqx_exchange_routes:flush_queues(WordsOfPath),
 
@@ -20,7 +20,7 @@ handle_event({event, binding_add, {WordsOfPath, _X, _D, _Args}, _, _}, State) ->
 	webmqx_consistent_req_sup:start_child(Path),
 	{ok, State};
 
-handle_event({event, binding_remove, {WordsOfPath, _X, _D, _Args}, _, _}, State) ->
+handle_event({event, webmqx_binding_remove, {WordsOfPath, _X, _D, _Args}, _, _}, State) ->
 	%% Flush the ets of routing table.
 	webmqx_exchange_routes:flush_queues(WordsOfPath),
 

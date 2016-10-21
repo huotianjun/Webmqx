@@ -24,7 +24,7 @@
 -record(state, {
 				vhost = webmqx_util:env_vhost(),
 				gm = undefined,
-				routing_queues= dict:new() %% The key is words of path, and value is a gb_trees.
+				routing_queues = dict:new() %% The key is words of path, and value is a gb_trees.
 				}). 
 
 %%----------------------------------------------------------------------------
