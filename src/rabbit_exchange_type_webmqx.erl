@@ -94,7 +94,7 @@ add_binding(transaction, _Exchange, Binding) ->
 add_binding(none, _Exchange, Binding) ->
 	%% Called after add_binding transaction completed, for update webmqx_exchange_routes of all nodes. 
 	#binding{source = X, key = K, destination = D, args = Args} = Binding,
-    rabbit_event:notify(binding_add, {webmqx_util:path_to_words(K), X, D, Args}),  
+    rabbit_event:notify(webmqx_binding_add, {webmqx_util:path_to_words(K), X, D, Args}),  
     ok.
 
 remove_bindings(transaction, _X, Bs) ->
@@ -120,7 +120,7 @@ remove_bindings(transaction, _X, Bs) ->
     ok;
 remove_bindings(none, _X, Bs) ->
 	%% Called after remove_binding transaction completed, for update webmqx_exchange_routes of all nodes. 
-    [rabbit_event:notify(binding_remove, {webmqx_util:path_to_words(K), X, D, Args})  
+    [rabbit_event:notify(webmqx_binding_remove, {webmqx_util:path_to_words(K), X, D, Args})  
 		||  #binding{source = X, key = K, destination = D, args = Args} <- Bs],
     ok.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from multiprocessing import Pool
+import threading
 import os, time, random
 import pika
 import json
@@ -57,9 +57,10 @@ def webmqx_server():
 
 # Startup 2 threads in pool. 
 if __name__=='__main__':
-    p = Pool()
-    for i in range(2):
-        p.apply_async(webmqx_server, args=())
-    p.close()
-    p.join()
+    t1 = threading.Thread(target=webmqx_server)
+    t1.start()
+    t2 = threading.Thread(target=webmqx_server)
+    t2.start()
+    t3 = threading.Thread(target=webmqx_server)
+    t3.start()
 

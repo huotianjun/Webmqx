@@ -2,6 +2,7 @@
 
 var amqp = require('amqplib/callback_api');
 
+function webmqx_server(){
 // Here, set the RabbitMQ server's IP or host.
 amqp.connect('amqp://guest:guest@localhost:5672', function(err, conn) {
   conn.createChannel(function(err, ch) {
@@ -41,6 +42,7 @@ amqp.connect('amqp://guest:guest@localhost:5672', function(err, conn) {
     });
   });
 });
+}
 
 function handle(rpc_request) {
 	var http_req = rpc_request['req'];
@@ -51,3 +53,17 @@ function handle(rpc_request) {
 
 	return 'HelloWorld';
 }
+
+var numThreads= 8; 
+var threadPool= require('threads_a_gogo').createPool(numThreads).all.eval(webmqx_server);
+var i=8;
+var cb = function(err,data){ //注册线程执行完毕的回调函数
+	console.log(data);
+	if(!--i){
+		threadPool.destroy();
+	}
+}
+
+threadPool.any.eval('thread 1', cb); 
+threadPool.any.eval('thread 2', cb);
+threadPool.any.eval('thread 3', cb);
