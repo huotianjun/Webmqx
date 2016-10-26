@@ -31,7 +31,7 @@ start_link() ->
 flush_routing_ring(WordsOfPath) ->
 	[begin
 			webmqx_rpc_worker:flush_routing_ring(Pid, WordsOfPath)
-		end || {_ProcessName, Pid, _Type, [_Class]} <- supervisor:which_children(?MODULE)].
+		end || {_ProcessName, Pid, _Type, [_Class]} <- supervisor2:which_children(?MODULE)].
 
 %%%
 %%% Callback of supervisor
