@@ -198,7 +198,12 @@ internal_rpc_publish(Path, Payload, From,
 	{ok, Ring, RoutingCache1} =  get_ring(webmqx_util:path_to_words(Path), RoutingCache),
 	case Ring of
 		undefined ->
-			ok;
+			case From of
+				{rpc_sync, FromPid} ->	
+					gen_server2:reply(FromPid, {ok, <<"no server">>});
+				{rpc_async {FromPid, SeqId}} ->
+					gen_server2:cast(FromPid, {rpc_ok, SeqId, {ok, <<"no server">>}})
+			end;
 		_ ->
 			#resource{name = QueueName} = concha:lookup(From, Ring),
 			Publish = #'basic.publish'{exchange = <<"">>, 
