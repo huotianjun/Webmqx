@@ -74,11 +74,13 @@ handle_call(_Request, _From, State) ->
 	{reply, ignore, State}.
 
 handle_cast({flush_routing_ring, WordsOfPath}, State = #state{gm = GM}) ->
+	error_logger:info_msg("webmqx_gm : flush_routing_ring ~p ~n", [WordsOfPath]),
 	gm:broadcast(GM, {flush_routing_ring, WordsOfPath}),
 	{noreply, State};
 
 %% All nodes update their routing rings.
 handle_cast({gm, {flush_routing_ring, WordsOfPath}}, State) ->
+	error_logger:info_msg("webmqx_gm : gm ~p ~n", [WordsOfPath]),
 	webmqx_rpc_worker_sup:flush_routing_ring(WordsOfPath),
 	{noreply, State};
 

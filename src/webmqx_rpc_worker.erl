@@ -125,6 +125,7 @@ handle_call({rpc_sync, Path, Payload}, From, State) ->
 
 handle_cast({flush_routing_ring, WordsOfPath}, State = #state{routing_cache = RoutingCache}) ->
 	{ok, _, RoutingCache1} = fetch_rabbit_queues(WordsOfPath, RoutingCache),
+	error_logger:info_msg("webmqx_rpc_worker : flush_routing_ring ~p ~n", [RoutingCache1]),
 	{noreply, State#state{routing_cache = RoutingCache1}}; 
 
 handle_cast({rpc_async, From, SeqId, Path, Payload}, State) -> 
