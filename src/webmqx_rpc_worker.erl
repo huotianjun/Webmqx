@@ -204,7 +204,6 @@ internal_rpc_publish(Path, Payload, From,
 			Publish = #'basic.publish'{exchange = <<"">>, 
                                routing_key = QueueName,
                                mandatory = true},
-
 			amqp_channel:call(Channel, Publish, #amqp_msg{props = Props,
                                                   payload = Payload})
 	end,
@@ -275,6 +274,5 @@ fetch_rabbit_queues(WordsOfPath, RoutingCache) ->
 			{ok, undefined, dict:store({key, WordsOfPath}, {none, NowTimeStamp}, RoutingCache)}; 
 		[_|_] ->
 			Ring = concha:new(Queues),
-			error_logger:info_msg("Ring ：~p ~p~n", [Ring, Queues]),
 			{ok, Ring,  dict:store({key, WordsOfPath}, Ring, RoutingCache)}
 	end.
