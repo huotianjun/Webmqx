@@ -38,7 +38,8 @@ start_child1(Path) ->
 		{webmqx_consistent_req_broker, start_link, [Path]},
 		permanent, 60, worker, [webmqx_consistent_req_broker]}).
 
-delete_child(Path) ->
+delete_child(_Path) ->
+	%% to-do : If null, delete the child.
 	ok.
 
 %%%
