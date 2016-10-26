@@ -3,6 +3,7 @@
 -include("webmqx.hrl").
 
 -export([start/0]).
+-export([response_to_json/2]).
 
 %%%
 %%% Exported function
