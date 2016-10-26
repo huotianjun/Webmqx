@@ -19,11 +19,11 @@ init(Req , Opts) ->
 			{ok, RpcWorkerPid} ->
 				case IsConsistentReq of
 					true ->
-						case webmqx_rpc_worker:normal_publish(RpcWorkerPid, Path, PayloadJson) of
+						case webmqx_rpc_worker:consistent_publish(RpcWorkerPid, Path, PayloadJson) of
 							ok ->	
 								{ok, #{}, <<>>};
 							_ ->
-								{error, #{},  <<"normal_publish error">>}
+								{error, #{},  <<"consistent_publish error">>}
 						end;
 					false ->	
 						case webmqx_exchange_routes:queues_count(Path) of

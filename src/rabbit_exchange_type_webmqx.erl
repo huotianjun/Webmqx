@@ -51,7 +51,7 @@
 %%% Exported functions
 %%%
 
-%% Called by webmqx_exchange_routes 
+%% Called by webmqx_rpc_worker. 
 fetch_routing_queues(VHost, Exchange, WordsOfPath) when is_list(WordsOfPath) ->
     mnesia:async_dirty(fun trie_match/2, [#resource{virtual_host = VHost, kind = exchange, name = Exchange}, WordsOfPath]).
 
@@ -70,10 +70,9 @@ description() ->
 
 serialise_events() -> false.
 
-route(_X, #delivery{message = #basic_message{routing_keys = Routes}}) ->
-	lists:append([begin
-						webmqx_exchange_routes:route(RKey)			
-				end || RKey <- Routes]).
+%% No use this when delivering, but direct to the queue.
+route(_X, _D) ->
+	[].
 
 validate(_X) -> ok.
 validate_binding(_X, _B) -> ok.
