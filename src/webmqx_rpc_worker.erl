@@ -124,7 +124,7 @@ handle_call({rpc_sync, Path, Payload}, From, State) ->
 	{noreply, NewState}.
 
 handle_cast({flush_routing_ring, WordsOfPath}, State) ->
-	{ok, _, RoutingCache1} = fetch_rabbit_queues(WordsOfPath, RoutingCache)
+	{ok, _, RoutingCache1} = fetch_rabbit_queues(WordsOfPath, RoutingCache),
 	{noreply, State#state{routing_cache = RoutingCache1}}; 
 
 handle_cast({rpc_async, From, SeqId, Path, Payload}, State) -> 
@@ -206,7 +206,7 @@ internal_rpc_publish(Path, Payload, From,
                                mandatory = true},
 
 			amqp_channel:call(Channel, Publish, #amqp_msg{props = Props,
-                                                  payload = Payload}),
+                                                  payload = Payload})
 	end,
 
     State#state{correlation_id = CorrelationId + 1,
@@ -267,7 +267,7 @@ get_ring(WordsOfPath, RoutingCache) when is_binary(RoutingKey)  ->
 	end.
 
 fetch_rabbit_queues(WordsOfPath, RoutingCache) ->
-	Queues = rabbit_exchange_type_webmqx:fetch_routing_queues(VHost = <<"/">>, ?EXCHANGE_WEBMQX, WordsOfPath),
+	Queues = rabbit_exchange_type_webmqx:fetch_routing_queues(_VHost = <<"/">>, ?EXCHANGE_WEBMQX, WordsOfPath),
 	case Queues of
 		[] ->
 			NowTimeStamp = now_timestamp_counter(),
