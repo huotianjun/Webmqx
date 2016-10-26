@@ -29,7 +29,7 @@ start_link() ->
 	{ok, SupPid}.
 
 flush_routing_ring(WordsOfPath) ->
-	error_logger:info_msg("flush ~p ~p ~n", [WordsOfPath, supervisor2:which_children(?MODULE)),
+	error_logger:info_msg("flush ~p ~p ~n", [WordsOfPath, supervisor2:which_children(?MODULE)]),
 	[begin
 			error_logger:info_msg("webmqx_rpc_worker_sup: flush ~p~n", [Pid]),
 			webmqx_rpc_worker:flush_routing_ring(Pid, WordsOfPath)
