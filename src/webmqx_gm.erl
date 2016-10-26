@@ -77,7 +77,7 @@ handle_cast({flush_routing_ring, WordsOfPath}, State = #state{gm = GM}) ->
 	gm:broadcast(GM, {flush_routing_ring, WordsOfPath}),
 	{noreply, State};
 
-%% All nodes update their ets tables.
+%% All nodes update their routing rings.
 handle_cast({gm, {flush_routing_ring, WordsOfPath}}, State) ->
 	webmqx_rpc_worker_sup:flush_routing_ring(WordsOfPath),
 	{noreply, State};
