@@ -201,7 +201,7 @@ internal_rpc_publish(Path, Payload, From,
 			case From of
 				{rpc_sync, FromPid} ->	
 					gen_server2:reply(FromPid, {ok, <<"no server">>});
-				{rpc_async {FromPid, SeqId}} ->
+				{rpc_async, {FromPid, SeqId}} ->
 					gen_server2:cast(FromPid, {rpc_ok, SeqId, {ok, <<"no server">>}})
 			end;
 		_ ->
