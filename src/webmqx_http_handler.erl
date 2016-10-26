@@ -26,18 +26,13 @@ init(Req , Opts) ->
 								{error, #{},  <<"consistent_publish error">>}
 						end;
 					false ->	
-						case webmqx_exchange_routes:queues_count(Path) of
-							0 ->
-								{error, #{}, <<"no server">>};
-							_ ->
-								case webmqx_rpc_worker:rpc(sync, RpcWorkerPid, Path, PayloadJson) of
-									undefined ->
-										{error, #{}, <<"rpc_sync error">>};
-									{ok, R} -> 
-										#{<<"headers">> := Headers, <<"body">> := Body}
-											= jiffy:decode(R, [return_maps]),	
-										{ok, Headers, Body}
-								end
+						case webmqx_rpc_worker:rpc(sync, RpcWorkerPid, Path, PayloadJson) of
+							undefined ->
+								{error, #{}, <<"rpc_sync error">>};
+							{ok, R} -> 
+								#{<<"headers">> := Headers, <<"body">> := Body}
+									= jiffy:decode(R, [return_maps]),	
+								{ok, Headers, Body}
 						end
 				end
 		end
