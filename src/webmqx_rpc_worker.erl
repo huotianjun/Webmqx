@@ -202,7 +202,7 @@ internal_rpc_publish(Path, Payload, From,
 				{rpc_sync, FromPid} ->	
 					gen_server2:reply(FromPid, undefined);
 				{rpc_async, {FromPid, SeqId}} ->
-					gen_server2:cast(FromPid, {rpc_ok, SeqId, undefined}})
+					gen_server2:cast(FromPid, {rpc_ok, SeqId, undefined})
 			end;
 		_ ->
 			#resource{name = QueueName} = concha:lookup(From, Ring),
