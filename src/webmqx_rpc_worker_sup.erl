@@ -25,7 +25,7 @@
 %%%
 
 start_link() ->
-    {ok, SupPid} = supervisor2:start_link(?MODULE, []),
+    {ok, SupPid} = supervisor2:start_link({local, ?MODULE}, ?MODULE, []),
 	{ok, SupPid}.
 
 flush_routing_ring(WordsOfPath) ->
