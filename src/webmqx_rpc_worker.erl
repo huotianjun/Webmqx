@@ -123,7 +123,7 @@ handle_call({rpc_sync, Path, Payload}, From, State) ->
 	NewState = internal_rpc_publish(Path, Payload, _From = {rpc_sync, From}, State),
 	{noreply, NewState}.
 
-handle_cast({flush_routing_ring, WordsOfPath}, State) ->
+handle_cast({flush_routing_ring, WordsOfPath}, State = #state{routing_cache = RoutingCache}) ->
 	{ok, _, RoutingCache1} = fetch_rabbit_queues(WordsOfPath, RoutingCache),
 	{noreply, State#state{routing_cache = RoutingCache1}}; 
 
@@ -210,6 +210,7 @@ internal_rpc_publish(Path, Payload, From,
 	end,
 
     State#state{correlation_id = CorrelationId + 1,
+				routing_cache = RoutingCache1,
                 continuations = dict:store(EncodedCorrelationId, From, Continuations)}.
 
 internal_consistent_publish(Path, Payload,
@@ -250,7 +251,7 @@ now_timestamp_counter() ->
 	{{_NowYear, _NowMonth, _NowDay},{NowHour, NowMinute, NowSecond}} = calendar:now_to_local_time(os:timestamp()),
 	(NowHour*3600 + NowMinute*60 + NowSecond).
 
-get_ring(WordsOfPath, RoutingCache) when is_binary(RoutingKey)  ->
+get_ring(WordsOfPath, RoutingCache) ->
 	case dict:find({key, WordsOfPath}, RoutingCache) of
 		{ok, {none, LastTryStamp}} -> 
 			NowTimeStamp = now_timestamp_counter(),
