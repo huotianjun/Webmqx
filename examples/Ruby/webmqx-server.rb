@@ -63,7 +63,7 @@ class WebmqxServer
 end
 
 threads = []
-16.times do
+3.times do
 	threads <<Thread.new { 
 		begin
 			server = WebmqxServer.new()
