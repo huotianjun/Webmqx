@@ -198,7 +198,7 @@ internal_rpc_publish(Path, Payload, From,
 	{ok, Ring, RoutingCache1} =  get_ring(webmqx_util:path_to_words(Path), RoutingCache),
 	case Ring of
 		undefined ->
-			Payload = reponse_to_json([{<<"content-type">>, <<"text/html">>}], <<"no server">>),
+			Payload = webmqx_service_internal:reponse_to_json([{<<"content-type">>, <<"text/html">>}], <<"no server">>),
 			case From of
 				{rpc_sync, FromPid} ->	
 					gen_server2:reply(FromPid, {ok, Payload});
