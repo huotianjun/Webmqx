@@ -10,9 +10,10 @@
 -behaviour(gen_server2).
 
 -export([start_link/1, stop/1]).
--export([rpc/4, rpc/5, normal_publish/3]).
+-export([rpc/4, rpc/5, consistent_publish/3]).
 -export([init/1, terminate/2, code_change/3, handle_call/3,
          handle_cast/2, handle_info/2]).
+-export([flush_routing_ring/2]).
 
 -record(state, {
 				vhost = webmqx_util:env_vhost(), 
@@ -20,6 +21,7 @@
 				rabbit_channel,
                 reply_queue,
 				n,
+				routing_cache = dict:new(),
 				consistent_req_queues = gb_sets:new(),
                 continuations = dict:new(),
                 correlation_id = 0}).
@@ -31,7 +33,7 @@
 -spec(start_link/1 :: (non_neg_integer()) -> rabbit_types::ok(pid())). 
 -spec(rpc/4 :: ('sync', pid(), binary(), binary()) -> rabbit_types::ok(binary()) | undefined).
 -spec(rpc/5 :: ('async', pid(), non_neg_integer(), binary(), binary()) -> 'ok').
--spec(normal_publish/3 :: (pid(), binary(), binary()) -> rabbit_types::ok_or_error(any())).
+-spec(consistent_publish/3 :: (pid(), binary(), binary()) -> rabbit_types::ok_or_error(any())).
 
 -endif.
 
@@ -54,8 +56,11 @@ rpc(async, WorkerPid, SeqId, Path, Payload) ->
     gen_server2:cast(WorkerPid, {rpc_async, self(), SeqId, Path, Payload}).
 
 %% Called by webmqx_http_handler.
-normal_publish(WorkerPid, Path, Payload) ->
-	gen_server2:call(WorkerPid, {normal_publish, Path, Payload}, infinity).
+consistent_publish(WorkerPid, Path, Payload) ->
+	gen_server2:call(WorkerPid, {consistent_publish, Path, Payload}, infinity).
+
+flush_routing_ring(Pid, WordsOfPath) ->
+	gen_server:cast(Pid, {flush_routing_ring, WordsOfPath}).
 
 stop(Pid) ->
     gen_server2:call(Pid, stop, infinity).
@@ -110,13 +115,17 @@ terminate(_Reason, #state{connection = {ConnectionRef, Connection},
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
 
-handle_call({normal_publish, Path, Payload}, _From, State) ->
-	{R, NewState} = internal_normal_publish(Path, Payload, State),
+handle_call({consistent_publish, Path, Payload}, _From, State) ->
+	{R, NewState} = internal_consistent_publish(Path, Payload, State),
 	{reply, R, NewState};
 
 handle_call({rpc_sync, Path, Payload}, From, State) ->
 	NewState = internal_rpc_publish(Path, Payload, _From = {rpc_sync, From}, State),
 	{noreply, NewState}.
+
+handle_cast({flush_routing_ring, WordsOfPath}, State) ->
+	{ok, _, RoutingCache1} = fetch_rabbit_queues(WordsOfPath, RoutingCache)
+	{noreply, State#state{routing_cache = RoutingCache1}}; 
 
 handle_cast({rpc_async, From, SeqId, Path, Payload}, State) -> 
 	NewState = internal_rpc_publish(Path, Payload, _From = {rpc_async, {From, SeqId}}, State),
@@ -178,6 +187,7 @@ setup_consumer(#state{rabbit_channel = {_Ref, Channel}, reply_queue = Q}) ->
 internal_rpc_publish(Path, Payload, From,
         State = #state{rabbit_channel = {_ChannelRef, Channel},
                        reply_queue = Q,
+					   routing_cache = RoutingCache,
                        correlation_id = CorrelationId,
                        continuations = Continuations}) ->
     EncodedCorrelationId = base64:encode(<<CorrelationId:64>>),
@@ -185,17 +195,24 @@ internal_rpc_publish(Path, Payload, From,
                        content_type = <<"application/octet-stream">>,
                        reply_to = Q},
 
-    Publish = #'basic.publish'{exchange = ?EXCHANGE_WEBMQX, 
-                               routing_key = Path,
+	{ok, Ring, RoutingCache1} =  get_ring(webmqx_util:path_to_words(Path), RoutingCache),
+	case Ring of
+		undefined ->
+			ok;
+		_ ->
+			Queue = concha:lookup(From, Ring),
+			Publish = #'basic.publish'{exchange = <<"">>, 
+                               routing_key = Queue,
                                mandatory = true},
 
-    amqp_channel:call(Channel, Publish, #amqp_msg{props = Props,
+			amqp_channel:call(Channel, Publish, #amqp_msg{props = Props,
                                                   payload = Payload}),
+	end,
 
     State#state{correlation_id = CorrelationId + 1,
                 continuations = dict:store(EncodedCorrelationId, From, Continuations)}.
 
-internal_normal_publish(Path, Payload,
+internal_consistent_publish(Path, Payload,
         State = #state{vhost = VHost,
 						rabbit_channel = {_ChannelRef, Channel}, 
 						consistent_req_queues = ConsReqQueues}) ->
@@ -227,4 +244,36 @@ internal_normal_publish(Path, Payload,
 			end;
 		false ->
 			{not_found, State} 
+	end.
+
+now_timestamp_counter() ->
+	{{_NowYear, _NowMonth, _NowDay},{NowHour, NowMinute, NowSecond}} = calendar:now_to_local_time(os:timestamp()),
+	(NowHour*3600 + NowMinute*60 + NowSecond).
+
+get_ring(WordsOfPath, RoutingCache) when is_binary(RoutingKey)  ->
+	case dict:find({key, WordsOfPath}, RoutingCache) of
+		{ok, {none, LastTryStamp}} -> 
+			NowTimeStamp = now_timestamp_counter(),
+			if
+				(NowTimeStamp < LastTryStamp) orelse ((NowTimeStamp - LastTryStamp) > 10) ->
+					fetch_rabbit_queues(WordsOfPath, RoutingCache);
+				true -> 
+					{ok, undefined, RoutingCache}	
+			end;
+		{ok, Ring} ->
+			{ok, Ring, RoutingCache};
+		error ->
+			fetch_rabbit_queues(WordsOfPath, RoutingCache)
+	end.
+
+fetch_rabbit_queues(WordsOfPath, RoutingCache) ->
+	Queues = rabbit_exchange_type_webmqx:fetch_routing_queues(VHost = <<"/">>, ?EXCHANGE_WEBMQX, WordsOfPath),
+	case Queues of
+		[] ->
+			NowTimeStamp = now_timestamp_counter(),
+			{ok, undefined, dict:store({key, WordsOfPath}, {none, NowTimeStamp}, RoutingCache)}; 
+		[_|_] ->
+			Ring = concha:new(Queues),
+			%%error_logger:info_msg("Ring ：~p ~p~n", [Ring, Queues]),
+			{ok, Ring,  dict:store({key, WordsOfPath}, Ring, RoutingCache)}
 	end.

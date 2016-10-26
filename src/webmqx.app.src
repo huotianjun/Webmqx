@@ -13,6 +13,7 @@
 			cowboy,
 			mnesia,
 			jiffy,
+			crypto,
 			observer,
 			runtime_tools
         ]},

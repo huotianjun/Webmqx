@@ -6,6 +6,7 @@
 
 -export([start_link/0]).
 -export([init/1]).
+-export([flush_routing_ring/1]).
 
 -include_lib("rabbit_common/include/rabbit.hrl").
 
@@ -26,6 +27,11 @@
 start_link() ->
     {ok, SupPid} = supervisor2:start_link(?MODULE, []),
 	{ok, SupPid}.
+
+flush_routing_ring(WordsOfPath) ->
+	[begin
+			webmqx_rpc_worker:flush_routing_ring(Pid, WordsOfPath)
+		end || {_ProcessName, Pid, _Type, [_Class]} <- supervisor:which_children(?MODULE)].
 
 %%%
 %%% Callback of supervisor
