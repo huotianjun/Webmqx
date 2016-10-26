@@ -200,9 +200,9 @@ internal_rpc_publish(Path, Payload, From,
 		undefined ->
 			ok;
 		_ ->
-			Queue = concha:lookup(From, Ring),
+			#resource{name = QueueName} = concha:lookup(From, Ring),
 			Publish = #'basic.publish'{exchange = <<"">>, 
-                               routing_key = Queue,
+                               routing_key = QueueName,
                                mandatory = true},
 			error_logger:info_msg("Publish : ~p ~p~n", [Queue, Publish]),
 
