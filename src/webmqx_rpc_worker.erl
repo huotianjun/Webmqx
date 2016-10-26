@@ -60,6 +60,7 @@ consistent_publish(WorkerPid, Path, Payload) ->
 	gen_server2:call(WorkerPid, {consistent_publish, Path, Payload}, infinity).
 
 flush_routing_ring(Pid, WordsOfPath) ->
+	error_logger:info_msg("webmqx_rpc_worker : cast ~n"),
 	gen_server:cast(Pid, {flush_routing_ring, WordsOfPath}).
 
 stop(Pid) ->
