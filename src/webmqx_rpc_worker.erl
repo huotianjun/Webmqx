@@ -204,7 +204,6 @@ internal_rpc_publish(Path, Payload, From,
 			Publish = #'basic.publish'{exchange = <<"">>, 
                                routing_key = QueueName,
                                mandatory = true},
-			error_logger:info_msg("Publish : ~p ~p~n", [Queue, Publish]),
 
 			amqp_channel:call(Channel, Publish, #amqp_msg{props = Props,
                                                   payload = Payload})
