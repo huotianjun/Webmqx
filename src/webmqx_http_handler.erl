@@ -8,10 +8,10 @@
 %%%
 
 init(Req , Opts) ->
-	error_logger:info_msg("Req : ~p Opts :~p ~n", [Req, Opts]),
 	#{rpc_workers_num := WorkersNum} = Opts,
-	{ok, {_Host, Path, Method, PayloadJson, Req2}} = req_parse(Req),
+	{ok, {PeerIP, _Host, Path, Method, PayloadJson, Req2}} = req_parse(Req),
 	IsConsistentReq = is_consistent_req(Method),
+	error_logger:info_msg("PeerIP : ~p ~n", [PeerIP]),
 
 	Response =
 	try 
@@ -51,6 +51,7 @@ req_parse(Req) ->
 	Method = cowboy_req:method(Req),
 	Path = cowboy_req:path(Req),
 	Qs = cowboy_req:qs(Req),
+	{PeerIP, _} = cowboy_req:peer(Req),
 
 	{Body, Req2}  = 
 		case cowboy_req:has_body(Req) of
@@ -77,7 +78,7 @@ req_parse(Req) ->
 				{body, Body}
 			   ]}, 
 
-	{ok, {Host, Path, Method, jiffy:encode(Payload), Req2}}.
+	{ok, {PeerIP, Host, Path, Method, jiffy:encode(Payload), Req2}}.
 
 is_consistent_req(<<"GET">>) -> false;
 is_consistent_req(<<"POST">>) -> false;
