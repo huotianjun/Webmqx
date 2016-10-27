@@ -82,7 +82,7 @@ handle_info(#'basic.cancel_ok'{}, State) ->
 
 %% Message from the queue of consistent requests, then rpc-ed to an application server.
 handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
-				#amqp_msg{payload = PayloadJson, props = #'P_basic'{ user_id = ClientIP }}},
+				#amqp_msg{payload = PayloadJson, props = #'P_basic'{correlation_id = ClientIP }}},
 				State = #state{path = Path, channel = {_Ref, Channel},
 								req_id = ReqId,
 								rpc_workers_num = RpcWorkersNum,
