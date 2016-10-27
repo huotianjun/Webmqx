@@ -66,14 +66,12 @@ req_parse(Req) ->
 				end;
 			false -> {<<"">>, Req}
 		end,
-
 	Payload = {[
 				{req, {[
 						{host, Host},
 						{method, Method},
 						{path, Path},
-						{qs, Qs},	
-						{peer, PeerIP}
+						{qs, Qs}	
 					  ]}}, 
 				{body, Body}
 			   ]}, 
