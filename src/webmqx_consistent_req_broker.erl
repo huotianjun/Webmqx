@@ -82,7 +82,7 @@ handle_info(#'basic.cancel_ok'{}, State) ->
 
 %% Message from the queue of consistent requests, then rpc-ed to an application server.
 handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
-				#amqp_msg{payload = PayloadJson}},
+				#amqp_msg{payload = PayloadJson, props = #'P_basic'{ peer = ClientIP }}},
 				State = #state{path = Path, channel = {_Ref, Channel},
 								req_id = ReqId,
 								rpc_workers_num = RpcWorkersNum,
@@ -94,7 +94,7 @@ handle_info({#'basic.deliver'{delivery_tag = DeliveryTag},
 				amqp_channel:call(Channel, #'basic.nack'{delivery_tag = DeliveryTag}),
 				State;
 			{ok, RpcWorkerPid} ->
-				webmqx_rpc_worker:rpc(async, RpcWorkerPid, ReqId, Path, PayloadJson),
+				webmqx_rpc_worker:rpc(async, RpcWorkerPid, ReqId, ClientIP, Path, PayloadJson),
 				State#state{req_id = ReqId + 1,
 							unacked_rpc_reqs = dict:store(ReqId, DeliveryTag, UnackedReqs)}
 		end
@@ -118,7 +118,7 @@ handle_call(stop, _From, State) ->
     {stop, normal, ok, State}.
 
 %% Message from rpc worker.
-handle_cast({rpc_ok, ReqId, {ok, _Response}}, 
+handle_cast({rpc_ok, ReqId, _}, 
 				State = #state{channel = {_Ref, Channel},
 								unacked_rpc_reqs = UnackedReqs}) ->
 	DeliveryTag =  dict:fetch(ReqId, UnackedReqs),

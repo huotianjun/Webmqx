@@ -10,7 +10,7 @@
 -behaviour(gen_server2).
 
 -export([start_link/1, stop/1]).
--export([rpc/4, rpc/5, consistent_publish/3]).
+-export([rpc/5, rpc/6, consistent_publish/4]).
 -export([init/1, terminate/2, code_change/3, handle_call/3,
          handle_cast/2, handle_info/2]).
 -export([flush_routing_ring/2]).
@@ -31,9 +31,9 @@
 -ifdef(use_specs).
 
 -spec(start_link/1 :: (non_neg_integer()) -> rabbit_types::ok(pid())). 
--spec(rpc/4 :: ('sync', pid(), binary(), binary()) -> rabbit_types::ok(binary()) | undefined).
--spec(rpc/5 :: ('async', pid(), non_neg_integer(), binary(), binary()) -> 'ok').
--spec(consistent_publish/3 :: (pid(), binary(), binary()) -> rabbit_types::ok_or_error(any())).
+-spec(rpc/5 :: ('sync', pid(), term(), binary(), binary()) -> rabbit_types::ok(binary()) | undefined).
+-spec(rpc/6 :: ('async', pid(), non_neg_integer(), term(),  binary(), binary()) -> 'ok').
+-spec(consistent_publish/4 :: (pid(), term(), binary(), binary()) -> rabbit_types::ok_or_error(any())).
 
 -endif.
 
@@ -48,16 +48,16 @@ start_link(N) ->
 	{ok, Pid}.
 
 %% Called by webmqx_http_handler.
-rpc(sync, WorkerPid, Path, Payload) ->
-    gen_server2:call(WorkerPid, {rpc_sync, Path, Payload}, infinity).
+rpc(sync, WorkerPid, ClientIP, Path, Payload) ->
+    gen_server2:call(WorkerPid, {rpc_sync, ClientIP, Path, Payload}, infinity).
 
 %% Called by webmqx_consistent_req_broker.
-rpc(async, WorkerPid, SeqId, Path, Payload) ->
-    gen_server2:cast(WorkerPid, {rpc_async, self(), SeqId, Path, Payload}).
+rpc(async, WorkerPid, SeqId, ClientIP, Path, Payload) ->
+    gen_server2:cast(WorkerPid, {rpc_async, {self(), SeqId}, ClientIP, Path, Payload}).
 
 %% Called by webmqx_http_handler.
-consistent_publish(WorkerPid, Path, Payload) ->
-	gen_server2:call(WorkerPid, {consistent_publish, Path, Payload}, infinity).
+consistent_publish(WorkerPid, ClientIP, Path, Payload) ->
+	gen_server2:call(WorkerPid, {consistent_publish, ClientIP, Path, Payload}, infinity).
 
 flush_routing_ring(Pid, WordsOfPath) ->
 	gen_server:cast(Pid, {flush_routing_ring, WordsOfPath}).
@@ -115,21 +115,21 @@ terminate(_Reason, #state{connection = {ConnectionRef, Connection},
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
 
-handle_call({consistent_publish, Path, Payload}, _From, State) ->
-	{R, NewState} = internal_consistent_publish(Path, Payload, State),
+handle_call({consistent_publish, ClientIP, Path, Payload}, _From, State) ->
+	{R, NewState} = internal_consistent_publish(ClientIP, Path, Payload, State),
 	{reply, R, NewState};
 
-handle_call({rpc_sync, Path, Payload}, From, State) ->
-	NewState = internal_rpc_publish(Path, Payload, _From = {rpc_sync, From}, State),
+handle_call({rpc_sync, ClientIP, Path, Payload}, From, State) ->
+	NewState = internal_rpc_publish(ClientIP, Path, Payload, _From = {rpc_sync, From}, State),
 	{noreply, NewState}.
+
+handle_cast({rpc_async, {From, SeqId}, ClientIP, Path, Payload}, State) -> 
+	NewState = internal_rpc_publish(ClientIP, Path, Payload, _From = {rpc_async, {From, SeqId}}, State),
+	{noreply, NewState};
 
 handle_cast({flush_routing_ring, WordsOfPath}, State = #state{routing_cache = RoutingCache}) ->
 	{ok, _, RoutingCache1} = fetch_rabbit_queues(WordsOfPath, RoutingCache),
 	{noreply, State#state{routing_cache = RoutingCache1}}; 
-
-handle_cast({rpc_async, From, SeqId, Path, Payload}, State) -> 
-	NewState = internal_rpc_publish(Path, Payload, _From = {rpc_async, {From, SeqId}}, State),
-	{noreply, NewState};
 
 handle_cast(_Msg, State) ->
     {noreply, State}.
@@ -151,13 +151,10 @@ handle_info({#'basic.deliver'{},
              _Msg = #amqp_msg{props = #'P_basic'{correlation_id = Id},
                        payload = Payload}},
             State = #state{continuations = Conts}) ->
-
-	{CallOrCast, From} =  dict:fetch(Id, Conts), 
-	case CallOrCast of
-		rpc_sync ->	
-			gen_server2:reply(From, {ok, Payload});
-		rpc_async ->
-			{FromPid, SeqId} = From,
+	case dict:fetch(Id, Conts) of
+		{rpc_sync, FromPid} ->	
+			gen_server2:reply(FromPid, {ok, Payload});
+		{rpc_async, {FromPid, SeqId}} ->
 			gen_server2:cast(FromPid, {rpc_ok, SeqId, {ok, Payload}})
 	end,
     {noreply, State#state{continuations = dict:erase(Id, Conts) }};
@@ -184,7 +181,7 @@ setup_consumer(#state{rabbit_channel = {_Ref, Channel}, reply_queue = Q}) ->
     #'basic.consume_ok'{} =
 		amqp_channel:call(Channel, #'basic.consume'{queue = Q, no_ack = true}).
 
-internal_rpc_publish(Path, Payload, From,
+internal_rpc_publish(ClientIP, Path, Payload, From,
         State = #state{rabbit_channel = {_ChannelRef, Channel},
                        reply_queue = Q,
 					   routing_cache = RoutingCache,
@@ -205,7 +202,7 @@ internal_rpc_publish(Path, Payload, From,
 					gen_server2:cast(FromPid, {rpc_ok, SeqId, undefined})
 			end;
 		_ ->
-			#resource{name = QueueName} = concha:lookup(From, Ring),
+			#resource{name = QueueName} = concha:lookup(ClientIP, Ring),
 			Publish = #'basic.publish'{exchange = <<"">>, 
                                routing_key = QueueName,
                                mandatory = true},
@@ -217,7 +214,7 @@ internal_rpc_publish(Path, Payload, From,
 				routing_cache = RoutingCache1,
                 continuations = dict:store(EncodedCorrelationId, From, Continuations)}.
 
-internal_consistent_publish(Path, Payload,
+internal_consistent_publish(ClientIP, Path, Payload,
         State = #state{vhost = VHost,
 						rabbit_channel = {_ChannelRef, Channel}, 
 						consistent_req_queues = ConsReqQueues}) ->
@@ -241,7 +238,8 @@ internal_consistent_publish(Path, Payload,
 										routing_key = Path,
 										mandatory = true},
 
-			case amqp_channel:call(Channel, Publish, #amqp_msg{payload = Payload}) of
+			case amqp_channel:call(Channel, Publish, #amqp_msg{payload = Payload, 
+															   props   = #'P_basic'{peer  = ClientIP}) of
 				ok ->
 					{ok, NewState};
 				Error ->
