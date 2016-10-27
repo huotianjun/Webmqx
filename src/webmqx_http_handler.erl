@@ -9,9 +9,8 @@
 
 init(Req , Opts) ->
 	#{rpc_workers_num := WorkersNum} = Opts,
-	{ok, {PeerIP, _Host, Path, Method, PayloadJson, Req2}} = req_parse(Req),
+	{ok, {ClientIP, _Host, Path, Method, PayloadJson, Req2}} = req_parse(Req),
 	IsConsistentReq = is_consistent_req(Method),
-	error_logger:info_msg("PeerIP : ~p ~n", [PeerIP]),
 
 	Response =
 	try 
@@ -20,14 +19,14 @@ init(Req , Opts) ->
 			{ok, RpcWorkerPid} ->
 				case IsConsistentReq of
 					true ->
-						case webmqx_rpc_worker:consistent_publish(RpcWorkerPid, Path, PayloadJson) of
+						case webmqx_rpc_worker:consistent_publish(RpcWorkerPid, ClientIP, Path, PayloadJson) of
 							ok ->	
 								{ok, #{}, <<>>};
 							_ ->
 								{error, #{},  <<"consistent_publish error">>}
 						end;
 					false ->	
-						case webmqx_rpc_worker:rpc(sync, RpcWorkerPid, Path, PayloadJson) of
+						case webmqx_rpc_worker:rpc(sync, RpcWorkerPid, ClientIP, Path, PayloadJson) of
 							undefined ->
 								{error, #{}, <<"rpc_sync error">>};
 							{ok, R} -> 
@@ -73,7 +72,8 @@ req_parse(Req) ->
 						{host, Host},
 						{method, Method},
 						{path, Path},
-						{qs, Qs}	
+						{qs, Qs},	
+						{peer, PeerIP}
 					  ]}}, 
 				{body, Body}
 			   ]}, 
