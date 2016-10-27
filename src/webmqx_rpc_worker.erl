@@ -239,7 +239,7 @@ internal_consistent_publish(ClientIP, Path, Payload,
 										mandatory = true},
 
 			case amqp_channel:call(Channel, Publish, #amqp_msg{payload = Payload, 
-															   props   = #'P_basic'{user_id = ClientIP}}) of
+															   props   = #'P_basic'{correlation_id = ClientIP}}) of
 				ok ->
 					{ok, NewState};
 				Error ->
