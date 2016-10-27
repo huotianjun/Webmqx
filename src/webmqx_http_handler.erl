@@ -8,6 +8,7 @@
 %%%
 
 init(Req , Opts) ->
+	error_logger:info_msg("Req : ~p Opts :~p ~n", [Req, Opts]),
 	#{rpc_workers_num := WorkersNum} = Opts,
 	{ok, {_Host, Path, Method, PayloadJson, Req2}} = req_parse(Req),
 	IsConsistentReq = is_consistent_req(Method),
