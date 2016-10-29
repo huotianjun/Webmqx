@@ -32,9 +32,7 @@ def on_request(ch, method, props, body):
 
 def webmqx_server():
     # If not running on localhost of RabbitMQ server, don't use the user of 'guest', but try other. 
-    credentials = pika.PlainCredentials('guest', 'guest')
-    parameters =  pika.ConnectionParameters('127.0.0.1', credentials=credentials)
-    connection = pika.BlockingConnection(parameters)
+    connection = pika.BlockingConnection(pika.URLParameters('amqp://guest:guest@127.0.0.1:5672/%2F?heartbeat_in    terval=1')) 
 
     channel = connection.channel()
     queue = channel.queue_declare(exclusive=True, auto_delete=True).method.queue
