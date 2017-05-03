@@ -28,7 +28,8 @@ start(_Type, _Args) ->
 			{'_', webmqx_http_handler, #{rpc_workers_num => RpcWorkersNum}}
 		]}
 	]),
-	{ok, _Cowboy} = cowboy:start_clear(http, 100, [{port, 80}], 
+	Port = webmqx_util:env_port(),
+	{ok, _Cowboy} = cowboy:start_clear(http, 100, [{port, Port}], 
 		#{env => #{dispatch => Dispatch}} 
 	),
 
