@@ -12,6 +12,8 @@ init(Req , Opts) ->
     {ok, {ClientIP, _Host, Path, Method, PayloadJson, Req2}} = req_parse(Req),
     IsConsistentReq = is_consistent_req(Method),
 
+    error_logger:info_msg("request : ~p ~n", [Req]),
+
     Response =
     try 
         case webmqx_rpc_worker_manager:get_a_worker(WorkersNum) of
@@ -92,7 +94,14 @@ http_reply({error, Headers, Body}, Req) ->
     Headers2 = Headers#{<<"content-length">> => integer_to_list(iolist_size(Body))}, 
     cowboy_req:reply(404, Headers2, Body, Req);
 
-http_reply({ok, Headers, Body}, Req) ->
+http_reply({ok, Headers , Body}, Req) ->
     Headers2 = Headers#{<<"content-length">> => integer_to_list(iolist_size(Body))}, 
-    cowboy_req:reply(200, Headers2, Body, Req).
+    error_logger:info_msg("response : ~p ~p ~n", [Headers, Body]),
+    try
+        #{<<"ResponseCode">> := Code} = Headers,
+        cowboy_req:reply(binary_to_integer(Code), Headers2, Body, Req)
+    catch 
+        _Error:_Reason -> 
+            cowboy_req:reply(200, Headers2, Body, Req)
+    end.
 
