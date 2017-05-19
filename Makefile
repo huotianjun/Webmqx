@@ -4,7 +4,8 @@ DEPS = amqp_client cowboy jiffy rabbit
 
 LOCAL_DEPS = ssl observer runtime_tools
 
-dep_cowboy_commit = master 
+#dep_cowboy_commit = master 
+#dep_cowboy_commit = 2.0.0-pre.3
 
 DEP_PLUGINS = rabbit_common/mk/rabbitmq-plugin.mk
 

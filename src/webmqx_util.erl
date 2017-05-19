@@ -3,7 +3,7 @@
 -include_lib("amqp_client/include/amqp_client.hrl").
 -include("webmqx.hrl").
 
--export([env/1, env_vhost/0, env_username/0, env_password/0, env_rpc_workers_num/0,
+-export([env/1, env_vhost/0, env_port/0, env_username/0, env_password/0, env_rpc_workers_num/0,
 		 words_to_path/1, path_to_words/1]). 
 		 
 
@@ -13,6 +13,7 @@
 
 -spec(env/1 :: (atom()) -> 'undefined' | any()).
 -spec(env_vhost/0 :: () -> binary()).
+-spec(env_port/0 :: () -> non_neg_integer()).
 -spec(env_username/0 :: () -> binary()).
 -spec(env_password/0 :: () -> binary()).
 -spec(env_rpc_workers_num/0 :: () -> non_neg_integer()).
@@ -48,6 +49,12 @@ env_password() ->
 env_vhost() ->
 	case env(vhost) of
 		undefined -> <<"/">>;
+		V -> V 
+	end.
+
+env_port() ->
+	case env(port) of
+		undefined -> 80;
 		V -> V 
 	end.
 

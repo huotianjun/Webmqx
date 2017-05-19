@@ -28,6 +28,7 @@
 -export([fetch_routing_queues/3, fetch_bindings_info/3]).
 -export([info/1, info/2]).
 
+%% loading at startup of RabbitMQ instance.
 -rabbit_boot_step({?MODULE,
                    [{description, "exchange type webmqx"},
                     {mfa,         {rabbit_registry, register,

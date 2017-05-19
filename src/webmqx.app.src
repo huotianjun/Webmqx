@@ -8,18 +8,19 @@
 		[
 			kernel,
 			stdlib,
+			crypto,
 			rabbit,
 			amqp_client,
 			cowboy,
 			mnesia,
 			jiffy,
-			crypto,
 			observer,
 			runtime_tools
         ]},
   {mod, { webmqx_app, []}},
   {env, [
 			{vhost, <<"/">>},
+			{port, 8090},
 			{username, <<"guest">>},
 			{password, <<"guest">>},
 			{rpc_workers_num, 10}

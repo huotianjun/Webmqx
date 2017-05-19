@@ -5,6 +5,30 @@ ifeq ($(.DEFAULT_GOAL),)
 .DEFAULT_GOAL = all
 endif
 
+<<<<<<< HEAD
+=======
+# PROJECT_VERSION defaults to:
+#   1. the version exported by rabbitmq-server-release;
+#   2. the version stored in `git-revisions.txt`, if it exists;
+#   3. a version based on git-describe(1), if it is a Git clone;
+#   4. 0.0.0
+
+PROJECT_VERSION := $(RABBITMQ_VERSION)
+
+ifeq ($(PROJECT_VERSION),)
+PROJECT_VERSION := $(shell \
+if test -f git-revisions.txt; then \
+	head -n1 git-revisions.txt | \
+	awk '{print $$$(words $(PROJECT_DESCRIPTION) version);}'; \
+else \
+	(git describe --dirty --abbrev=7 --tags --always --first-parent \
+	 2>/dev/null || echo rabbitmq_v0_0_0) | \
+	sed -e 's/^rabbitmq_v//' -e 's/^v//' -e 's/_/./g' -e 's/-/+/' \
+	 -e 's/-/./g'; \
+fi)
+endif
+
+>>>>>>> 537fc89828609095f5d21cba920f0d78f3a5ad38
 # --------------------------------------------------------------------
 # RabbitMQ components.
 # --------------------------------------------------------------------
@@ -21,13 +45,19 @@ dep_rabbit                            = git_rmq rabbitmq-server $(current_rmq_re
 dep_rabbit_common                     = git_rmq rabbitmq-common $(current_rmq_ref) $(base_rmq_ref) master
 dep_rabbitmq_amqp1_0                  = git_rmq rabbitmq-amqp1.0 $(current_rmq_ref) $(base_rmq_ref) master
 dep_rabbitmq_auth_backend_amqp        = git_rmq rabbitmq-auth-backend-amqp $(current_rmq_ref) $(base_rmq_ref) master
+dep_rabbitmq_auth_backend_cache       = git_rmq rabbitmq-auth-backend-cache $(current_rmq_ref) $(base_rmq_ref) master
 dep_rabbitmq_auth_backend_http        = git_rmq rabbitmq-auth-backend-http $(current_rmq_ref) $(base_rmq_ref) master
 dep_rabbitmq_auth_backend_ldap        = git_rmq rabbitmq-auth-backend-ldap $(current_rmq_ref) $(base_rmq_ref) master
 dep_rabbitmq_auth_mechanism_ssl       = git_rmq rabbitmq-auth-mechanism-ssl $(current_rmq_ref) $(base_rmq_ref) master
 dep_rabbitmq_boot_steps_visualiser    = git_rmq rabbitmq-boot-steps-visualiser $(current_rmq_ref) $(base_rmq_ref) master
 dep_rabbitmq_clusterer                = git_rmq rabbitmq-clusterer $(current_rmq_ref) $(base_rmq_ref) master
+dep_rabbitmq_cli                      = git_rmq rabbitmq-cli $(current_rmq_ref) $(base_rmq_ref) master
 dep_rabbitmq_codegen                  = git_rmq rabbitmq-codegen $(current_rmq_ref) $(base_rmq_ref) master
 dep_rabbitmq_consistent_hash_exchange = git_rmq rabbitmq-consistent-hash-exchange $(current_rmq_ref) $(base_rmq_ref) master
+<<<<<<< HEAD
+=======
+dep_rabbitmq_ct_client_helpers        = git_rmq rabbitmq-ct-client-helpers $(current_rmq_ref) $(base_rmq_ref) master
+>>>>>>> 537fc89828609095f5d21cba920f0d78f3a5ad38
 dep_rabbitmq_ct_helpers               = git_rmq rabbitmq-ct-helpers $(current_rmq_ref) $(base_rmq_ref) master
 dep_rabbitmq_delayed_message_exchange = git_rmq rabbitmq-delayed-message-exchange $(current_rmq_ref) $(base_rmq_ref) master
 dep_rabbitmq_dotnet_client            = git_rmq rabbitmq-dotnet-client $(current_rmq_ref) $(base_rmq_ref) master
@@ -36,6 +66,7 @@ dep_rabbitmq_federation               = git_rmq rabbitmq-federation $(current_rm
 dep_rabbitmq_federation_management    = git_rmq rabbitmq-federation-management $(current_rmq_ref) $(base_rmq_ref) master
 dep_rabbitmq_java_client              = git_rmq rabbitmq-java-client $(current_rmq_ref) $(base_rmq_ref) master
 dep_rabbitmq_jms_client               = git_rmq rabbitmq-jms-client $(current_rmq_ref) $(base_rmq_ref) master
+dep_rabbitmq_jms_cts                  = git_rmq rabbitmq-jms-cts $(current_rmq_ref) $(base_rmq_ref) master
 dep_rabbitmq_jms_topic_exchange       = git_rmq rabbitmq-jms-topic-exchange $(current_rmq_ref) $(base_rmq_ref) master
 dep_rabbitmq_lvc                      = git_rmq rabbitmq-lvc-plugin $(current_rmq_ref) $(base_rmq_ref) master
 dep_rabbitmq_management               = git_rmq rabbitmq-management $(current_rmq_ref) $(base_rmq_ref) master
@@ -66,30 +97,42 @@ dep_rabbitmq_web_stomp_examples       = git_rmq rabbitmq-web-stomp-examples $(cu
 dep_rabbitmq_web_mqtt                 = git_rmq rabbitmq-web-mqtt $(current_rmq_ref) $(base_rmq_ref) master
 dep_rabbitmq_web_mqtt_examples        = git_rmq rabbitmq-web-mqtt-examples $(current_rmq_ref) $(base_rmq_ref) master
 dep_rabbitmq_website                  = git_rmq rabbitmq-website $(current_rmq_ref) $(base_rmq_ref) live master
-dep_sockjs                            = git_rmq sockjs-erlang $(current_rmq_ref) $(base_rmq_ref) master
 dep_toke                              = git_rmq toke $(current_rmq_ref) $(base_rmq_ref) master
 
 dep_rabbitmq_public_umbrella          = git_rmq rabbitmq-public-umbrella $(current_rmq_ref) $(base_rmq_ref) master
 
-# FIXME: As of 2015-11-20, we depend on Ranch 1.2.1, but erlang.mk
-# defaults to Ranch 1.1.0. All projects depending indirectly on Ranch
-# needs to add "ranch" as a BUILD_DEPS. The list of projects needing
-# this workaround are:
-#     o  rabbitmq-web-stomp
-dep_ranch = git https://github.com/ninenines/ranch 1.2.1
+# Third-party dependencies version pinning.
+#
+# We do that in this file, which is copied in all projects, to ensure
+# all projects use the same versions. It avoids conflicts and makes it
+# possible to work with rabbitmq-public-umbrella.
+
+dep_cowboy_commit = master
+#dep_cowboy_commit = 1.1.0
+dep_mochiweb = git git://github.com/basho/mochiweb.git v2.9.0p2
+dep_ranch_commit = 1.3.2
+dep_sockjs = git https://github.com/rabbitmq/sockjs-erlang.git 405990ea62353d98d36dbf5e1e64942d9b0a1daf
+dep_webmachine_commit = 1.10.8p2
+dep_ranch_proxy_protocol = git git://github.com/heroku/ranch_proxy_protocol.git 1.4.2
 
 RABBITMQ_COMPONENTS = amqp_client \
 		      rabbit \
 		      rabbit_common \
 		      rabbitmq_amqp1_0 \
 		      rabbitmq_auth_backend_amqp \
+		      rabbitmq_auth_backend_cache \
 		      rabbitmq_auth_backend_http \
 		      rabbitmq_auth_backend_ldap \
 		      rabbitmq_auth_mechanism_ssl \
 		      rabbitmq_boot_steps_visualiser \
 		      rabbitmq_clusterer \
+		      rabbitmq_cli \
 		      rabbitmq_codegen \
 		      rabbitmq_consistent_hash_exchange \
+<<<<<<< HEAD
+=======
+		      rabbitmq_ct_client_helpers \
+>>>>>>> 537fc89828609095f5d21cba920f0d78f3a5ad38
 		      rabbitmq_ct_helpers \
 		      rabbitmq_delayed_message_exchange \
 		      rabbitmq_dotnet_client \
@@ -98,6 +141,7 @@ RABBITMQ_COMPONENTS = amqp_client \
 		      rabbitmq_federation_management \
 		      rabbitmq_java_client \
 		      rabbitmq_jms_client \
+		      rabbitmq_jms_cts \
 		      rabbitmq_jms_topic_exchange \
 		      rabbitmq_lvc \
 		      rabbitmq_management \
