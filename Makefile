@@ -1,6 +1,6 @@
 PROJECT = webmqx
 
-DEPS = amqp_client cowboy jiffy jsx lager rabbit
+DEPS = ranch amqp_client cowboy jiffy jsx lager rabbit
 
 LOCAL_DEPS = ssl observer runtime_tools
 
