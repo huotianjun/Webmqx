@@ -20,7 +20,7 @@
   {mod, { webmqx_app, []}},
   {env, [
 			{vhost, <<"/">>},
-			{port, 8090},
+			{port, 80},
 			{username, <<"guest">>},
 			{password, <<"guest">>},
 			{rpc_workers_num, 10}
