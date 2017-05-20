@@ -21,8 +21,8 @@
   {env, [
 			{vhost, <<"/">>},
 			{port, 80},
-			{username, <<"guest">>},
-			{password, <<"guest">>},
+			{username, <<"apns">>},
+			{password, <<"apns">>},
 			{rpc_workers_num, 10}
 		]}
  ]}.
