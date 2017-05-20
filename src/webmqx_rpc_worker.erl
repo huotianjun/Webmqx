@@ -148,9 +148,10 @@ handle_info(#'basic.cancel_ok'{}, State) ->
 
 %% Message from queue of application server.
 handle_info({#'basic.deliver'{},
-             _Msg = #amqp_msg{props = #'P_basic'{correlation_id = Id},
+             Msg = #amqp_msg{props = #'P_basic'{correlation_id = Id},
                        payload = Payload}},
             State = #state{continuations = Conts}) ->
+    error_logger:info_msg("basic.deliver : ~p ~n", [Msg],
 	case dict:fetch(Id, Conts) of
 		{rpc_sync, FromPid} ->	
 			gen_server2:reply(FromPid, {ok, Payload});
