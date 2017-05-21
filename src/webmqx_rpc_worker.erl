@@ -148,7 +148,7 @@ handle_info(#'basic.cancel_ok'{}, State) ->
 
 %% Message from queue of application server.
 handle_info({#'basic.deliver'{},
-             Msg = #amqp_msg{props = #'P_basic'{correlation_id = Id},
+             _Msg = #amqp_msg{props = #'P_basic'{correlation_id = Id},
                        payload = Payload}},
             State = #state{continuations = Conts}) ->
 	case dict:fetch(Id, Conts) of
