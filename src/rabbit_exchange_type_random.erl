@@ -39,14 +39,17 @@
   serialise_events/0,
   validate/1
 ]).
+-export([info/1, info/2]).
+
+info(_X) -> [].
+info(_X, _) -> [].
 
 description() ->
     [{name, <<"x-random">>}, {description, <<"AMQP random exchange. Like a direct exchange, but randomly chooses who to route to.">>}].
 
 route(_X=#exchange{name = Name},
       _D=#delivery{message = #basic_message{routing_keys = Routes}}) ->
-	Matches = rabbit_router:match_routing_key(Name, ['_']),
-    %%Matches = rabbit_router:match_routing_key(Name, Routes),
+    Matches = rabbit_router:match_routing_key(Name, Routes),
     %io:format("exchange: ~p~n", [X]),
     %io:format("delivery: ~p~n", [D]),
     %io:format("matches: ~p~n", [Matches]),
