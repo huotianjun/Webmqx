@@ -49,20 +49,20 @@ description() ->
 
 route(X, D) ->
     io:formart("X: ~p  D : ~p ~n", [X, D]),
-    [];
+    [].
 
-route(X=#exchange{name = Name},
-      D=#delivery{message = #basic_message{routing_keys = Routes}}) ->
-    Matches = rabbit_router:match_routing_key(Name, Routes),
-    io:format("exchange: ~p~n", [X]),
-    io:format("delivery: ~p~n", [D]),
-    io:format("matches: ~p~n", [Matches]),
-    case length(Matches) of
-      Len when Len < 2 -> Matches;
-      Len ->
-        Rand = crypto:rand_uniform(1, Len + 1),
-        [lists:nth(Rand, Matches)]
-    end.
+%route(X=#exchange{name = Name},
+%      D=#delivery{message = #basic_message{routing_keys = Routes}}) ->
+%    Matches = rabbit_router:match_routing_key(Name, Routes),
+%    io:format("exchange: ~p~n", [X]),
+%    io:format("delivery: ~p~n", [D]),
+%    io:format("matches: ~p~n", [Matches]),
+%    case length(Matches) of
+%      Len when Len < 2 -> Matches;
+%      Len ->
+%        Rand = crypto:rand_uniform(1, Len + 1),
+%        [lists:nth(Rand, Matches)]
+%    end.
 
 serialise_events() -> false.
 validate(_X) -> ok.
