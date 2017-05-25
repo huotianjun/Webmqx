@@ -47,8 +47,8 @@ info(_X, _) -> [].
 description() ->
     [{name, <<"x-random">>}, {description, <<"AMQP random exchange. Like a direct exchange, but randomly chooses who to route to.">>}].
 
-route(X=#exchange{name = #resource{name = Name}},
-      D=#delivery{message = #basic_message{routing_keys = Routes}}) ->
+route(_X=#exchange{name = #resource{name = Name}},
+      _D=#delivery{message = #basic_message{routing_keys = Routes}}) ->
     Matches = rabbit_router:match_routing_key(Name, Routes),
     error_logger:info_msg("matches: ~p~n", [Matches]),
     case length(Matches) of
