@@ -47,6 +47,10 @@ info(_X, _) -> [].
 description() ->
     [{name, <<"x-random">>}, {description, <<"AMQP random exchange. Like a direct exchange, but randomly chooses who to route to.">>}].
 
+route(X, D) ->
+    io:formart("X: ~p  D : ~p ~n", [X, D]),
+    [];
+
 route(X=#exchange{name = Name},
       D=#delivery{message = #basic_message{routing_keys = Routes}}) ->
     Matches = rabbit_router:match_routing_key(Name, Routes),
