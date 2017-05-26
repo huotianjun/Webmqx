@@ -50,7 +50,7 @@ description() ->
 route(X, D) ->
     {exchange, Name, 'x-random', _, _, _, _, _, _, _} = X,
     {delivery,false,false,_,
-        {basic_message, _ ,Routes, _Content, _, _}, _, _} = D
+        {basic_message, _ ,Routes, _Content, _, _}, _, _} = D,
 
     Matches = rabbit_router:match_routing_key(Name, Routes),
     error_logger:info_msg("matches: ~p~n", [Matches]),
