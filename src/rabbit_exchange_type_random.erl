@@ -56,7 +56,7 @@ route(_X=#exchange{name = #resource{name = Name}},
       Len ->
         Rand = crypto:rand_uniform(1, Len + 1),
         [lists:nth(Rand, Matches)]
-    end.
+    end;
 
 route(X, D) ->
     error_logger:info_msg("error  ~p ~p~n", [X, D]),
