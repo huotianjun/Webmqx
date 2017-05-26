@@ -48,7 +48,6 @@ description() ->
     [{name, <<"x-random">>}, {description, <<"AMQP random exchange. Like a direct exchange, but randomly chooses who to route to.">>}].
 
 route(X, D) ->
-      _D=#delivery{message = #basic_message{routing_keys = Routes}}) ->
     {exchange, Name, 'x-random', _, _, _, _, _, _, _} = X,
     {delivery,false,false,_,
         {basic_message, _ ,Routes, _Content, _, _}, _, _} = D
