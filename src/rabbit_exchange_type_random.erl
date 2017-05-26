@@ -47,8 +47,12 @@ info(_X, _) -> [].
 description() ->
     [{name, <<"x-random">>}, {description, <<"AMQP random exchange. Like a direct exchange, but randomly chooses who to route to.">>}].
 
-route(_X=#exchange{name = #resource{name = Name}},
+route(X, D) ->
       _D=#delivery{message = #basic_message{routing_keys = Routes}}) ->
+    {exchange, Name, 'x-random', _, _, _, _, _, _, _} = X,
+    {delivery,false,false,_,
+        {basic_message, _ ,Routes, _Content, _, _}, _, _} = D
+
     Matches = rabbit_router:match_routing_key(Name, Routes),
     error_logger:info_msg("matches: ~p~n", [Matches]),
 
@@ -57,11 +61,7 @@ route(_X=#exchange{name = #resource{name = Name}},
       Len ->
         Rand = crypto:rand_uniform(1, Len + 1),
         [lists:nth(Rand, Matches)]
-    end;
-
-route(X, D) ->
-    error_logger:info_msg("error  ~p ~p~n", [X, D]),
-    [].
+    end.
 
 serialise_events() -> false.
 validate(_X) -> ok.
