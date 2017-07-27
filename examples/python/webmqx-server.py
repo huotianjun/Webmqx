@@ -37,6 +37,8 @@ def webmqx_server():
     channel = connection.channel()
     queue = channel.queue_declare(exclusive=True, auto_delete=True).method.queue
 
+    channel.exchange_declare(exchange='webmqx', exchange_type='webmqx')
+
     # Exchange must be set to 'webmqx'.
     # Your can bind many routing_key as http path.
     channel.queue_bind(exchange='webmqx', queue=queue, routing_key='/py-test/1')

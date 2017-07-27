@@ -191,6 +191,7 @@ internal_rpc_publish(ClientIP, Path, Payload, From,
                         reply_to = Q},
 
     {ok, Ring, RoutingCache1} =  get_ring(webmqx_util:path_to_words(Path), RoutingCache),
+    %error_logger:info_msg(" Ring : ~p RoutingCache1 : ~p", [Ring, RoutingCache1]),
     case Ring of
         undefined ->
             case From of
@@ -267,12 +268,24 @@ get_ring(WordsOfPath, RoutingCache) ->
     end.
 
 fetch_rabbit_queues(WordsOfPath, RoutingCache) ->
+    WR = lists:reverse(WordsOfPath),
+    fetch_rabbit_queues1(WR, RoutingCache, WR, undefined). 
+
+fetch_rabbit_queues1(_, RoutingCache, Key, Queues = [_|_]) -> 
+    Ring = concha:new(Queues), 
+    {ok, Ring,  dict:store({key, Key}, Ring, RoutingCache)};
+
+fetch_rabbit_queues1([], RoutingCache, Key, undefined) -> 
+    NowTimeStamp = now_timestamp_counter(),
+    {ok, undefined, dict:store({key, Key}, {none, NowTimeStamp}, RoutingCache)}; 
+
+fetch_rabbit_queues1(WR = [_|WRLeft], RoutingCache, _, undefined) ->
+    WordsOfPath = lists:reverse(WR),
     Queues = rabbit_exchange_type_webmqx:fetch_routing_queues(_VHost = <<"/">>, ?EXCHANGE_WEBMQX, WordsOfPath),
+    %error_logger:info_msg(" WR : ~p  WordsOfPath: ~p Queues : ~p", [WR, WordsOfPath, Queues]),
     case Queues of
         [] ->
-            NowTimeStamp = now_timestamp_counter(),
-            {ok, undefined, dict:store({key, WordsOfPath}, {none, NowTimeStamp}, RoutingCache)}; 
+            fetch_rabbit_queues1(WRLeft, RoutingCache, WordsOfPath, undefined);
         [_|_] ->
-            Ring = concha:new(Queues),
-            {ok, Ring,  dict:store({key, WordsOfPath}, Ring, RoutingCache)}
+            fetch_rabbit_queues1(WRLeft, RoutingCache, WordsOfPath, Queues)
     end.
