@@ -85,7 +85,7 @@ path_to_words1(<<>>, [], Acc) ->
 path_to_words1(<<>>, Word, Acc) ->
     lists:reverse([lists:reverse(Word) | Acc]);
 path_to_words1(<<$/, Rest/binary>>, [], Acc) ->
-    path_to_words1(Rest, [], Acc);
+    path_to_words1(Rest, [], ["/" | Acc]);
 path_to_words1(<<$/, Rest/binary>>, Word, Acc) ->
     path_to_words1(Rest, [], [lists:reverse(Word) | Acc]);
 path_to_words1(<<C:8, Rest/binary>>, Word, Acc) ->
