@@ -153,7 +153,9 @@ handle_info({#'basic.deliver'{},
         {rpc_sync, FromPid} ->  
                 gen_server2:reply(FromPid, {ok, Payload});
         {rpc_async, {FromPid, SeqId}} ->
-                gen_server2:cast(FromPid, {rpc_ok, SeqId, {ok, Payload}})
+                gen_server2:cast(FromPid, {rpc_ok, SeqId, {ok, Payload}});
+        _ ->
+                error_logger:info_msg("basic.deliver : unknown Id , not in Conts")
     end,
     {noreply, State#state{continuations = dict:erase(Id, Conts) }};
 
