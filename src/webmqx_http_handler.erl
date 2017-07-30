@@ -34,7 +34,16 @@ init(Req , Opts) ->
                             {ok, R} -> 
                                 #{<<"headers">> := Headers, <<"body">> := Body}
                                     = jiffy:decode(R, [return_maps]),   
-                                {ok, Headers, Body}
+
+                                Body1 =
+                                    case maps:is_key(<<"base64">>, Headers) of
+                                        true -> 
+                                            base64:decode(Body);
+                                        false ->
+                                            Body
+                                    end,
+                
+                                {ok, Headers, Body1}
                         end
                 end
         end
