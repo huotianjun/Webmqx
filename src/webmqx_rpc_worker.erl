@@ -145,6 +145,7 @@ handle_info(#'basic.cancel_ok'{}, State) ->
     {stop, normal, State};
 
 %% Message from queue of application server.
+%% to-do : web socket
 handle_info({#'basic.deliver'{},
                 _Msg = #amqp_msg{props = #'P_basic'{correlation_id = Id},
                         payload = Payload}},
