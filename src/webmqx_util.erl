@@ -4,8 +4,8 @@
 -include("webmqx.hrl").
 
 -export([env/1, env_vhost/0, env_port/0, env_username/0, env_password/0, env_rpc_workers_num/0,
-		 words_to_path/1, path_to_words/1]). 
-		 
+         words_to_path/1, path_to_words/1]). 
+         
 
 %%----------------------------------------------------------------------------
 
@@ -35,46 +35,46 @@ env(Key) ->
     end.
 
 env_username() ->
-	case env(username) of
-		undefined -> <<"guest">>;
-		U -> U
-	end.
+    case env(username) of
+        undefined -> <<"guest">>;
+        U -> U
+    end.
 
 env_password() ->
-	case env(password) of
-		undefined -> <<"guest">>;
-		P -> P
-	end.
+    case env(password) of
+        undefined -> <<"guest">>;
+        P -> P
+    end.
 
 env_vhost() ->
-	case env(vhost) of
-		undefined -> <<"/">>;
-		V -> V 
-	end.
+    case env(vhost) of
+        undefined -> <<"/">>;
+        V -> V 
+    end.
 
 env_port() ->
-	case env(port) of
-		undefined -> 80;
-		V -> V 
-	end.
+    case env(port) of
+        undefined -> 80;
+        V -> V 
+    end.
 
 env_rpc_workers_num() ->
-	case env(rpc_workers_num) of
-		undefined -> ?DEFAULT_RPC_WORKERS_NUM;
-		Num -> Num
-	end.
+    case env(rpc_workers_num) of
+        undefined -> ?DEFAULT_RPC_WORKERS_NUM;
+        Num -> Num
+    end.
 
 words_to_path(["/"]) -> <<"/">>;
 words_to_path([]) -> <<"/">>;
 words_to_path(Words) when is_list(Words)->
-	words_to_path1(Words, []).
+    words_to_path1(Words, []).
 
 words_to_path1([], Acc) -> list_to_binary(lists:reverse(Acc));
 words_to_path1([Word|Rest], Acc) ->
-	words_to_path1(Rest, [Word | ["/" | Acc]]).
+    words_to_path1(Rest, [Word | ["/" | Acc]]).
 
 path_to_words(<<$/>>) ->
-	["/"];
+    ["/"];
 path_to_words(<<>>) ->
     ["/"];
 path_to_words(Path) when is_binary(Path)->

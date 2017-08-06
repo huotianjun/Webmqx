@@ -73,7 +73,7 @@ serialise_events() -> false.
 
 %% No use this when delivering, but direct to the queue.
 route(_X, _D) ->
-	[].
+    [].
 
 validate(_X) -> ok.
 validate_binding(_X, _B) -> ok.
@@ -92,8 +92,8 @@ policy_changed(_X1, _X2) -> ok.
 add_binding(transaction, _Exchange, Binding) ->
     internal_add_binding(Binding);
 add_binding(none, _Exchange, Binding) ->
-	%% Called after add_binding transaction completed, for update all nodes. 
-	#binding{source = X, key = K, destination = D, args = Args} = Binding,
+    %% Called after add_binding transaction completed, for update all nodes. 
+    #binding{source = X, key = K, destination = D, args = Args} = Binding,
     rabbit_event:notify(webmqx_binding_add, {webmqx_util:path_to_words(K), X, D, Args}),  
     ok.
 
@@ -119,9 +119,9 @@ remove_bindings(transaction, _X, Bs) ->
      end ||  #binding{source = X, key = K, destination = D, args = Args} <- Bs],
     ok;
 remove_bindings(none, _X, Bs) ->
-	%% Called after remove_binding transaction completed, for update all nodes. 
+    %% Called after remove_binding transaction completed, for update all nodes. 
     [rabbit_event:notify(webmqx_binding_remove, {webmqx_util:path_to_words(K), X, D, Args})  
-		||  #binding{source = X, key = K, destination = D, args = Args} <- Bs],
+        ||  #binding{source = X, key = K, destination = D, args = Args} <- Bs],
     ok.
 
 assert_args_equivalence(X, Args) ->
@@ -135,20 +135,20 @@ internal_add_binding(#binding{source = X, key = K, destination = D,
 
 trie_match(X, Words) ->
     Node = trie_match(X, root, Words),
-	trie_bindings(X, Node).
+    trie_bindings(X, Node).
 
 trie_match_info(X, Words) ->
-	Node = trie_match(X, root, Words),
-	trie_bindings_info(X, Node).
+    Node = trie_match(X, root, Words),
+    trie_bindings_info(X, Node).
 
 trie_match(_X, Node, []) -> Node;
 trie_match(X, Node, [W | RestW]) ->
-	trie_match_part(X, Node, W, fun trie_match/3, RestW).
+    trie_match_part(X, Node, W, fun trie_match/3, RestW).
 
 trie_match_part(X, Node, Search, MatchFun, RestW) ->
     case trie_child(X, Node, Search) of
         {ok, NextNode} -> 
-			MatchFun(X, NextNode, RestW);
+            MatchFun(X, NextNode, RestW);
         error          -> []
     end.
 

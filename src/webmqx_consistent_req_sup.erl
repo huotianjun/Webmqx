@@ -23,24 +23,24 @@
 %%%
 
 start_link() ->
-	supervisor2:start_link({local, ?MODULE}, ?MODULE, []).
+    supervisor2:start_link({local, ?MODULE}, ?MODULE, []).
 
 %% Try starting a consistent requests broker.
 start_child(Path) when is_binary(Path) ->
-	case start_child1(Path) of
-		{ok, Pid}                       -> Pid;
-		{error, {already_started, Pid}} -> Pid
-	end.
+    case start_child1(Path) of
+        {ok, Pid}                       -> Pid;
+        {error, {already_started, Pid}} -> Pid
+    end.
 
 start_child1(Path) ->
-	supervisor2:start_child(?MODULE,
-		{binary_to_atom(Path, ?ENCODING),
-		{webmqx_consistent_req_broker, start_link, [Path]},
-		permanent, 60, worker, [webmqx_consistent_req_broker]}).
+    supervisor2:start_child(?MODULE,
+        {binary_to_atom(Path, ?ENCODING),
+        {webmqx_consistent_req_broker, start_link, [Path]},
+        permanent, 60, worker, [webmqx_consistent_req_broker]}).
 
 delete_child(_Path) ->
-	%% to-do : If null, delete the child.
-	ok.
+    %% to-do : If null, delete the child.
+    ok.
 
 %%%
 %%% Callback of supervisor

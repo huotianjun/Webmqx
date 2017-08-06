@@ -22,8 +22,8 @@
 -define(TAB, ?MODULE).
 
 -record(state, {
-				gm = undefined
-				}). 
+                gm = undefined
+                }). 
 
 %%----------------------------------------------------------------------------
 
@@ -41,63 +41,63 @@
 %%%
 
 start_link() ->
-	gen_server2:start_link({local, ?MODULE}, ?MODULE, [], []).
+    gen_server2:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 start() ->
     ensure_started().
 
 %% Called from webmqx_binding_event_handler.
 flush_routing_ring(WordsOfPath) ->
-	gen_server2:cast(?MODULE, {flush_routing_ring, WordsOfPath}).
+    gen_server2:cast(?MODULE, {flush_routing_ring, WordsOfPath}).
 
 %%%
 %%% Callbacks of gen_server
 %%%
 
 init([]) ->
-	{ok, GM} = gm:start_link(?MODULE, ?MODULE, [self()],
-							 fun rabbit_misc:execute_mnesia_transaction/1),
-	MRef = erlang:monitor(process, GM),
+    {ok, GM} = gm:start_link(?MODULE, ?MODULE, [self()],
+                             fun rabbit_misc:execute_mnesia_transaction/1),
+    MRef = erlang:monitor(process, GM),
 
-	receive
-		{joined, GM}            -> error_logger:info_msg("webmqx_gm ~p is joined~n", [GM]),
-									erlang:demonitor(MRef, [flush]),
-									ok;
-		{'DOWN', MRef, _, _, _} -> error_logger:info_msg("start link gm DOWN!"),		
-									ok 
-	end,
-	error_logger:info_msg("webmqx_gm is started"),
+    receive
+        {joined, GM}            -> error_logger:info_msg("webmqx_gm ~p is joined~n", [GM]),
+                                    erlang:demonitor(MRef, [flush]),
+                                    ok;
+        {'DOWN', MRef, _, _, _} -> error_logger:info_msg("start link gm DOWN!"),        
+                                    ok 
+    end,
+    error_logger:info_msg("webmqx_gm is started"),
 
-	{ok, #state{gm = GM}}.
+    {ok, #state{gm = GM}}.
 
 handle_call(_Request, _From, State) ->
-	{reply, ignore, State}.
+    {reply, ignore, State}.
 
 handle_cast({flush_routing_ring, WordsOfPath}, State = #state{gm = GM}) ->
-	gm:broadcast(GM, {flush_routing_ring, WordsOfPath}),
-	{noreply, State};
+    gm:broadcast(GM, {flush_routing_ring, WordsOfPath}),
+    {noreply, State};
 
 %% All nodes update their routing rings.
 handle_cast({gm, {flush_routing_ring, WordsOfPath}}, State) ->
-	webmqx_rpc_worker_sup:flush_routing_ring(WordsOfPath),
-	{noreply, State};
+    webmqx_rpc_worker_sup:flush_routing_ring(WordsOfPath),
+    {noreply, State};
 
 handle_cast(_Request, State) ->
-	{noreply, State}.
+    {noreply, State}.
 
 handle_info(_Info, State) ->
-	{noreply, State}.
+    {noreply, State}.
 
 terminate(_Reason, _State) ->
-	ok.
+    ok.
 
 code_change(_OldVsn, State, _Extra) ->
-	{ok, State}.
+    {ok, State}.
 
 ensure_started() ->
     case whereis(?MODULE) of
         undefined ->
-			webmqx_sup:start_restartable_child(?MODULE);
+            webmqx_sup:start_restartable_child(?MODULE);
         _Pid ->
             ok
     end.
@@ -107,7 +107,7 @@ ensure_started() ->
 %%%
 
 joined([SPid], _Members) -> 
-	SPid ! {joined, self()}, ok.
+    SPid ! {joined, self()}, ok.
 
 members_changed([_SPid], _Births, _) ->
     ok.
@@ -116,5 +116,5 @@ handle_msg([SPid], _From, Msg) ->
     ok = gen_server2:cast(SPid, {gm, Msg}).
 
 handle_terminate([_SPid], Reason) ->
-	error_logger:info_msg("handle_terminate Reason : ~p ~n", [Reason]),
+    error_logger:info_msg("handle_terminate Reason : ~p ~n", [Reason]),
     ok.

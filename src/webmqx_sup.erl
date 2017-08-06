@@ -43,7 +43,7 @@
 %%%
 
 start_link() ->
-	supervisor2:start_link({local, ?MODULE}, ?MODULE, []).
+    supervisor2:start_link({local, ?MODULE}, ?MODULE, []).
 
 start_supervisor_child(Mod) -> start_supervisor_child(Mod, []).
 

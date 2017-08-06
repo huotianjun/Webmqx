@@ -26,21 +26,21 @@
 
 start_link() ->
     {ok, SupPid} = supervisor2:start_link({local, ?MODULE}, ?MODULE, []),
-	{ok, SupPid}.
+    {ok, SupPid}.
 
 flush_routing_ring(WordsOfPath) ->
-	[begin
-			webmqx_rpc_worker:flush_routing_ring(Pid, WordsOfPath)
-		end || {_ProcessName, Pid, _Type, _Class} <- supervisor2:which_children(?MODULE)].
+    [begin
+            webmqx_rpc_worker:flush_routing_ring(Pid, WordsOfPath)
+        end || {_ProcessName, Pid, _Type, _Class} <- supervisor2:which_children(?MODULE)].
 
 %%%
 %%% Callback of supervisor
 %%%
 
 init([]) -> 
-	Procs = [
-		{{webmqx_rpc_worker, N}, {webmqx_rpc_worker, start_link, [N]},
-			permanent, 16#ffffffff, worker, []}
-			|| N <- lists:seq(1, webmqx_util:env_rpc_workers_num())],
-	{ok, {{one_for_one, 1, 5}, Procs}}.
+    Procs = [
+        {{webmqx_rpc_worker, N}, {webmqx_rpc_worker, start_link, [N]},
+            permanent, 16#ffffffff, worker, []}
+            || N <- lists:seq(1, webmqx_util:env_rpc_workers_num())],
+    {ok, {{one_for_one, 1, 5}, Procs}}.
 
