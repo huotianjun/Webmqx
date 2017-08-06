@@ -20,7 +20,6 @@ handle_event({event, webmqx_binding_remove, {WordsOfPath, _X, _D, _Args}, _, _},
     %% Flush the ets of routing table.
     webmqx_gm:flush_routing_ring(WordsOfPath),
 
-    error_logger:info_msg("delete child : ~p~n", [Path]),
     {ok, State};
 
 handle_event(_Event, State) ->

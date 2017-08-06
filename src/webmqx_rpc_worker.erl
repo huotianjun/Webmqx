@@ -10,7 +10,7 @@
 -behaviour(gen_server2).
 
 -export([start_link/1, stop/1]).
--export([rpc/5, rpc/6]).
+-export([rpc/5]).
 -export([init/1, terminate/2, code_change/3, handle_call/3,
          handle_cast/2, handle_info/2]).
 -export([flush_routing_ring/2]).
@@ -101,7 +101,7 @@ handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
 
 handle_call({rpc_sync, ClientIP, Path, Payload}, From, State) ->
-    NewState = internal_rpc_publish(ClientIP, Path, Payload, _From = {rpc_sync, From}, State),
+    NewState = internal_rpc_publish(ClientIP, Path, Payload, From, State),
     {noreply, NewState}.
 
 handle_cast({flush_routing_ring, WordsOfPath}, State = #state{routing_cache = RoutingCache}) ->
@@ -125,11 +125,12 @@ handle_info(#'basic.cancel_ok'{}, State) ->
 
 %% Message from queue of application server.
 handle_info({#'basic.deliver'{},
-                _Msg = #amqp_msg{props = #'P_basic'{correlation_id = Pid64},
+                _Msg = #amqp_msg{props = #'P_basic'{correlation_id = FromBin},
                         payload = Payload}},
                 State) ->
-    FromPid = list_to_pid(binary_to_list(base64:decode(Pid64))).
-    gen_server2:reply(FromPid, {ok, Payload});
+    %FromPid = list_to_pid(binary_to_list(base64:decode(Pid64))),
+    From = binary_to_term(base64:decode(FromBin)),
+    gen_server2:reply(From, {ok, Payload}),
     {noreply, State};
 
 handle_info({'EXIT', _Pid, Reason}, State) ->
@@ -154,11 +155,12 @@ setup_consumer(#state{rabbit_channel = {_Ref, Channel}, reply_queue = Q}) ->
     #'basic.consume_ok'{} =
                 amqp_channel:call(Channel, #'basic.consume'{queue = Q, no_ack = true}).
 
-internal_rpc_publish(ClientIP, Path, Payload, From,
+internal_rpc_publish(ClientIP, Path, Payload, From = {_FromPid, _Ref},
                         State = #state{rabbit_channel = {_ChannelRef, Channel},
                                         reply_queue = Q,
                                         routing_cache = RoutingCache}) ->
-    Props = #'P_basic'{correlation_id = base64:encode(pid_to_list(From)),
+    %Props = #'P_basic'{correlation_id = base64:encode(pid_to_list(FromPid)),
+    Props = #'P_basic'{correlation_id = base64:encode(term_to_binary(From)),
                         content_type = <<"application/octet-stream">>,
                         reply_to = Q},
 
@@ -166,10 +168,7 @@ internal_rpc_publish(ClientIP, Path, Payload, From,
     %error_logger:info_msg(" Ring : ~p RoutingCache1 : ~p", [Ring, RoutingCache1]),
     case Ring of
         undefined ->
-            case From of
-                {rpc_sync, FromPid} ->  
-                    gen_server2:reply(FromPid, undefined)
-            end;
+            gen_server2:reply(From, undefined);
          _ ->
             #resource{name = QueueName} = concha:lookup(ClientIP, Ring),
             Publish = #'basic.publish'{exchange = <<"">>, 

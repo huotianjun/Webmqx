@@ -9,7 +9,7 @@
 
 init(Req , Opts) ->
     #{rpc_workers_num := WorkersNum} = Opts,
-    {ok, {ClientIP, _Host, Path, Method, PayloadJson, Req2}} = req_parse(Req),
+    {ok, {ClientIP, _Host, Path, PayloadJson, Req2}} = req_parse(Req),
 
     error_logger:info_msg("request : ~p ~n", [Req]),
 
@@ -35,7 +35,6 @@ init(Req , Opts) ->
                             end,
                 
                             {ok, Headers, Body1}
-                        end
                 end
         end
     catch 
@@ -82,7 +81,7 @@ req_parse(Req) ->
                 {body, Body}
                ]}, 
 
-    {ok, {PeerIP, Host, Path, Method, jiffy:encode(Payload), Req2}}.
+    {ok, {PeerIP, Host, Path, jiffy:encode(Payload), Req2}}.
 
 http_reply({error, Headers, Body}, Req) ->
     Headers2 = Headers#{<<"content-length">> => integer_to_list(iolist_size(Body))}, 
