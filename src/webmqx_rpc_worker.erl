@@ -10,7 +10,7 @@
 -behaviour(gen_server2).
 
 -export([start_link/1, stop/1]).
--export([rpc/5, rpc/6, consistent_publish/4]).
+-export([rpc/5, rpc/6]).
 -export([init/1, terminate/2, code_change/3, handle_call/3,
          handle_cast/2, handle_info/2]).
 -export([flush_routing_ring/2]).
@@ -21,10 +21,7 @@
                rabbit_channel,
                reply_queue,
                n,
-               routing_cache = dict:new(),
-               consistent_req_queues = gb_sets:new(),
-               continuations = dict:new(),
-               correlation_id = 0}).
+               routing_cache = dict:new()}).
 
 %%----------------------------------------------------------------------------
 
@@ -32,8 +29,6 @@
 
 -spec(start_link/1 :: (non_neg_integer()) -> rabbit_types::ok(pid())). 
 -spec(rpc/5 :: ('sync', pid(), term(), binary(), binary()) -> rabbit_types::ok(binary()) | undefined).
--spec(rpc/6 :: ('async', pid(), non_neg_integer(), term(),  binary(), binary()) -> 'ok').
--spec(consistent_publish/4 :: (pid(), term(), binary(), binary()) -> rabbit_types::ok_or_error(any())).
 
 -endif.
 
@@ -50,14 +45,6 @@ start_link(N) ->
 %% Called by webmqx_http_handler.
 rpc(sync, WorkerPid, ClientIP, Path, Payload) ->
     gen_server2:call(WorkerPid, {rpc_sync, ClientIP, Path, Payload}, infinity).
-
-%% Called by webmqx_consistent_req_broker.
-rpc(async, WorkerPid, SeqId, ClientIP, Path, Payload) ->
-    gen_server2:cast(WorkerPid, {rpc_async, {self(), SeqId}, ClientIP, Path, Payload}).
-
-%% Called by webmqx_http_handler.
-consistent_publish(WorkerPid, ClientIP, Path, Payload) ->
-    gen_server2:call(WorkerPid, {consistent_publish, ClientIP, Path, Payload}, infinity).
 
 flush_routing_ring(Pid, WordsOfPath) ->
     gen_server:cast(Pid, {flush_routing_ring, WordsOfPath}).
@@ -113,17 +100,9 @@ terminate(_Reason, #state{connection = {ConnectionRef, Connection},
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
 
-handle_call({consistent_publish, ClientIP, Path, Payload}, _From, State) ->
-    {R, NewState} = internal_consistent_publish(ClientIP, Path, Payload, State),
-    {reply, R, NewState};
-
 handle_call({rpc_sync, ClientIP, Path, Payload}, From, State) ->
     NewState = internal_rpc_publish(ClientIP, Path, Payload, _From = {rpc_sync, From}, State),
     {noreply, NewState}.
-
-handle_cast({rpc_async, {From, SeqId}, ClientIP, Path, Payload}, State) -> 
-    NewState = internal_rpc_publish(ClientIP, Path, Payload, _From = {rpc_async, {From, SeqId}}, State),
-    {noreply, NewState};
 
 handle_cast({flush_routing_ring, WordsOfPath}, State = #state{routing_cache = RoutingCache}) ->
     {ok, _, RoutingCache1} = fetch_rabbit_queues(WordsOfPath, RoutingCache),
@@ -145,20 +124,13 @@ handle_info(#'basic.cancel_ok'{}, State) ->
     {stop, normal, State};
 
 %% Message from queue of application server.
-%% to-do : web socket
 handle_info({#'basic.deliver'{},
-                _Msg = #amqp_msg{props = #'P_basic'{correlation_id = Id},
+                _Msg = #amqp_msg{props = #'P_basic'{correlation_id = Pid64},
                         payload = Payload}},
-                State = #state{continuations = Conts}) ->
-    case dict:fetch(Id, Conts) of
-        {rpc_sync, FromPid} ->  
-                gen_server2:reply(FromPid, {ok, Payload});
-        {rpc_async, {FromPid, SeqId}} ->
-                gen_server2:cast(FromPid, {rpc_ok, SeqId, {ok, Payload}});
-        _ ->
-                error_logger:info_msg("basic.deliver : unknown Id , not in Conts")
-    end,
-    {noreply, State#state{continuations = dict:erase(Id, Conts) }};
+                State) ->
+    FromPid = list_to_pid(binary_to_list(base64:decode(Pid64))).
+    gen_server2:reply(FromPid, {ok, Payload});
+    {noreply, State};
 
 handle_info({'EXIT', _Pid, Reason}, State) ->
     {stop, Reason, State};
@@ -185,11 +157,8 @@ setup_consumer(#state{rabbit_channel = {_Ref, Channel}, reply_queue = Q}) ->
 internal_rpc_publish(ClientIP, Path, Payload, From,
                         State = #state{rabbit_channel = {_ChannelRef, Channel},
                                         reply_queue = Q,
-                                        routing_cache = RoutingCache,
-                                        correlation_id = CorrelationId,
-                                        continuations = Continuations}) ->
-    EncodedCorrelationId = base64:encode(<<CorrelationId:64>>),
-    Props = #'P_basic'{correlation_id = EncodedCorrelationId,
+                                        routing_cache = RoutingCache}) ->
+    Props = #'P_basic'{correlation_id = base64:encode(pid_to_list(From)),
                         content_type = <<"application/octet-stream">>,
                         reply_to = Q},
 
@@ -199,9 +168,7 @@ internal_rpc_publish(ClientIP, Path, Payload, From,
         undefined ->
             case From of
                 {rpc_sync, FromPid} ->  
-                    gen_server2:reply(FromPid, undefined);
-                {rpc_async, {FromPid, SeqId}} ->
-                    gen_server2:cast(FromPid, {rpc_ok, SeqId, undefined})
+                    gen_server2:reply(FromPid, undefined)
             end;
          _ ->
             #resource{name = QueueName} = concha:lookup(ClientIP, Ring),
@@ -212,43 +179,7 @@ internal_rpc_publish(ClientIP, Path, Payload, From,
                                 payload = Payload})
     end,
 
-    State#state{correlation_id = CorrelationId + 1,
-                    routing_cache = RoutingCache1,
-                    continuations = dict:store(EncodedCorrelationId, From, Continuations)}.
-
-internal_consistent_publish(ClientIP, Path, Payload,
-    State = #state{vhost = VHost,
-                    rabbit_channel = {_ChannelRef, Channel}, 
-                    consistent_req_queues = ConsReqQueues}) ->
-    {IsAbsent, NewState} = 
-        case gb_sets:is_element(Path, ConsReqQueues) of
-            true -> {true, State};
-            false ->
-                Queue =  #resource{virtual_host = VHost, kind = queue, name = Path},
-                case rabbit_amqqueue:with(Queue, fun(_) -> ok end) of
-                    ok -> 
-                        {true, State#state{consistent_req_queues = gb_sets:add(Path, ConsReqQueues)}};
-                    R ->
-                        error_logger:info_msg("no this queue named the path ~p ~p~n", [Path, R]),
-                       {false, State}
-                end
-        end,
-
-        case IsAbsent of
-            true ->
-                Publish = #'basic.publish'{exchange = <<"">>,
-                                            routing_key = Path,
-                                            mandatory = true},
-                case amqp_channel:call(Channel, Publish, #amqp_msg{payload = Payload, 
-                                            props   = #'P_basic'{correlation_id = ClientIP}}) of
-                    ok ->
-                        {ok, NewState};
-                    Error ->
-                        {Error, NewState}       
-                end;
-            false ->
-                {not_found, State} 
-        end.
+    State#state{routing_cache = RoutingCache1}.
 
 now_timestamp_counter() ->
     {{_NowYear, _NowMonth, _NowDay},{NowHour, NowMinute, NowSecond}} = calendar:now_to_local_time(os:timestamp()),

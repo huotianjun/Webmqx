@@ -19,7 +19,6 @@ start(_Type, _Args) ->
     %% RPC workers start.
     webmqx_rpc_worker_manager:start(),
     webmqx_sup:start_supervisor_child(webmqx_rpc_worker_sup),
-    webmqx_sup:start_supervisor_child(webmqx_consistent_req_sup),
 
     %% Cowboy start
     RpcWorkersNum = webmqx_util:env_rpc_workers_num(),

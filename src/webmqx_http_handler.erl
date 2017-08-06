@@ -10,7 +10,6 @@
 init(Req , Opts) ->
     #{rpc_workers_num := WorkersNum} = Opts,
     {ok, {ClientIP, _Host, Path, Method, PayloadJson, Req2}} = req_parse(Req),
-    IsConsistentReq = is_consistent_req(Method),
 
     error_logger:info_msg("request : ~p ~n", [Req]),
 
@@ -19,37 +18,29 @@ init(Req , Opts) ->
         case webmqx_rpc_worker_manager:get_a_worker(WorkersNum) of
             undefined -> {error, #{}, <<"">>};
             {ok, RpcWorkerPid} ->
-                case IsConsistentReq of
-                    true ->
-                        case webmqx_rpc_worker:consistent_publish(RpcWorkerPid, ClientIP, Path, PayloadJson) of
-                            ok ->   
-                                {ok, #{}, <<>>};
-                            _ ->
-                                {error, #{},  <<"consistent_publish error">>}
-                        end;
-                    false ->    
-                        case webmqx_rpc_worker:rpc(sync, RpcWorkerPid, ClientIP, Path, PayloadJson) of
-                            undefined ->
-                                {error, #{}, <<"rpc_sync error">>};
-                            {ok, R} -> 
-                                #{<<"headers">> := Headers, <<"body">> := Body}
-                                    = jiffy:decode(R, [return_maps]),   
+                case webmqx_rpc_worker:rpc(sync, RpcWorkerPid, ClientIP, Path, PayloadJson) of
+                    undefined ->
+                        {error, #{}, <<"rpc error">>};
+                    {ok, R} -> 
+                        #{<<"headers">> := Headers, <<"body">> := Body}
+                            = jiffy:decode(R, [return_maps]),   
 
-                                Body1 =
-                                    case maps:is_key(<<"base64">>, Headers) of
-                                        true -> 
-                                            base64:decode(Body);
-                                        false ->
-                                            Body
-                                    end,
+                        Body1 =
+                            % binary content
+                            case maps:is_key(<<"base64">>, Headers) of
+                                true -> 
+                                    base64:decode(Body);
+                                false ->
+                                    Body
+                            end,
                 
-                                {ok, Headers, Body1}
+                            {ok, Headers, Body1}
                         end
                 end
         end
     catch 
         _Error:_Reason -> 
-            {error, #{}, <<"rpc crash">>} 
+            {error, #{}, <<"webmqx crash">>} 
     end,
 
     http_reply(Response, Req2),
@@ -92,12 +83,6 @@ req_parse(Req) ->
                ]}, 
 
     {ok, {PeerIP, Host, Path, Method, jiffy:encode(Payload), Req2}}.
-
-is_consistent_req(<<"GET">>) -> false;
-is_consistent_req(<<"POST">>) -> false;
-is_consistent_req(<<"PUT">>) -> true;
-is_consistent_req(<<"DELETE">>) -> true;
-is_consistent_req(_) -> false.
 
 http_reply({error, Headers, Body}, Req) ->
     Headers2 = Headers#{<<"content-length">> => integer_to_list(iolist_size(Body))}, 
