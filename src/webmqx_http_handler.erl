@@ -7,8 +7,7 @@
 %%% Callback from cowboy
 %%%
 
-init(Req , Opts) ->
-    #{rpc_workers_num := WorkersNum} = Opts,
+init(Req , Opts = #{rpc_workers_num := WorkersNum}) ->
     {ok, {ClientIP, _Host, Path, PayloadJson, Req2}} = req_parse(Req),
 
     error_logger:info_msg("request : ~p ~n", [Req]),

@@ -24,7 +24,7 @@ start(_Type, _Args) ->
     RpcWorkersNum = webmqx_util:env_rpc_workers_num(),
     Dispatch = cowboy_router:compile([
         {'_', [
-            {"/api/websocket", webmqx_ws_handler, []},
+            {"/api/websocket", webmqx_ws_handler, #{rpc_workers_num => RpcWorkersNum}},
             {'_', webmqx_http_handler, #{rpc_workers_num => RpcWorkersNum}}
         ]}
     ]),
